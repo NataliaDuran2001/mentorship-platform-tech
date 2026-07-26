@@ -202,7 +202,7 @@ Estado al momento de escribir este documento. **No es autoritativo**.
 | ~~A2 · Integración de Supabase~~ | #4 | `status:hecha` · **cerrado**, 4/4 AC | A1 | `4dfb0d0` |
 | ~~B1 · Design system a tema Flutter~~ | #2 | `status:hecha` · **cerrado**, 5/5 AC | A1 | `f1567f3` (+ `2d484f6` parcial) |
 | **B2 · CI en GitHub Actions** | #6 | `status:bloqueada` · abierto, 4/5 AC (falta solo AC5, ver §9) | A1 | `027cb0c` |
-| **B3 · Router y shell responsivo** | #5 | `status:pendiente` | **B1** | |
+| ~~B3 · Router y shell responsivo~~ | #5 | `status:hecha` · **cerrado**, 5/5 AC | B1 | `e7d26d1` |
 
 Extra fuera de B1–B3: **#16** (revocar EXECUTE de `rls_auto_enable()`) cerrado,
 4/4 AC, commit `b948568`. Ver §2 y §9.
@@ -591,3 +591,32 @@ de autenticación de E1 que hubo que revertir por estar fuera de alcance.
 - **B2 · PR #17 (`feat/e0-fundaciones` → `main`) queda abierto y en verde.**
   Sirve de evidencia del AC3 y de vehículo del merge de E0 cuando la dueña lo
   decida; B3 entra a la misma rama y el PR se actualiza solo.
+
+- **B3 · distribución del bottom nav (4 slots para 5 destinos):** Dashboard,
+  Chat, Lógica y Entrevistas ocupan los slots; **Perfil queda fuera** y en ≤768
+  se llega por el ícono del AppBar (y por el drawer en el rango intermedio).
+  Cuando Perfil está activo en ≤768 el bottom nav se oculta (vista plena):
+  el `NavigationBar` de M3 no tiene estado "sin selección" y marcar otro
+  destino sería mentir.
+- **B3 · lectura de los tres modos del shell**, reconciliando el issue con
+  DESIGN.md: `>768` sidebar fija de 260px · `481–768` bottom nav + drawer
+  (hamburguesa) con la lista completa · `≤480` bottom nav con márgenes de 16 y
+  sin drawer.
+- **B3 · el login simulado ahora navega a `/onboarding`** al terminar, y el
+  placeholder de onboarding tiene un botón a `/dashboard`: el grafo completo
+  es navegable (AC1) sin implementar autenticación. Los guards reales son
+  del #9.
+- **B3 · URLs con la hash strategy por defecto de Flutter Web** (`/#/ruta`):
+  recargar mantiene la pantalla sin configurar rewrites en el server. Migrar a
+  `usePathUrlStrategy` es decisión aparte y no la exige ningún AC.
+- **B3 · `GoRouter` es instancia única** (`AppRouter.router` estático); los
+  tests la resetean con `go('/login')` en `setUp`, igual que ya reseteaban los
+  signals globales.
+- **B3 · la sidebar lleva `Material` propio:** `ListTile` pinta fondo e ink en
+  el `Material` más cercano y un `Container` con color en el medio disparaba
+  la aserción "ListTile background color may be invisible" en los tests.
+- **B3 · `fvm flutter test --platform chrome` se abortó a los ~20 min** sin
+  completar la compilación web (lentitud del tooling web de esta máquina, ya
+  documentada en §2). Los AC quedaron verificados con la suite de la VM, que
+  cruza los breakpoints con overflow-como-fallo; el detalle está en la
+  validación del #5.
