@@ -36,7 +36,12 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: AppConstants.defaultPadding * 3),
                   
-                  // Observador reactivo de signals (Watch)
+                  // Observador reactivo de signals (Watch).
+                  // signals_flutter 7.1 deprecó Watch a favor de SignalBuilder,
+                  // pero §3 del handoff fija Watch como decisión cerrada. Se
+                  // suprime el aviso para cumplir el AC2 del #1 (analyze sin
+                  // issues) sin cambiar la decisión; anotado en la bitácora §9.
+                  // ignore: deprecated_member_use
                   Watch((context) {
                     if (authLoading.value) {
                       return const Center(
