@@ -6,10 +6,6 @@ import 'core/theme/app_theme.dart';
 import 'presentation/widgets/pages/login_page.dart';
 
 Future<void> main() async {
-  // Error de análisis deliberado para validar el AC1 del #6 (rama desechable
-  // ci/validate-red, nunca se mergea): variable local sin usar.
-  final int sinUsar = 42;
-
   // Necesario porque inicializamos plugins antes de runApp
   WidgetsFlutterBinding.ensureInitialized();
 
