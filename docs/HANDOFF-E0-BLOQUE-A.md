@@ -125,7 +125,7 @@ Estado al momento de escribir este documento. **No es autoritativo**: la verdad 
 
 **Ojo con A3.** Quedó registrada como implementada en una iteración previa, pero la verificación del código mostró otra cosa: `AppColors.primary` sigue en `#A78BFA`, `app_colors.dart` tiene 6 constantes de 40+, `constants.dart` tiene 2, `lib/core/theme/app_theme.dart` no existe y `AppBranding` tampoco. Solo se hizo el registro de la fuente. **Los ítems 1 a 4 del alcance están íntegros por delante**, y bloquean A4. El detalle está en el comentario de validación del #2.
 
-La rama `feat/e0-fundaciones` **fue pusheada sin abrir PR**, autorizado explícitamente por la dueña del repo. `main` sigue intacta en el commit inicial. El PR queda para cuando exista el CI del #6, que es lo que le da sentido a abrirlo.
+La rama `feat/e0-fundaciones` **sí fue pusheada**, sin abrir PR, autorizado explícitamente por la dueña del repo. `main` sigue intacta en `f7d41cb`. El PR queda para el procedimiento de validación del #6, que es lo que le da sentido a abrirlo.
 
 Labels de estado: `status:pendiente` · `status:en-curso` · `status:hecha` · `status:bloqueada`. La label `manual` marca lo que el loop no debe tocar.
 
