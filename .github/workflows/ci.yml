@@ -1,0 +1,42 @@
+# CI del repo: analyze + test en cada PR hacia main y en cada push a main.
+# El check `analyze-y-test` es el requerido por la protección de la rama main.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  analyze-y-test:
+    name: analyze-y-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # IMPORTANTE: esta versión debe coincidir SIEMPRE con la de .fvmrc.
+      # Si se actualiza el SDK, actualizar ambos archivos en el mismo commit.
+      # En el runner no hay FVM: la versión la fija esta action.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.2"
+          channel: stable
+          cache: true
+
+      # Cache de dependencias de pub, además del SDK que cachea la action.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - run: flutter pub get
+
+      # --fatal-infos: cualquier info nueva (deprecaciones incluidas) rompe el
+      # build. El único aviso conocido (Watch deprecado en signals_flutter 7.1)
+      # está suprimido con un ignore localizado en login_page.dart; ver la §3
+      # del handoff del bloque B.
+      - run: flutter analyze --fatal-infos
+
+      - run: flutter test
