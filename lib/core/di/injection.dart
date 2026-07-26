@@ -15,6 +15,11 @@ void setupDependencies() {
   // Cliente de Supabase: única puerta de entrada al backend desde la capa Data.
   getIt.registerLazySingleton<SupabaseClient>(() => SupabaseConfig.client);
 
-  // Ejemplo de inyección:
-  // getIt.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(getIt<SupabaseClient>()));
+  // Pendiente del issue #9: registrar los repositorios y casos de uso del
+  // Módulo 1 acá, nunca construirlos dentro de un widget.
+  //
+  // getIt.registerLazySingleton<AuthRepository>(
+  //   () => AuthRepositoryImpl(getIt<SupabaseClient>()),
+  // );
+  // getIt.registerLazySingleton(() => SignInUseCase(getIt<AuthRepository>()));
 }
