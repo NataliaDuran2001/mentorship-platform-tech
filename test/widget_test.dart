@@ -33,7 +33,9 @@ void main() {
 
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('Bienvenido'), findsOneWidget);
+    // Test roto deliberado para validar el AC2 del #6 (rama desechable
+    // ci/validate-red, nunca se mergea): 'Bienvenido' sí existe en la UI.
+    expect(find.text('Bienvenido'), findsNothing);
     expect(find.text('Correo electrónico'), findsOneWidget);
     expect(find.text('Contraseña'), findsOneWidget);
     expect(find.text('Ingresar'), findsOneWidget);
