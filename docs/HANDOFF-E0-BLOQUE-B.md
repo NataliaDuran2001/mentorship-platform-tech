@@ -62,9 +62,14 @@ Una tarea por iteración. En cada una:
 12. Actualizar la tabla de §4 con el resultado y el SHA corto.
 13. Si no queda ninguna tarea ejecutable, ir a §8 y detenerse.
 
-**Rama:** todo va a `feat/e0-fundaciones`, que **ya existe** con 4 commits.
-**`git push` y abrir PR sí requieren pedirlo** — `main` es la rama por defecto de
-un repo público.
+**Rama:** todo va a `feat/e0-fundaciones`, que **ya existe**. El push y el PR
+**ya están autorizados** por la dueña del repo; el PR se abre dentro del
+procedimiento de validación de B2, no antes.
+
+**No afirmes acá el número de commits ni si la rama está pusheada.** Son hechos
+volátiles que quedan obsoletos entre iteraciones y ya causaron una contradicción
+en este documento. Consultalos siempre en vivo:
+`git log --oneline` y `git ls-remote --heads origin`.
 
 ---
 
@@ -76,9 +81,9 @@ integrado.
 
 | | |
 |---|---|
-| Rama de trabajo | `feat/e0-fundaciones`, 4 commits, **no pusheada**. `main` sigue en 1 commit |
+| Rama de trabajo | `feat/e0-fundaciones`. `main` sigue intacta en `f7d41cb`. Estado del push y cantidad de commits: **consultar en vivo**, no están fijados acá |
 | Toolchain | Flutter **3.44.2** vía FVM (`.fvmrc`) · Dart **3.12.2**. Prefija todo con `fvm` |
-| Backend | Supabase, proyecto `dtvfucqamakudgbwuhbw`. Schema `public` **vacío**, `auth.users` en **0** |
+| Backend | Supabase, proyecto `dtvfucqamakudgbwuhbw`. Sin tablas, `auth.users` en **0**. El schema `public` **no está vacío**: ver "Hallazgo del schema" abajo |
 | Tablero | 14 issues. E0 = #1–#6, E1 = #7–#14 |
 | Design system | "Luminous Clarity" · `C:\Users\Natalia\Downloads\mentor_ai\stitch_femtech_mentor_ai\luminous_clarity\DESIGN.md` (fuera del repo) |
 | Doc de arranque | [`docs/DEVELOPMENT.md`](DEVELOPMENT.md), verificado clonando en limpio |
@@ -88,7 +93,7 @@ integrado.
 | Commit | Qué |
 |---|---|
 | `838ec6f` | **#1 cerrado.** `test/widget_test.dart` reescrito (3 tests verdes), `.gitattributes`, borrado del basura `3.10`, `docs/DEVELOPMENT.md` enlazado desde el README |
-| `4dfb0d0` | **#4 `status:bloqueada`.** Cliente de Supabase integrado: `supabase_config.dart` versionado, `SupabaseClient` en `getIt`, `publishableKey` en vez del deprecado `anonKey`, `environment.sdk` a `^3.10.0` |
+| `4dfb0d0` | **#4 cerrado, `status:hecha`.** Cliente de Supabase integrado: `supabase_config.dart` versionado, `SupabaseClient` en `getIt`, `publishableKey` en vez del deprecado `anonKey`, `environment.sdk` a `^3.10.0`. El AC1 fue reformulado y aplicado al cuerpo del issue: "establece sesión" pasó al #9, este issue solo integra el cliente |
 | `2d484f6` | **#2 avance parcial.** Sección `fonts:` de Geist declarada, `assets/fonts/` versionado con su `OFL.txt`, `fontFamily` repetido eliminado de 4 `TextStyle` |
 | `0b7d8fc` | Bitácora de desviaciones en la §9 del bloque A |
 
@@ -103,6 +108,31 @@ integrado.
   es un flake de DWDS con la máquina cargada: reintentar el `run`.
 - `.gitattributes` ya normaliza los finales de línea. `git status` en un clon
   limpio sale vacío.
+
+### Hallazgo del schema — no es trabajo de E0, importa para el #7
+
+El schema `public` no tiene tablas, pero **no está vacío**: hay un event trigger
+activo, `ensure_rls`, que ejecuta la función `rls_auto_enable()` en cada
+`ddl_command_end`. En todo `CREATE TABLE` sobre `public` corre
+`alter table ... enable row level security` automáticamente.
+
+Dos consecuencias para el #7, no para este bloque:
+
+1. El AC1 del #7 ("todas las tablas con `rls_enabled: true`") **se cumple solo**.
+   Lo que hay que escribir a mano son las **políticas**, no el `enable`.
+2. El riesgo se invierte: una tabla con RLS activo y **cero políticas** queda
+   silenciosamente inaccesible, y ahora ese es el estado por defecto.
+
+También hay un warning del advisor de seguridad: `anon` y `authenticated` tienen
+`EXECUTE` sobre `rls_auto_enable()`, que es `SECURITY DEFINER`. En la práctica no
+es explotable — la función retorna `event_trigger` y Postgres rechaza invocar ese
+tipo de funciones directamente — pero el grant no tiene propósito, porque el
+trigger la ejecuta como owner. La limpieza es una línea, pendiente de decisión de
+la dueña del repo:
+
+```sql
+REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM anon, authenticated;
+```
 
 ---
 
@@ -167,7 +197,7 @@ Estado al momento de escribir este documento. **No es autoritativo**.
 | Tarea | Issue | Estado | Depende de | Commit |
 |---|---|---|---|---|
 | ~~A1 · Entorno y línea base verde~~ | #1 | `status:hecha` · **cerrado** | — | `838ec6f` |
-| ~~A2 · Integración de Supabase~~ | #4 | `status:bloqueada` · abierto, 3/4 AC | A1 | `4dfb0d0` |
+| ~~A2 · Integración de Supabase~~ | #4 | `status:hecha` · **cerrado**, 4/4 AC | A1 | `4dfb0d0` |
 | **B1 · Design system a tema Flutter** | #2 | `status:pendiente` · item 5 hecho | A1 | `2d484f6` (parcial) |
 | **B2 · CI en GitHub Actions** | #6 | `status:pendiente` | A1 | |
 | **B3 · Router y shell responsivo** | #5 | `status:pendiente` | **B1** | |
@@ -432,14 +462,16 @@ ya autorizado.
 
 | Qué | Bloquea | Estado |
 |---|---|---|
-| **Issue #3 · Configurar Supabase** (label `manual`). Google OAuth con credenciales de GCP y redirect URLs · Site URL y allow-list · plantillas de correo en español · decidir la confirmación por correo | El **#9**. Ya **no** bloquea nada de E0 | Pendiente, de la dueña del repo |
-| Reformulación del AC1 del **#4** | El cierre del #4 | Pendiente de confirmación. El trabajo técnico está completo |
+| **Issue #3 · Configurar Supabase** (label `manual`). Site URL y allow-list de redirects · plantillas de correo en español | Nada. Ya **no** bloquea E0 ni el #9 | Pendiente, de la dueña del repo |
+| **Issue #15 · Google OAuth** (labels `manual`, `fase:post-mvp`) | Nada del MVP. Es aditivo sobre el #9 | **Diferido por decisión de producto.** El MVP autentica con email/password |
+| ~~Reformulación del AC1 del #4~~ | — | **Resuelto.** Confirmada y aplicada al cuerpo del issue; #4 está cerrado |
+| ~~Decidir la confirmación por correo~~ | — | **Resuelto.** Se mantiene activa (`mailer_autoconfirm: false`). El #9 debe construir el estado "revisá tu correo" |
 
 ### Decisiones abiertas menores — no bloquean B1–B3
 
 | Qué | Quién decide | Estado |
 |---|---|---|
-| `.mcp.json` quedó **untracked**. No tiene secretos: solo `project_ref` y la lista de features del servidor MCP de Supabase | Dueña del repo | Versionarlo o agregarlo a `.gitignore` |
+| ~~`.mcp.json` untracked~~ | — | **Resuelto:** versionado en `6efb122`. Verificado que no tiene secretos: solo el endpoint del MCP, el `project_ref` y la lista de features. El `project_ref` ya es público, aparece en la URL de `supabase_config.dart` |
 | Nivel `code` de la tipografía: el frontmatter declara `Geist`, pero `GeistMono` está registrado en `pubspec.yaml` y la prosa habla de mono-integración | Quien haga B1 | Elegir uno y anotarlo en §9 |
 | Migrar `Watch` a `SignalBuilder` y actualizar §3 y `CLAUDE.md` | Dueña del repo | Recomendado antes de que la deuda de `// ignore` crezca. Ver §3 |
 | Distribución del bottom nav: 4 slots para 5 destinos | Quien haga B3 | Elegir y anotar en §9 |
@@ -460,10 +492,10 @@ fuera de alcance. Están descritos en la §9 del [bloque A](HANDOFF-E0-BLOQUE-A.
 
 | Ajuste | Valor | Consecuencia |
 |---|---|---|
-| `email` | `true` | Email/password **ya funciona**: viene activo por defecto |
-| `google` | `false` | Es lo único que #3 tiene que habilitar |
+| `email` | `true` | Email/password **ya funciona**: viene activo por defecto. **Es el método de auth del MVP** |
+| `google` | `false` | Diferido al **#15**, `fase:post-mvp`. No se toca |
 | `disable_signup` | `false` | El registro está abierto |
-| `mailer_autoconfirm` | `false` | Un signup crea el usuario pero **no devuelve sesión** hasta confirmar el correo |
+| `mailer_autoconfirm` | `false` | **Decisión cerrada: se mantiene así.** Un signup crea el usuario pero no devuelve sesión hasta confirmar el correo, y el #9 debe construir ese estado en la UI |
 
 Nada de esto es trabajo de E0. **No implementes autenticación en este bloque.**
 
