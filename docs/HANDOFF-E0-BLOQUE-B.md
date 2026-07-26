@@ -200,9 +200,12 @@ Estado al momento de escribir este documento. **No es autoritativo**.
 |---|---|---|---|---|
 | ~~A1 · Entorno y línea base verde~~ | #1 | `status:hecha` · **cerrado** | — | `838ec6f` |
 | ~~A2 · Integración de Supabase~~ | #4 | `status:hecha` · **cerrado**, 4/4 AC | A1 | `4dfb0d0` |
-| **B1 · Design system a tema Flutter** | #2 | `status:pendiente` · item 5 hecho | A1 | `2d484f6` (parcial) |
+| ~~B1 · Design system a tema Flutter~~ | #2 | `status:hecha` · **cerrado**, 5/5 AC | A1 | `f1567f3` (+ `2d484f6` parcial) |
 | **B2 · CI en GitHub Actions** | #6 | `status:pendiente` | A1 | |
 | **B3 · Router y shell responsivo** | #5 | `status:pendiente` | **B1** | |
+
+Extra fuera de B1–B3: **#16** (revocar EXECUTE de `rls_auto_enable()`) cerrado,
+4/4 AC, commit `b948568`. Ver §2 y §9.
 
 Los tres issues abiertos de E0 están asignados a `NataliaDuran2001`.
 
@@ -541,3 +544,32 @@ de autenticación de E1 que hubo que revertir por estar fuera de alcance.
   roles no habría eliminado el acceso efectivo ni los warnings. La migración
   aplicada revoca `FROM PUBLIC, anon, authenticated` y conserva el grant de
   `service_role`. Evidencia y validación de AC en el #16. Commit `b948568`.
+
+- **B1 · nivel `code` → GeistMono.** El frontmatter declara `Geist`, pero
+  `GeistMono-Regular.ttf` es el único mono que el design system manda a
+  registrar (la tabla del #2 lo destina a "bloques de código") y la prosa pide
+  distinguir el código del texto corrido. Con `Geist` ahí, el `.ttf` mono sería
+  peso muerto en el bundle. Queda expuesto como `AppTheme.code`, porque
+  `TextTheme` no tiene slot para código.
+- **B1 · variante secundaria de `CustomButton` → `OutlinedButton` temado.** El
+  spec del botón secundario (transparente, borde 1px, texto oscuro) es
+  exactamente `OutlinedButtonTheme`; así los tres niveles (primario, secundario
+  y ghost) viven en el tema y el átomo queda sin un solo color. Los dos finders
+  de `widget_test.dart` que buscaban `ElevatedButton` para el botón de Google
+  se actualizaron en el mismo commit, como manda el gotcha de B3 para el caso
+  análogo.
+- **B1 · glow de foco de los inputs en `CustomInput`, no en el tema.** Un
+  `InputBorder` no puede pintar sombras, así que el borde-a-primary va en
+  `InputDecorationTheme` y el glow (2px, primary al 20%) en el átomo con
+  `Focus` + `Builder` — sin `setState` ni estado propio, respetando §3.
+- **B1 · ícono de prefijo de inputs: de `secondary` a `onSurfaceVariant`, vía
+  tema.** Decoración descriptiva, no interactiva: con la paleta corregida,
+  `secondary` (#712AE2) gritaba contra el minimalismo del design system. Vive
+  en `prefixIconColor` del tema, ya no en el átomo.
+- **B1 · `AppBranding.name` = `'Mentorship App'`.** Se conserva el valor neutro
+  que ya usaba `MaterialApp.title`: la marca es decisión de producto sin tomar
+  (§3), esto solo centraliza el punto de cambio.
+- **B1 · `background`/`onBackground`/`surfaceVariant` no se pasan al
+  `ColorScheme`.** Flutter los tiene deprecados como campos del scheme; con
+  `--fatal-infos` en B2 romperían el build. Los tres tokens existen en
+  `AppColors` (AC2) y `scaffoldBackgroundColor` usa `background` directo.
