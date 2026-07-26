@@ -201,7 +201,7 @@ Estado al momento de escribir este documento. **No es autoritativo**.
 | ~~A1 · Entorno y línea base verde~~ | #1 | `status:hecha` · **cerrado** | — | `838ec6f` |
 | ~~A2 · Integración de Supabase~~ | #4 | `status:hecha` · **cerrado**, 4/4 AC | A1 | `4dfb0d0` |
 | ~~B1 · Design system a tema Flutter~~ | #2 | `status:hecha` · **cerrado**, 5/5 AC | A1 | `f1567f3` (+ `2d484f6` parcial) |
-| **B2 · CI en GitHub Actions** | #6 | `status:bloqueada` · abierto, 4/5 AC (falta solo AC5, ver §9) | A1 | `027cb0c` |
+| ~~B2 · CI en GitHub Actions~~ | #6 | `status:hecha` · **cerrado**, 5/5 AC | A1 | `027cb0c` |
 | ~~B3 · Router y shell responsivo~~ | #5 | `status:hecha` · **cerrado**, 5/5 AC | B1 | `e7d26d1` |
 
 Extra fuera de B1–B3: **#16** (revocar EXECUTE de `rls_auto_enable()`) cerrado,
@@ -620,3 +620,10 @@ de autenticación de E1 que hubo que revertir por estar fuera de alcance.
   documentada en §2). Los AC quedaron verificados con la suite de la VM, que
   cruza los breakpoints con overflow-como-fallo; el detalle está en la
   validación del #5.
+
+- **Cierre de E0.** La dueña mergeó los PR #17 y #19 a `main` y **autorizó
+  explícitamente** activar la protección: regla aplicada con el check
+  `analyze-y-test` requerido y `enforce_admins: true` — desde entonces `main`
+  solo recibe PRs con CI verde, sin excepción para admin. Con eso el #6 cerró
+  5/5 y E0 quedó completo salvo el #3 (`manual`, de la dueña), cuyo paso a
+  paso está comentado en el propio issue. E1 arranca con su propio handoff.
