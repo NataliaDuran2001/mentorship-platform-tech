@@ -64,6 +64,23 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Familias tipográficas del design system Luminous Clarity.
+  # Solo los pesos que DESIGN.md usa: cada peso extra infla el bundle web.
+  # La licencia OFL-1.1 exige redistribuir assets/fonts/OFL.txt junto a ellos.
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+    - family: GeistMono
+      fonts:
+        - asset: assets/fonts/GeistMono-Regular.ttf
+          weight: 400
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

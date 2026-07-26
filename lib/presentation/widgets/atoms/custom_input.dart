@@ -20,7 +20,6 @@ class CustomInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       obscureText: obscureText,
-      style: const TextStyle(fontFamily: 'Geist'),
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.secondary) : null,

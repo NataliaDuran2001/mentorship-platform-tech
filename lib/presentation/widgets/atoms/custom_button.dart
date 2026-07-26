@@ -36,7 +36,7 @@ class CustomButton extends StatelessWidget {
       icon: icon ?? const SizedBox.shrink(),
       label: Text(
         text, 
-        style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Geist'),
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
     );
   }

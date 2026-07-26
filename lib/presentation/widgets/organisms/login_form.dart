@@ -34,7 +34,7 @@ class LoginForm extends StatelessWidget {
             Expanded(child: Divider()),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0), 
-              child: Text("O", style: TextStyle(fontFamily: 'Geist', color: Colors.grey)),
+              child: Text("O", style: TextStyle(color: Colors.grey)),
             ),
             Expanded(child: Divider()),
           ]

@@ -31,7 +31,8 @@ class MyApp extends StatelessWidget {
           secondary: AppColors.secondary,
         ),
         useMaterial3: true,
-        // Si no has agregado la fuente a pubspec.yaml, usará la fuente por defecto del sistema
+        // Única declaración de la familia: los widgets ya no la repiten en cada
+        // TextStyle. Los .ttf se registran en la sección fonts: de pubspec.yaml.
         fontFamily: 'Geist',
       ),
       home: const LoginPage(),
