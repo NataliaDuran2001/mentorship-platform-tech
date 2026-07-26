@@ -125,7 +125,7 @@ Estado al momento de escribir este documento. **No es autoritativo**: la verdad 
 
 **Ojo con A3.** Quedó registrada como implementada en una iteración previa, pero la verificación del código mostró otra cosa: `AppColors.primary` sigue en `#A78BFA`, `app_colors.dart` tiene 6 constantes de 40+, `constants.dart` tiene 2, `lib/core/theme/app_theme.dart` no existe y `AppBranding` tampoco. Solo se hizo el registro de la fuente. **Los ítems 1 a 4 del alcance están íntegros por delante**, y bloquean A4. El detalle está en el comentario de validación del #2.
 
-Los commits existen solo en local: la rama `feat/e0-fundaciones` **no fue pusheada**.
+La rama `feat/e0-fundaciones` **fue pusheada sin abrir PR**, autorizado explícitamente por la dueña del repo. `main` sigue intacta en el commit inicial. El PR queda para cuando exista el CI del #6, que es lo que le da sentido a abrirlo.
 
 Labels de estado: `status:pendiente` · `status:en-curso` · `status:hecha` · `status:bloqueada`. La label `manual` marca lo que el loop no debe tocar.
 
@@ -367,4 +367,17 @@ Decisiones técnicas que tomaste dentro de tu ámbito, desviaciones necesarias c
 - **A2**: `Supabase.initialize` recibía la publishable key por el parámetro `anonKey`, deprecado en supabase_flutter 2.16. Cambiado a `publishableKey`. No era opcional: el aviso de deprecación también rompía el AC2 del #1.
 - **#2 (parcial, no cerrado)**: adelanté el item 5 —declarar la sección `fonts:` de Geist y quitar el `fontFamily` repetido en cuatro `TextStyle`— en un commit aparte, porque `fontFamily: 'Geist'` no resolvía a nada y Flutter caía en silencio a la fuente del sistema. **Falta todo el resto del #2**: corrección de la paleta (`primary` sigue en `#A78BFA`, debe ser `#674BB5`), escala de spacing, `app_theme.dart` y `AppBranding`. El commit usa un mensaje propio en vez del prescrito por A3, para no dar por hecho un trabajo que no está hecho.
 - **Fuera de alcance, revertido**: en una iteración anterior se cableó autenticación real (`signInWithOAuth`, contrato de `AuthRepository` extendido con `currentUser` y `authStateChanges`, `LoginUseCase` registrado en `getIt`, binding de sesión a signals) y una pantalla de error de arranque. Es trabajo del **#9**, que §3 prohíbe en este bloque. Revertido por completo; el login vuelve a ser el `Future.delayed` simulado. **Vale la pena rescatar dos cosas cuando toque el #9**: (1) `main()` hace `await SupabaseConfig.initialize()` sin `try/catch`, así que cualquier fallo del backend deja pantalla blanca indefinida sin diagnóstico; (2) `isAuthenticated` es un `signal` escribible, y la UI lo estaba poniendo en `true` a mano — debería ser `computed` derivado de la sesión real.
-- **Higiene, sin commitear**: `.mcp.json` quedó untracked. No tiene secretos (solo `project_ref` y la lista de features del servidor MCP de Supabase). Decidir si se versiona o se agrega a `.gitignore`.
+- **Higiene, resuelto**: `.mcp.json` estaba untracked. No tiene secretos —solo el `project_ref` y la lista de features del servidor MCP de Supabase—, así que **se versiona**, por decisión de la dueña del repo: quien clone hereda el MCP ya configurado en vez de rearmarlo a mano.
+
+### Decisiones de la dueña del repo tomadas en esta sesión
+
+Se resolvieron cuatro cosas que estaban esperando su criterio. **Ninguna cambia §3**; las tres primeras destraban trabajo que estaba parado por falta de decisión, no por falta de código.
+
+| Decisión | Resultado |
+|---|---|
+| Reformulación del AC1 del #4 | **Confirmada.** «Arranca e *inicializa* el cliente, sin excepción de inicialización». El #4 cerró con 4/4 AC y dejó de depender del #3 |
+| Dónde registrar lo pendiente de Supabase que depende de ella | **Actualizar el #3**, no abrir un issue nuevo. #3 ya cubría el alcance; se le corrigió el título (Google OAuth se fue al #15) y se reescribió el cuerpo como checklist de consola web |
+| Push de `feat/e0-fundaciones` | **Autorizado sin PR.** El PR espera al CI del #6 |
+| `.mcp.json` | **Versionado** |
+
+**Sigue esperando su criterio, y gatea el #9:** la política de confirmación por correo del #3 (`mailer_autoconfirm` está hoy en `false`). La recomendación registrada en el issue es dejar la confirmación activa, para no divergir de producción.
