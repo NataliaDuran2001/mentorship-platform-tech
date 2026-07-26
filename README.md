@@ -1,16 +1,27 @@
 # aspire_app
 
-A new Flutter project.
+App Flutter de una plataforma de mentoría con IA. El proyecto está en sus
+fundaciones: hoy hay una pantalla de login y la integración del cliente de
+Supabase.
 
-## Getting Started
+## Arranque
 
-This project is a starting point for a Flutter application.
+Flutter está fijado en **3.44.2** vía FVM. En un clon nuevo:
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+fvm install
+fvm flutter pub get
+fvm flutter run -d chrome
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+`fvm install` no es opcional: `.fvm/` está en `.gitignore`, así que sin él el
+IDE no resuelve el SDK.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Guía completa en [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**: requisitos,
+secuencia verificada, configuración por entorno con `--dart-define` y matriz de
+problemas frecuentes en Windows.
+
+## Arquitectura
+
+Clean architecture (`presentation → domain ← data`) y atomic design en
+`lib/presentation/widgets/`. Las reglas están en [CLAUDE.md](CLAUDE.md).

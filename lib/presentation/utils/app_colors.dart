@@ -1,14 +1,67 @@
-// Capa Presentation (Utils): Paleta de colores extraída del diseño base.
+// Capa Presentation (Utils): Paleta de colores del design system Luminous
+// Clarity. Fuente de verdad: el frontmatter YAML de DESIGN.md, con sus nombres
+// en camelCase. Los hex de la prosa de ese documento NO son autoritativos: de
+// ahí salieron los valores desviados que esta versión corrige.
 
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFFA78BFA);
-  static const Color secondary = Color(0xFF7C3AED);
-  static const Color tertiary = Color(0xFFAF9E00);
-  static const Color neutral = Color(0xFFF8FAFC);
-  
-  // Colores adicionales de soporte para textos oscuros o grises
-  static const Color textHeadline = Color(0xFF1E293B); 
-  static const Color border = Color(0xFFE2E8F0);
+  // Superficies
+  static const Color surface = Color(0xFFF7F9FB);
+  static const Color surfaceDim = Color(0xFFD8DADC);
+  static const Color surfaceBright = Color(0xFFF7F9FB);
+  static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
+  static const Color surfaceContainerLow = Color(0xFFF2F4F6);
+  static const Color surfaceContainer = Color(0xFFECEEF0);
+  static const Color surfaceContainerHigh = Color(0xFFE6E8EA);
+  static const Color surfaceContainerHighest = Color(0xFFE0E3E5);
+  static const Color surfaceVariant = Color(0xFFE0E3E5);
+  static const Color onSurface = Color(0xFF191C1E);
+  static const Color onSurfaceVariant = Color(0xFF494552);
+  static const Color inverseSurface = Color(0xFF2D3133);
+  static const Color inverseOnSurface = Color(0xFFEFF1F3);
+  static const Color outline = Color(0xFF7A7583);
+  static const Color outlineVariant = Color(0xFFCAC4D4);
+  static const Color surfaceTint = Color(0xFF674BB5);
+
+  // Primario
+  static const Color primary = Color(0xFF674BB5);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color primaryContainer = Color(0xFFA78BFA);
+  static const Color onPrimaryContainer = Color(0xFF3C1989);
+  static const Color inversePrimary = Color(0xFFCEBDFF);
+  static const Color primaryFixed = Color(0xFFE8DDFF);
+  static const Color primaryFixedDim = Color(0xFFCEBDFF);
+  static const Color onPrimaryFixed = Color(0xFF21005E);
+  static const Color onPrimaryFixedVariant = Color(0xFF4F319C);
+
+  // Secundario
+  static const Color secondary = Color(0xFF712AE2);
+  static const Color onSecondary = Color(0xFFFFFFFF);
+  static const Color secondaryContainer = Color(0xFF8A4CFC);
+  static const Color onSecondaryContainer = Color(0xFFFFFBFF);
+  static const Color secondaryFixed = Color(0xFFEADDFF);
+  static const Color secondaryFixedDim = Color(0xFFD2BBFF);
+  static const Color onSecondaryFixed = Color(0xFF25005A);
+  static const Color onSecondaryFixedVariant = Color(0xFF5A00C6);
+
+  // Terciario
+  static const Color tertiary = Color(0xFF6A5F00);
+  static const Color onTertiary = Color(0xFFFFFFFF);
+  static const Color tertiaryContainer = Color(0xFFAF9E00);
+  static const Color onTertiaryContainer = Color(0xFF3B3500);
+  static const Color tertiaryFixed = Color(0xFFF8E454);
+  static const Color tertiaryFixedDim = Color(0xFFDBC839);
+  static const Color onTertiaryFixed = Color(0xFF201C00);
+  static const Color onTertiaryFixedVariant = Color(0xFF504700);
+
+  // Error
+  static const Color error = Color(0xFFBA1A1A);
+  static const Color onError = Color(0xFFFFFFFF);
+  static const Color errorContainer = Color(0xFFFFDAD6);
+  static const Color onErrorContainer = Color(0xFF93000A);
+
+  // Fondo (en este design system coincide con surface/onSurface)
+  static const Color background = Color(0xFFF7F9FB);
+  static const Color onBackground = Color(0xFF191C1E);
 }

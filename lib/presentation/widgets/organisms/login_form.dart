@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../atoms/custom_input.dart';
 import '../atoms/custom_button.dart';
 import '../molecules/google_login_button.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 
 class LoginForm extends StatelessWidget {
@@ -33,8 +34,8 @@ class LoginForm extends StatelessWidget {
           children: [
             Expanded(child: Divider()),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0), 
-              child: Text("O", style: TextStyle(fontFamily: 'Geist', color: Colors.grey)),
+              padding: EdgeInsets.symmetric(horizontal: AppConstants.defaultPadding),
+              child: Text("O", style: TextStyle(color: AppColors.onSurfaceVariant)),
             ),
             Expanded(child: Divider()),
           ]
