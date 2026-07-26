@@ -435,6 +435,25 @@ ya autorizado.
 | **Issue #3 · Configurar Supabase** (label `manual`). Google OAuth con credenciales de GCP y redirect URLs · Site URL y allow-list · plantillas de correo en español · decidir la confirmación por correo | El **#9**. Ya **no** bloquea nada de E0 | Pendiente, de la dueña del repo |
 | Reformulación del AC1 del **#4** | El cierre del #4 | Pendiente de confirmación. El trabajo técnico está completo |
 
+### Decisiones abiertas menores — no bloquean B1–B3
+
+| Qué | Quién decide | Estado |
+|---|---|---|
+| `.mcp.json` quedó **untracked**. No tiene secretos: solo `project_ref` y la lista de features del servidor MCP de Supabase | Dueña del repo | Versionarlo o agregarlo a `.gitignore` |
+| Nivel `code` de la tipografía: el frontmatter declara `Geist`, pero `GeistMono` está registrado en `pubspec.yaml` y la prosa habla de mono-integración | Quien haga B1 | Elegir uno y anotarlo en §9 |
+| Migrar `Watch` a `SignalBuilder` y actualizar §3 y `CLAUDE.md` | Dueña del repo | Recomendado antes de que la deuda de `// ignore` crezca. Ver §3 |
+| Distribución del bottom nav: 4 slots para 5 destinos | Quien haga B3 | Elegir y anotar en §9 |
+
+### Rescatar cuando toque el #9 (E1, no ahora)
+
+Dos defectos reales que se detectaron y se revirtieron junto al código de auth
+fuera de alcance. Están descritos en la §9 del [bloque A](HANDOFF-E0-BLOQUE-A.md):
+
+1. `main()` hace `await SupabaseConfig.initialize()` **sin `try/catch`**, así que
+   cualquier fallo del backend deja pantalla blanca indefinida y sin diagnóstico.
+2. `isAuthenticated` es un `signal` escribible y la UI lo pone en `true` a mano.
+   Debería ser `computed` derivado de la sesión real.
+
 ### Estado real de la autenticación, verificado
 
 `GET /auth/v1/settings` del proyecto devuelve:
