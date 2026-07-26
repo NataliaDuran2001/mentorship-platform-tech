@@ -134,6 +134,22 @@ class AppTheme {
         color: AppColors.outlineVariant,
         thickness: 1,
       ),
+      // Nav del shell: fondo claro, sin tinte de scroll, indicador en el
+      // violeta fijo claro de la paleta.
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.onSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: AppColors.surfaceContainerLow,
+      ),
+      navigationBarTheme: const NavigationBarThemeData(
+        backgroundColor: AppColors.surfaceContainerLowest,
+        indicatorColor: AppColors.primaryFixed,
+        surfaceTintColor: Colors.transparent,
+      ),
       // Botón primario: fondo primary, texto blanco, radio 8, sin sombra.
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

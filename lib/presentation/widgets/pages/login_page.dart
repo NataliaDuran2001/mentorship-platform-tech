@@ -2,6 +2,7 @@
 // la inyección de dependencias y el estado global o de la vista.
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 import '../organisms/login_form.dart';
@@ -56,6 +57,12 @@ class LoginPage extends StatelessWidget {
 
                         authLoading.value = false;
                         isAuthenticated.value = true;
+
+                        // El flujo del Módulo 1 sigue en el onboarding. Los
+                        // route guards reales llegan con el #9.
+                        if (context.mounted) {
+                          context.go('/onboarding');
+                        }
                       },
                     );
                   }),
