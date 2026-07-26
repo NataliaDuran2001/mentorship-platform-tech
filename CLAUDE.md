@@ -30,7 +30,7 @@ Two orthogonal structures are layered on top of each other. Both are load-bearin
 
 | Layer | Contents | Rule |
 |---|---|---|
-| [lib/domain/](lib/domain/) | `entities/`, `repositories/` (abstract contracts), `usecases/` | Pure Dart. No Flutter, no JSON, no external packages. |
+| [lib/domain/](lib/domain/) | `entities/`, `repositories/` (abstract contracts), `usecases/`, `failures/` (typed errors the contracts throw) | Pure Dart. No Flutter, no JSON, no external packages. |
 | [lib/data/](lib/data/) | `models/` (JSON parsing), `repositories/` (implements domain contracts) | Talks to APIs/Firebase/DB. Models map to domain entities. |
 | [lib/presentation/](lib/presentation/) | `widgets/`, `state/`, `utils/` | Depends on domain only, never on `data` directly. |
 | [lib/core/](lib/core/) | `di/injection.dart`, `config/supabase_config.dart` | Cross-cutting wiring. |
@@ -65,4 +65,4 @@ Do not treat these as intentional; fix them when touching the relevant area.
 
 - **`test/widget_test.dart` fails.** It is the untouched Flutter counter template asserting on `'0'`, `'1'`, and `Icons.add`, none of which exist in the login app. `fvm flutter test` is red until it is rewritten.
 - **`fontFamily: 'Geist'` resolves to nothing.** It is set in the theme and repeated in individual `TextStyle`s, but no `fonts:` section exists in [pubspec.yaml](pubspec.yaml), so Flutter silently falls back to the system font.
-- **Login is faked.** `LoginPage.onLoginWithGoogle` runs an inline `Future.delayed(2s)` and flips the signals directly; `onLogin` is an empty callback. `LoginUseCase`/`AuthRepositoryImpl` exist (the impl is also a 2s delay stub) but are never called — the real flow should go through `getIt`.
+- **Login is faked.** `LoginPage.onLoginWithGoogle` runs an inline `Future.delayed(2s)` and flips the signals directly; `onLogin` is an empty callback. The domain layer (issue #8) already defines the real `AuthRepository` contract and the `SignUp`/`SignIn`/`SignOut` use cases, but `AuthRepositoryImpl` is a stub that throws `UnimplementedError` and nothing is registered in `getIt` yet. Wiring it up is issue #9; the real flow must go through `getIt`.
