@@ -123,16 +123,18 @@ Dos consecuencias para el #7, no para este bloque:
 2. El riesgo se invierte: una tabla con RLS activo y **cero políticas** queda
    silenciosamente inaccesible, y ahora ese es el estado por defecto.
 
-También hay un warning del advisor de seguridad: `anon` y `authenticated` tienen
-`EXECUTE` sobre `rls_auto_enable()`, que es `SECURITY DEFINER`. En la práctica no
-es explotable — la función retorna `event_trigger` y Postgres rechaza invocar ese
-tipo de funciones directamente — pero el grant no tiene propósito, porque el
-trigger la ejecuta como owner. La limpieza es una línea, pendiente de decisión de
-la dueña del repo:
+También había un warning del advisor de seguridad: `anon` y `authenticated`
+tenían `EXECUTE` sobre `rls_auto_enable()`, que es `SECURITY DEFINER`. En la
+práctica no era explotable — la función retorna `event_trigger` y Postgres
+rechaza invocar ese tipo de funciones directamente — pero el grant no tenía
+propósito, porque el trigger la ejecuta como owner.
 
-```sql
-REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM anon, authenticated;
-```
+**Resuelto** por decisión de la dueña del repo, como cambio propio fuera de
+B1–B3: issue **#16** (cerrado, 4/4 AC), migración
+`supabase/migrations/20260726073609_revoke_execute_rls_auto_enable.sql`, commit
+`b948568`. El REVOKE se extendió a `PUBLIC` porque el ACL traía `=X/postgres`,
+del que ambos roles heredaban; ver la validación en el #16. `get_advisors`
+(security) quedó **sin lints**.
 
 ---
 
@@ -531,3 +533,11 @@ conflicto de `Watch`, la corrección del piso de `environment.sdk`, y el trabajo
 de autenticación de E1 que hubo que revertir por estar fuera de alcance.
 
 <!-- Cada iteración agrega acá. Formato: `- **B_n**: qué y por qué` -->
+
+- **Extra (fuera de B1–B3) · #16**: la dueña del repo decidió aplicar la limpieza
+  del grant de `rls_auto_enable()` (§2) como cambio propio. El SQL propuesto
+  revocaba solo `anon, authenticated`; el ACL real traía además un grant a
+  `PUBLIC` (`=X/postgres`) del que ambos heredaban, así que revocar solo esos dos
+  roles no habría eliminado el acceso efectivo ni los warnings. La migración
+  aplicada revoca `FROM PUBLIC, anon, authenticated` y conserva el grant de
+  `service_role`. Evidencia y validación de AC en el #16. Commit `b948568`.
