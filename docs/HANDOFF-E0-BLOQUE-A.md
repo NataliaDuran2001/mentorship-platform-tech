@@ -115,17 +115,17 @@ Estado al momento de escribir este documento. **No es autoritativo**: la verdad 
 
 | Tarea | Issue | Estado | Depende de | Commit |
 |---|---|---|---|---|
-| A1 · Entorno y línea base verde | #1 | `status:pendiente` · implementada, AC verificados | — | `838ec6f` |
-| A2 · Cerrar integración de Supabase | #4 | `status:pendiente` · implementada, AC1 depende del #9 | A1 | `4dfb0d0` |
-| A3 · Design system a tema Flutter | #2 | `status:pendiente` · solo el item 5 (Geist) | A1 | `2d484f6` |
+| A1 · Entorno y línea base verde | #1 | **`status:hecha`** · cerrado, 5 AC validados | — | `838ec6f` |
+| A2 · Cerrar integración de Supabase | #4 | **`status:hecha`** · cerrado, 4 AC validados con el AC1 reformulado | A1 | `4dfb0d0` |
+| A3 · Design system a tema Flutter | #2 | `status:pendiente` · **solo aterrizó el ítem 5 (Geist)**. Los ítems 1–4 siguen sin hacer | A1 | `2d484f6` (parcial) |
 | A4 · Router y shell responsivo | #5 | `status:pendiente` | A3 | |
 | A5 · CI en GitHub Actions | #6 | `status:pendiente` | A1 | |
 
-**El tablero no fue sincronizado.** Las labels siguen en `status:pendiente` y no
-se publicaron los comentarios de validación de §6, porque modificar issues de un
-repositorio público es una acción hacia afuera que no estaba autorizada en esta
-iteración. Los commits existen solo en local: la rama `feat/e0-fundaciones` **no
-fue pusheada**.
+**Tablero sincronizado y AC validados con evidencia real** (`analyze` sin issues, `test` con 3 pasando, y un clon limpio verificado siguiendo `docs/DEVELOPMENT.md` de punta a punta). Los comentarios de validación están publicados en cada issue.
+
+**Ojo con A3.** Quedó registrada como implementada en una iteración previa, pero la verificación del código mostró otra cosa: `AppColors.primary` sigue en `#A78BFA`, `app_colors.dart` tiene 6 constantes de 40+, `constants.dart` tiene 2, `lib/core/theme/app_theme.dart` no existe y `AppBranding` tampoco. Solo se hizo el registro de la fuente. **Los ítems 1 a 4 del alcance están íntegros por delante**, y bloquean A4. El detalle está en el comentario de validación del #2.
+
+Los commits existen solo en local: la rama `feat/e0-fundaciones` **no fue pusheada**.
 
 Labels de estado: `status:pendiente` · `status:en-curso` · `status:hecha` · `status:bloqueada`. La label `manual` marca lo que el loop no debe tocar.
 
