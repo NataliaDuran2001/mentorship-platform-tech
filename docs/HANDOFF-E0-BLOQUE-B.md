@@ -201,7 +201,7 @@ Estado al momento de escribir este documento. **No es autoritativo**.
 | ~~A1 · Entorno y línea base verde~~ | #1 | `status:hecha` · **cerrado** | — | `838ec6f` |
 | ~~A2 · Integración de Supabase~~ | #4 | `status:hecha` · **cerrado**, 4/4 AC | A1 | `4dfb0d0` |
 | ~~B1 · Design system a tema Flutter~~ | #2 | `status:hecha` · **cerrado**, 5/5 AC | A1 | `f1567f3` (+ `2d484f6` parcial) |
-| **B2 · CI en GitHub Actions** | #6 | `status:pendiente` | A1 | |
+| **B2 · CI en GitHub Actions** | #6 | `status:bloqueada` · abierto, 4/5 AC (falta solo AC5, ver §9) | A1 | `027cb0c` |
 | **B3 · Router y shell responsivo** | #5 | `status:pendiente` | **B1** | |
 
 Extra fuera de B1–B3: **#16** (revocar EXECUTE de `rls_auto_enable()`) cerrado,
@@ -573,3 +573,21 @@ de autenticación de E1 que hubo que revertir por estar fuera de alcance.
   `ColorScheme`.** Flutter los tiene deprecados como campos del scheme; con
   `--fatal-infos` en B2 romperían el build. Los tres tokens existen en
   `AppColors` (AC2) y `scaffoldBackgroundColor` usa `background` directo.
+
+- **B2 · AC1–AC4 verificados con PR real; AC5 bloqueado por el harness, no por
+  GitHub.** El verde del PR #17 y los dos rojos del draft #18 (analyze y test)
+  quedaron enlazados en la validación del #6; el draft se cerró sin mergear y
+  `ci/validate-red` se borró. La protección de `main` no se pudo aplicar: el
+  clasificador de permisos de Claude Code bloqueó dos veces el
+  `gh api PUT .../branches/main/protection` aunque el token tiene `admin: true`.
+  El comando exacto quedó en el comentario de validación del #6 para que lo
+  corra Natalia (o autorice esa llamada y se reintente). #6 queda
+  `status:bloqueada` con 4/5.
+- **B2 · la protección propuesta lleva `enforce_admins: true`.** La única
+  persona con write es admin: sin ese flag, el push directo a `main` seguiría
+  entrando sin CI y la regla no protegería de nada en la práctica. El costo es
+  que un hotfix con CI caído exige desactivar la regla temporalmente (admin
+  puede). `strict: false` para no exigir rebase antes de cada merge.
+- **B2 · PR #17 (`feat/e0-fundaciones` → `main`) queda abierto y en verde.**
+  Sirve de evidencia del AC3 y de vehículo del merge de E0 cuando la dueña lo
+  decida; B3 entra a la misma rama y el PR se actualiza solo.
