@@ -115,11 +115,17 @@ Estado al momento de escribir este documento. **No es autoritativo**: la verdad 
 
 | Tarea | Issue | Estado | Depende de | Commit |
 |---|---|---|---|---|
-| A1 · Entorno y línea base verde | #1 | `status:pendiente` | — | |
-| A2 · Cerrar integración de Supabase | #4 | `status:pendiente` | A1 | |
-| A3 · Design system a tema Flutter | #2 | `status:pendiente` | A1 | |
+| A1 · Entorno y línea base verde | #1 | `status:pendiente` · implementada, AC verificados | — | `838ec6f` |
+| A2 · Cerrar integración de Supabase | #4 | `status:pendiente` · implementada, AC1 depende del #9 | A1 | `4dfb0d0` |
+| A3 · Design system a tema Flutter | #2 | `status:pendiente` · solo el item 5 (Geist) | A1 | `2d484f6` |
 | A4 · Router y shell responsivo | #5 | `status:pendiente` | A3 | |
 | A5 · CI en GitHub Actions | #6 | `status:pendiente` | A1 | |
+
+**El tablero no fue sincronizado.** Las labels siguen en `status:pendiente` y no
+se publicaron los comentarios de validación de §6, porque modificar issues de un
+repositorio público es una acción hacia afuera que no estaba autorizada en esta
+iteración. Los commits existen solo en local: la rama `feat/e0-fundaciones` **no
+fue pusheada**.
 
 Labels de estado: `status:pendiente` · `status:en-curso` · `status:hecha` · `status:bloqueada`. La label `manual` marca lo que el loop no debe tocar.
 
@@ -313,7 +319,8 @@ Requiere consola web o archivos externos. **No es codificable. No lo intentes ni
 
 | Qué | Bloquea | Estado |
 |---|---|---|
-| **Issue #3 · Configurar Supabase** (label `manual`). Google OAuth con credenciales de GCP y redirect URLs · Site URL y allow-list · plantillas de correo en español · decidir la confirmación por correo | Todo el **#9**. Ya **no** bloquea nada de E0 | Pendiente, de la dueña del repo |
+| **Issue #3 · Configurar Supabase** (label `manual`). Site URL y allow-list · plantillas de correo en español · **decidir la política de confirmación por correo** | Ese último ítem gatea el **#9**. Ya **no** bloquea nada de E0 | Pendiente, de la dueña del repo |
+| **Issue #15 · Google OAuth** (labels `manual`, `fase:post-mvp`) | Nada del MVP. Es aditivo sobre el #9 | Diferido por decisión de producto |
 | Archivos `.ttf` de Geist | AC3 del #2 | **Resuelto.** Ya están en `assets/fonts/` con su `OFL.txt` |
 | Protección de rama `main` | AC5 del #6 | **Resuelto.** El token tiene `admin: true`, verificado |
 | Abrir un PR para ejercitar el CI | AC1–3 del #6 | **Autorizado** por la dueña del repo. Ver el procedimiento en A5 |
@@ -324,8 +331,8 @@ Requiere consola web o archivos externos. **No es codificable. No lo intentes ni
 
 | Ajuste | Valor | Consecuencia |
 |---|---|---|
-| `email` | `true` | Email/password **ya funciona**: viene activo por defecto en Supabase |
-| `google` | `false` | Es lo único que #3 tiene que habilitar |
+| `email` | `true` | Email/password **ya funciona**: viene activo por defecto en Supabase. **Es el método de auth del MVP** |
+| `google` | `false` | Diferido al #15. No se toca en el MVP |
 | `disable_signup` | `false` | El registro está abierto |
 | `mailer_autoconfirm` | `false` | Un signup crea el usuario pero **no devuelve sesión** hasta confirmar el correo |
 
@@ -354,3 +361,10 @@ No arranques E1. No hagas push. No abras PR.
 Decisiones técnicas que tomaste dentro de tu ámbito, desviaciones necesarias con su razón, y cosas que deberían discutirse pero no bloquean.
 
 <!-- Cada iteración agrega acá. Formato: `- **A_n**: qué y por qué` -->
+
+- **A1**: `Watch` está deprecado en signals_flutter 7.1 a favor de `SignalBuilder`. Eso choca de frente con dos requisitos: §3 fija `Watch` como decisión cerrada, y el AC2 del #1 exige `analyze` sin issues — con el aviso de deprecación, `analyze` termina en exit 1. **No cambié la decisión**: dejé `Watch` y suprimí el aviso con un `// ignore: deprecated_member_use` localizado en `login_page.dart`, con el motivo escrito ahí mismo. **Recomendación para revisar**: migrar a `SignalBuilder` y actualizar §3 y `CLAUDE.md`. Es un rename, no un cambio de modelo reactivo, y el A5 planea `analyze --fatal-infos` en CI, que volverá a tropezar con cada deprecación suprimida a mano.
+- **A2**: el `environment.sdk` estaba en `^3.9.0`, valor que el comentario del issue #4 daba por correcto. Es más bajo que el piso real: `pubspec.lock` registra `dart ">=3.10.0-0"`, así que un clon con Dart 3.9 falla al resolver dependencias. Lo subí a `^3.10.0`. El dato del comentario del issue ("mínimo que exige supabase_flutter 2.16.0") era el mínimo del paquete suelto, no el del conjunto ya resuelto.
+- **A2**: `Supabase.initialize` recibía la publishable key por el parámetro `anonKey`, deprecado en supabase_flutter 2.16. Cambiado a `publishableKey`. No era opcional: el aviso de deprecación también rompía el AC2 del #1.
+- **#2 (parcial, no cerrado)**: adelanté el item 5 —declarar la sección `fonts:` de Geist y quitar el `fontFamily` repetido en cuatro `TextStyle`— en un commit aparte, porque `fontFamily: 'Geist'` no resolvía a nada y Flutter caía en silencio a la fuente del sistema. **Falta todo el resto del #2**: corrección de la paleta (`primary` sigue en `#A78BFA`, debe ser `#674BB5`), escala de spacing, `app_theme.dart` y `AppBranding`. El commit usa un mensaje propio en vez del prescrito por A3, para no dar por hecho un trabajo que no está hecho.
+- **Fuera de alcance, revertido**: en una iteración anterior se cableó autenticación real (`signInWithOAuth`, contrato de `AuthRepository` extendido con `currentUser` y `authStateChanges`, `LoginUseCase` registrado en `getIt`, binding de sesión a signals) y una pantalla de error de arranque. Es trabajo del **#9**, que §3 prohíbe en este bloque. Revertido por completo; el login vuelve a ser el `Future.delayed` simulado. **Vale la pena rescatar dos cosas cuando toque el #9**: (1) `main()` hace `await SupabaseConfig.initialize()` sin `try/catch`, así que cualquier fallo del backend deja pantalla blanca indefinida sin diagnóstico; (2) `isAuthenticated` es un `signal` escribible, y la UI lo estaba poniendo en `true` a mano — debería ser `computed` derivado de la sesión real.
+- **Higiene, sin commitear**: `.mcp.json` quedó untracked. No tiene secretos (solo `project_ref` y la lista de features del servidor MCP de Supabase). Decidir si se versiona o se agrega a `.gitignore`.
