@@ -46,8 +46,10 @@ void main() {
 
     await tester.pumpWidget(const MyApp());
 
+    // Desde el issue #2 la variante secundaria de CustomButton es un
+    // OutlinedButton temado (antes ElevatedButton con estilo inline).
     expect(
-      find.widgetWithText(ElevatedButton, 'Iniciar con Google'),
+      find.widgetWithText(OutlinedButton, 'Iniciar con Google'),
       findsOneWidget,
     );
   });
@@ -61,7 +63,7 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(
-      find.widgetWithText(ElevatedButton, 'Iniciar con Google'),
+      find.widgetWithText(OutlinedButton, 'Iniciar con Google'),
       findsNothing,
     );
   });

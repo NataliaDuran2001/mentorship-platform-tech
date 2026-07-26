@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'core/config/app_branding.dart';
 import 'core/config/supabase_config.dart';
 import 'core/di/injection.dart';
+import 'core/theme/app_theme.dart';
 import 'presentation/widgets/pages/login_page.dart';
-import 'presentation/utils/app_colors.dart';
 
 Future<void> main() async {
   // Necesario porque inicializamos plugins antes de runApp
@@ -22,19 +23,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mentorship App',
+      title: AppBranding.name,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.secondary,
-        ),
-        useMaterial3: true,
-        // Única declaración de la familia: los widgets ya no la repiten en cada
-        // TextStyle. Los .ttf se registran en la sección fonts: de pubspec.yaml.
-        fontFamily: 'Geist',
-      ),
+      // El tema completo vive en AppTheme; acá no se define ningún estilo.
+      theme: AppTheme.light,
       home: const LoginPage(),
     );
   }

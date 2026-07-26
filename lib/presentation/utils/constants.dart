@@ -1,7 +1,39 @@
-// Capa Presentation (Utils): Constantes globales para la interfaz 
-// como tamaños de padding, radios de bordes, duraciones de animación, etc.
+// Capa Presentation (Utils): Constantes globales de la interfaz según el
+// frontmatter de DESIGN.md (Luminous Clarity): escala de spacing en grid de
+// 4px, radios de borde, anchos de layout y breakpoints responsivos.
 
 class AppConstants {
-  static const double defaultPadding = 16.0;
-  static const double borderRadius = 8.0;
+  // Escala de spacing (grid de 4px)
+  static const double spacingUnit = 4.0;
+  static const double spacingXs = 4.0;
+  static const double spacingSm = 8.0;
+  static const double spacingMd = 16.0;
+  static const double spacingLg = 24.0;
+  static const double spacingXl = 40.0;
+
+  // Alias histórico del paso base de padding; los widgets existentes lo
+  // multiplican para huecos mayores.
+  static const double defaultPadding = spacingMd;
+
+  // Radios de borde
+  static const double radiusSm = 4.0;
+  static const double radiusDefault = 8.0;
+  static const double radiusMd = 12.0;
+  static const double radiusLg = 16.0;
+  static const double radiusXl = 24.0;
+  static const double radiusFull = 9999.0;
+
+  // Alias histórico del radio por defecto.
+  static const double borderRadius = radiusDefault;
+
+  // Layout
+  static const double containerMax = 1200.0;
+  static const double sidebarWidth = 260.0;
+  // Ancho máximo legible para vistas con mucho texto.
+  static const double maxReadableWidth = 800.0;
+
+  // Breakpoints responsivos
+  // ≤768: la sidebar colapsa a drawer. ≤480: los márgenes bajan a 16.
+  static const double breakpointTablet = 768.0;
+  static const double breakpointMobile = 480.0;
 }
