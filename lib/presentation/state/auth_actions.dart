@@ -22,6 +22,7 @@ import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
 import 'onboarding_actions.dart';
 import 'onboarding_state.dart';
+import 'roadmap_state.dart';
 
 StreamSubscription<AuthSession?>? _suscripcionSesion;
 
@@ -196,6 +197,7 @@ Future<void> signOut() async {
     // entre después.
     cancelOnboardingTimers();
     resetOnboarding();
+    resetRoadmap();
     authLoading.value = false;
   }
 }

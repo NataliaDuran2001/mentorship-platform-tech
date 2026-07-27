@@ -17,11 +17,16 @@ import '../../presentation/widgets/pages/login_page.dart';
 import '../../presentation/widgets/pages/logica_page.dart';
 import '../../presentation/widgets/pages/onboarding_page.dart';
 import '../../presentation/widgets/pages/perfil_page.dart';
+import '../../presentation/widgets/pages/roadmap_page.dart';
 import '../../presentation/widgets/pages/sign_up_page.dart';
 
 /// Destinos del shell y sus rutas, en el mismo orden. Perfil no ocupa slot
 /// del bottom nav: en ≤768 se llega por el ícono del AppBar (§9 del handoff).
+///
+/// «Mi ruta» va primero porque es el destino al que llega la usuaria al terminar
+/// el onboarding: es lo que cierra el CA 1.3.
 const _destinos = <AppDestination>[
+  AppDestination(label: 'Mi ruta', icon: Icons.route_outlined),
   AppDestination(label: 'Dashboard', icon: Icons.space_dashboard_outlined),
   AppDestination(label: 'Chat', icon: Icons.chat_bubble_outline),
   AppDestination(label: 'Lógica', icon: Icons.psychology_outlined),
@@ -34,6 +39,7 @@ const _destinos = <AppDestination>[
 ];
 
 const _rutas = <String>[
+  '/ruta',
   '/dashboard',
   '/chat',
   '/logica',
@@ -64,8 +70,9 @@ class AppRouter {
     refreshListenable: _refresco,
     redirect: _guard,
     routes: [
-      // Raíz: alias del dashboard para que recargar en '/' no dé 404.
-      GoRoute(path: '/', redirect: (_, __) => '/dashboard'),
+      // Raíz: alias de la ruta de aprendizaje, para que recargar en '/' no dé
+      // 404 y para aterrizar donde está el contenido del Módulo 1.
+      GoRoute(path: '/', redirect: (_, __) => '/ruta'),
 
       // Fuera del shell: sin nav visible.
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
@@ -90,6 +97,7 @@ class AppRouter {
           );
         },
         routes: [
+          GoRoute(path: '/ruta', builder: (_, __) => const RoadmapPage()),
           GoRoute(
             path: '/dashboard',
             builder: (_, __) => const DashboardPage(),
@@ -110,7 +118,7 @@ class AppRouter {
   ///
   /// 1. Sin sesión → `/login`.
   /// 2. Con sesión y onboarding incompleto → `/onboarding`.
-  /// 3. Con sesión y onboarding completo → `/dashboard`.
+  /// 3. Con sesión y onboarding completo → `/ruta`.
   ///
   /// Vale también para el acceso directo por URL: el guard corre en cada
   /// navegación, incluida la primera, así que escribir `/dashboard` en la barra
@@ -132,7 +140,9 @@ class AppRouter {
     }
 
     // Con el onboarding terminado, login, registro y onboarding ya no aplican.
-    if (esPublica || destino == _rutaOnboarding) return '/dashboard';
+    // Se aterriza en la ruta de aprendizaje y no en el dashboard: es el CA 1.3
+    // —«al definir la ruta se despliega el árbol de tópicos»—.
+    if (esPublica || destino == _rutaOnboarding) return '/ruta';
     return null;
   }
 }

@@ -79,8 +79,9 @@ class AppShell extends StatelessWidget {
       );
     }
 
-    // Rango intermedio y móvil: AppBar + bottom nav de 4 slots; el drawer con
-    // la lista completa solo existe en el rango intermedio.
+    // Rango intermedio y móvil: AppBar + bottom nav con los destinos marcados
+    // para él; el drawer con la lista completa solo existe en el rango
+    // intermedio.
     final bottomDestinations =
         destinations.where((d) => d.enBottomNav).toList();
     final seleccionado = destinations[selectedIndex];

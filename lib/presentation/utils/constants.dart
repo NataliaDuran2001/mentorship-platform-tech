@@ -46,6 +46,9 @@ class AppConstants {
   // también para dimensiones, no solo para colores y spacing.
   static const double progressBarHeight = 4.0;
   static const double iconTileSize = 48.0;
+  /// Ícono chico, el de los estados del árbol de tópicos.
+  static const double iconSizeSm = 20.0;
+
   static const double radioSize = 24.0;
   static const double radioDotSize = 12.0;
 

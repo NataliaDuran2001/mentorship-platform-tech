@@ -35,6 +35,7 @@ import 'package:aspire_app/presentation/widgets/pages/chat_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/dashboard_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/login_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/onboarding_page.dart';
+import 'package:aspire_app/presentation/widgets/pages/roadmap_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/sign_up_page.dart';
 
 // ---------------------------------------------------------------------------
@@ -435,23 +436,25 @@ void main() {
       expect(find.byIcon(Icons.menu), findsNothing);
     });
 
-    testWidgets('con el onboarding completo, login y onboarding redirigen al '
-        'dashboard', (tester) async {
+    testWidgets('con el onboarding completo, login y onboarding redirigen a la '
+        'ruta de aprendizaje', (tester) async {
       _ampliarVentana(tester);
       _conSesionCompleta();
 
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 
-      expect(find.byType(DashboardPage), findsOneWidget);
+      // Aterriza en /ruta y no en el dashboard: es el CA 1.3, «al definir la
+      // ruta se despliega el árbol de tópicos».
+      expect(find.byType(RoadmapPage), findsOneWidget);
 
       AppRouter.router.go('/onboarding');
       await tester.pumpAndSettle();
 
-      expect(find.byType(DashboardPage), findsOneWidget);
+      expect(find.byType(RoadmapPage), findsOneWidget);
       expect(
         AppRouter.router.routerDelegate.currentConfiguration.uri.path,
-        '/dashboard',
+        '/ruta',
       );
     });
 
@@ -481,7 +484,7 @@ void main() {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
 
-      expect(find.byType(DashboardPage), findsOneWidget);
+      expect(find.byType(RoadmapPage), findsOneWidget);
 
       await tester.tap(find.text('Cerrar sesión'));
       await tester.pumpAndSettle();

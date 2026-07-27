@@ -10,8 +10,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
+import '../../data/repositories/roadmap_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/onboarding_repository.dart';
+import '../../domain/repositories/roadmap_repository.dart';
+import '../../domain/usecases/get_roadmap_tree_usecase.dart';
 import '../../domain/usecases/recommend_track_usecase.dart';
 import '../../domain/usecases/sign_in_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
@@ -38,6 +41,9 @@ void setupDependencies() {
   getIt.registerLazySingleton<OnboardingRepository>(
     () => OnboardingRepositoryImpl(getIt<SupabaseClient>()),
   );
+  getIt.registerLazySingleton<RoadmapRepository>(
+    () => RoadmapRepositoryImpl(getIt<SupabaseClient>()),
+  );
 
   // Casos de uso.
   getIt.registerLazySingleton(() => SignUpUseCase(getIt<AuthRepository>()));
@@ -45,6 +51,9 @@ void setupDependencies() {
   getIt.registerLazySingleton(() => SignOutUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(
     () => SubmitOnboardingUseCase(getIt<OnboardingRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => GetRoadmapTreeUseCase(getIt<RoadmapRepository>()),
   );
   // Sin dependencias: es lógica pura sobre las respuestas del cuestionario.
   getIt.registerLazySingleton(() => const RecommendTrackUseCase());
