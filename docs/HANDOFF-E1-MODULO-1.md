@@ -161,8 +161,8 @@ Reescribir desde `gh` en cada iteración.
 | Tarea | Issue | Estado | Depende de | Commit |
 |---|---|---|---|---|
 | C1 · Capa de dominio | #8 | `status:hecha` | — | `86fddba` |
-| C2 · Esquema Supabase + RLS | #7 | `status:pendiente` | — (#3, #4 cerrados) | |
-| C3 · Átomos y moléculas del onboarding | #10 | `status:pendiente` | — (#2 cerrado) | |
+| C2 · Esquema Supabase + RLS | #7 | `status:bloqueada` — 5/7 AC | — (#3, #4 cerrados) | `8c17ab5` |
+| C3 · Átomos y moléculas del onboarding | #10 | `status:hecha` | — (#2 cerrado) | `d12a516` |
 | C4 · Autenticación real | #9 | `status:pendiente` | #7, #8 | |
 | C5 · Onboarding directo (4 pasos) | #11 | `status:pendiente` | #8, #10 | |
 | C6 · Cuestionario guía | #12 | `status:pendiente` | #11 | |
@@ -171,8 +171,16 @@ Reescribir desde `gh` en cada iteración.
 
 Orden recomendado: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8.
 
-C2 y C3 son paralelizables entre sí si hay más de una persona: tocan capas
-disjuntas (migraciones SQL, widgets `atoms`+`molecules`).
+**Lo único pendiente del #7** son el AC3 (aislamiento entre dos usuarias) y el
+AC5 (el trigger crea el perfil). Los dos necesitan dos filas reales en
+`auth.users`; se desbloquean corriendo `supabase/tests/rls_modulo_1.sql` desde
+el SQL editor del dashboard. No bloquean a ninguna otra tarea: el esquema está
+aplicado y las 5 tablas funcionan.
+
+**El merge a `main` quedó autorizado para E1** (antes era exclusivo de la
+dueña). `main` sigue protegida con el check `analyze-y-test` y
+`enforce_admins: true`, así que hay que esperar el CI en verde antes de
+mergear.
 
 ## 5. Tareas
 
@@ -543,3 +551,80 @@ los handoffs de E0.
   ofrece Mobile y UI/UX, que no son tracks del MVP. El enum tiene 3 valores y un
   test lo fija. Si producto quiere esos tracks, es un cambio de alcance, no un
   ajuste de UI.
+
+- **C2 · La migración del esquema agregó 2 WARN al advisor, y cerrarlos tenía una
+  trampa.** `handle_new_user()` es `SECURITY DEFINER` y quedaba expuesta como
+  `/rest/v1/rpc/`, el mismo hallazgo que el #16 cerró para `rls_auto_enable()`.
+  Se resolvió igual, revocando el `EXECUTE`, pero con una diferencia que importa:
+  el ACL por defecto incluye un grant a `PUBLIC`, y **al revocar `PUBLIC` el rol
+  que dispara el trigger (`supabase_auth_admin`) pierde el acceso**. Sin el grant
+  explícito previo, el arreglo de seguridad habría roto el registro de usuarias
+  en silencio. Está en `20260726232005_revoke_execute_triggers_modulo_1.sql`.
+  Lección general: al revocar `PUBLIC` sobre una función que dispara un trigger,
+  identificar antes quién la ejecuta.
+
+- **C2 · Dos invariantes del CA 1.3 se forzaron en la base, no solo en Dart.**
+  `profiles_completo_exige_track` (`check (onboarding_completed_at is null or
+  track_id is not null)`) y `topics_orden_unico_entre_hermanos`
+  (`unique nulls not distinct (track_id, parent_id, sort_order)`). La primera es
+  la misma regla que `UserProfile.hasCompletedOnboarding` y la política del #14;
+  la segunda evita que dos hermanos con el mismo `sort_order` vuelvan el orden
+  ambiguo. Duplicar la regla en la base es a propósito: la UI puede tener un bug,
+  el constraint no.
+
+- **C2 · `user_progress` solo guarda hechos.** El enum es
+  `('in_progress','completed')`. Los `available` y `locked` de `TopicStatus` no
+  están porque son derivados: los calcula `GetRoadmapTreeUseCase`. Guardarlos
+  obligaría a reescribir filas en cada avance, y dos fuentes de verdad para lo
+  mismo se desincronizan.
+
+- **C2 · Los tópicos placeholder se sembraron solo en `frontend`.** El #13 tiene
+  que manejar un árbol con jerarquía *y* el estado vacío, y así prueba los dos
+  contra datos reales: `frontend` tiene 5 tópicos en 2 niveles, `backend` e
+  `infrastructure` quedan vacíos —que es el caso normal hoy—. Los títulos dicen
+  «(placeholder)» para que se note si alguno llega a una captura de pantalla.
+
+- **C2 · `supabase/tests/` es carpeta nueva.** `rls_modulo_1.sql` no es una
+  migración: es el guion reproducible de la verificación de políticas, envuelto
+  en una transacción que termina en `ROLLBACK`. Se puede correr sobre el proyecto
+  de desarrollo sin ensuciarlo, y hay que volver a correrlo cada vez que cambien
+  las políticas.
+
+- **C3 · `HoverBuilder` es el único widget con estado de todo el onboarding, y es
+  deliberado.** El prototipo usa `group-hover` de Tailwind: pasar el mouse por la
+  card cambia también el fondo del recuadro del ícono que tiene adentro, así que
+  alguien tiene que conocer el hover y propagarlo por parámetro. El hover es
+  estado efímero de presentación, no estado de la aplicación: en un signal global
+  quedaría compartido por todas las cards de la pantalla, que es exactamente lo
+  contrario de lo que hace falta. La regla de §3 —signals, no `setState`— sigue
+  valiendo para el estado de la app.
+
+- **C3 · Los estados visuales viven en `presentation/utils/selectable_card_style.dart`,
+  no duplicados en cada molécula.** `OptionCardTile`, `TrackCard` y `GoalRadioRow`
+  comparten exactamente los mismos estados; si se desincronizan, la pantalla se ve
+  distinta entre pasos. El anillo del seleccionado es un `BoxShadow` con
+  `spreadRadius: 1` y sin difuminado —el `box-shadow: 0 0 0 1px` del prototipo—
+  en vez de subir el borde a 2px, que movería el layout.
+
+- **C3 · Desviación del prototipo, con razón: la barra de progreso mide 4px, no
+  1px.** El cuerpo del #10 dice «barra de 1px de alto», pero el prototipo la
+  declara `h-1`, que en Tailwind es 0.25rem = **4px**. Un `rounded-full` sobre
+  1px no se ve. Vale el prototipo, que es lo que pide el AC3 del issue.
+
+- **C3 · Desviación del prototipo, con razón: la fila de meta seleccionada se
+  resalta.** En el prototipo las filas del paso 3 no son `.option-card`, así que
+  solo cambian el borde en hover y dejan la selección al punto de 12px del
+  círculo. `GoalRadioRow` usa la misma decoración que las tarjetas: un punto de
+  12px es poca señal para el estado elegido, y el resto del flujo ya marca la
+  selección así.
+
+- **C3 · `CustomButton.onPressed` pasó a ser nullable.** Es el idioma de Material
+  para un botón deshabilitado, y es lo que necesita el paso 2 del #11 para
+  impedir avanzar sin track. Los llamadores existentes pasan valores no nulos, así
+  que no hubo que tocarlos.
+
+- **C3 · Para el #9, no bloquea**: el pie del onboarding necesita botones ghost en
+  `onSurfaceVariant`, y `CustomButton` no tiene esa variante (su secundaria es un
+  `OutlinedButton`, con borde). Quedó resuelto con un `TextButton` privado dentro
+  de `OnboardingFooter`. Cuando el #9 toque los botones del login, conviene
+  extraer una variante `ghost` de `CustomButton` y que las dos la usen.
