@@ -32,6 +32,11 @@ class AppShell extends StatelessWidget {
   final List<AppDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
+
+  /// Cierra la sesión. Si es `null` no se muestra la acción, para que el shell
+  /// siga sirviendo en pruebas o pantallas sin autenticación.
+  final VoidCallback? onLogout;
+
   final Widget child;
 
   const AppShell({
@@ -41,6 +46,7 @@ class AppShell extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.child,
+    this.onLogout,
   });
 
   @override
@@ -93,6 +99,12 @@ class AppShell extends StatelessWidget {
                 onPressed: () =>
                     onDestinationSelected(destinations.indexOf(destino)),
               ),
+          if (onLogout != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: onLogout,
+            ),
         ],
       ),
       drawer: esMovil ? null : _buildDrawer(context),
@@ -146,6 +158,17 @@ class AppShell extends StatelessWidget {
                   selected: i == selectedIndex,
                   onTap: () => onDestinationSelected(i),
                 ),
+              if (onLogout != null) ...[
+                const Spacer(),
+                const Divider(),
+                NavItem(
+                  label: 'Cerrar sesión',
+                  icon: Icons.logout,
+                  selected: false,
+                  onTap: onLogout!,
+                ),
+                const SizedBox(height: AppConstants.spacingSm),
+              ],
             ],
           ),
         ),
@@ -177,6 +200,20 @@ class AppShell extends StatelessWidget {
                   onDestinationSelected(i);
                 },
               ),
+            if (onLogout != null) ...[
+              const Spacer(),
+              const Divider(),
+              NavItem(
+                label: 'Cerrar sesión',
+                icon: Icons.logout,
+                selected: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  onLogout!();
+                },
+              ),
+              const SizedBox(height: AppConstants.spacingSm),
+            ],
           ],
         ),
       ),

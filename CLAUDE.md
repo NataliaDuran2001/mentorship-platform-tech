@@ -39,11 +39,19 @@ Two orthogonal structures are layered on top of each other. Both are load-bearin
 
 ### State — signals, not setState
 
-State lives in top-level `signal<T>` globals in [lib/presentation/state/](lib/presentation/state/) (`signals_flutter`). Widgets stay `StatelessWidget` and wrap the reactive region in `Watch((context) { ... })`, reading/writing `.value`. See [auth_state.dart](lib/presentation/state/auth_state.dart) and its use in `LoginPage`.
+State lives in top-level `signal<T>` globals in [lib/presentation/state/](lib/presentation/state/) (`signals_flutter`). Widgets stay `StatelessWidget` and wrap the reactive region in `SignalBuilder(builder: (context) { ... })`, reading/writing `.value`. See [auth_state.dart](lib/presentation/state/auth_state.dart) and its use in `LoginPage`.
+
+`Watch(...)` is the deprecated predecessor of `SignalBuilder` in signals_flutter 7.1 — do not add new uses. CI runs `analyze --fatal-infos`, so every `Watch` needs its own `// ignore: deprecated_member_use`; the migration was decided in issue #10 and completed in #9.
+
+Signals are for **application** state. Ephemeral, purely-visual widget state (hover, for instance) does not belong in a global signal — a global would be shared by every card on screen. [hover_builder.dart](lib/presentation/widgets/atoms/hover_builder.dart) is the sanctioned exception and the only `StatefulWidget` in the onboarding.
+
+Derived state is a `computed`, never a writable signal the UI sets by hand: `isAuthenticated` derives from the real session and `hasCompletedOnboarding` from the profile.
+
+Actions that call use cases live in [auth_actions.dart](lib/presentation/state/auth_actions.dart), not in the pages: it is the only file in `presentation` that touches `getIt`, so logic shared by several screens (login, sign-up, logout) is not duplicated.
 
 ### DI — get_it
 
-[lib/core/di/injection.dart](lib/core/di/injection.dart) exposes `getIt` and `setupDependencies()`, called from `main()` after `SupabaseConfig.initialize()` and before `runApp`. It registers `SupabaseClient` as a lazy singleton; `AuthRepositoryImpl` → `AuthRepository` and the use cases are still commented out — wire them here rather than constructing them in widgets.
+[lib/core/di/injection.dart](lib/core/di/injection.dart) exposes `getIt` and `setupDependencies()`, called from `main()` after `SupabaseConfig.initialize()` and before `runApp`. It registers `SupabaseClient`, both repositories (against their **domain contracts**, never the concrete class, so `presentation` never depends on `data`) and the use cases, all as lazy singletons. Wire new dependencies here rather than constructing them in widgets. `overrideDependency<T>()` swaps in a test double.
 
 ### Backend — Supabase
 
