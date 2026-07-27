@@ -167,7 +167,7 @@ Reescribir desde `gh` en cada iteración.
 | C2 · Esquema Supabase + RLS | #7 | `status:bloqueada` — 5/7 AC | — (#3, #4 cerrados) | `8c17ab5` |
 | C3 · Átomos y moléculas del onboarding | #10 | `status:hecha` | — (#2 cerrado) | `d12a516` |
 | C4 · Autenticación real | #9 | `status:bloqueada` — 5/7 AC | #7, #8 | `2ec1b98` |
-| C5 · Onboarding directo (4 pasos) | #11 | `status:pendiente` | #8, #10 | |
+| C5 · Onboarding directo (4 pasos) | #11 | `status:hecha` | #8, #10 | `5075cab` |
 | C6 · Cuestionario guía | #12 | `status:pendiente` | #11 | |
 | C7 · Persistencia y reanudación | #14 | `status:pendiente` | #11 (afina #12) | |
 | C8 · Árbol de tópicos | #13 | `status:pendiente` | #7, #8, #10 | |
@@ -448,15 +448,57 @@ tablero en ficción.
 Los módulos 2 a 6 del spec todavía no están bajados a issues. Este handoff
 cubre solo el Módulo 1.
 
-## 8. Término
+## 8. Estado al cierre de E1
 
-Cuando los 8 issues estén `status:hecha` o `status:bloqueada`, detenerse y
-reportar: tabla final de §4 con estados y SHA; issues abiertos con su AC
-pendiente y de qué dependen; lo anotado en §9; salida real de `fvm flutter
-analyze` y `fvm flutter test`; estado de los PRs y cuáles esperan merge de la
-dueña; y la verificación end-to-end del Módulo 1, que es el entregable real
-(registrar usuaria nueva → confirmar correo → login → onboarding completo, ambas
-ramas → ver el árbol de tópicos, con `--web-port 5000`).
+Los 8 issues están en `status:hecha` o `status:bloqueada`. Ver la tabla de §4.
+
+### Verificación automatizada
+
+```
+fvm flutter analyze --fatal-infos  → No issues found!
+fvm flutter test                   → All tests passed! (116 tests)
+```
+
+Eran 6 tests al empezar E1. Reparto: 30 de la capa de dominio, 19 de átomos y
+moléculas, 16 del onboarding directo, 12 del cuestionario guía, 15 de la
+reanudación, 8 del árbol de tópicos y 16 de autenticación, guards y shell.
+
+Todos los PRs de E1 se mergearon a `main` con el check `analyze-y-test` en
+verde: #21, #22, #23, #24, #26, #27, #28.
+
+### Lo que queda pendiente, y por qué
+
+Los dos issues bloqueados tienen **el mismo bloqueo**: verificación manual
+contra el backend real. Nada del código depende de ellos.
+
+| Issue | AC pendientes | Qué hace falta |
+|---|---|---|
+| #7 | AC3 (aislamiento entre dos usuarias), AC5 (el trigger crea el perfil) | Correr `supabase/tests/rls_modulo_1.sql` en el SQL editor. Termina en `ROLLBACK`, no deja rastro ni manda correos |
+| #9 | AC1 (registro y login reales), AC3 (recargar mantiene la sesión) | Una usuaria confirmada y un navegador. Ver `docs/SUPABASE.md` |
+
+### Verificación end-to-end, pendiente
+
+Es el entregable real del Módulo 1 y no se puede hacer sin navegador. El guion:
+
+```bash
+fvm flutter run -d chrome --web-port 5000
+```
+
+El puerto importa: el Site URL del proyecto es `http://localhost:5000` y el
+enlace del correo no vuelve a otro.
+
+1. `/registro` con una dirección real → tiene que aparecer «Revisá tu correo».
+2. Abrir el enlace del correo → confirma la cuenta.
+3. `/login` con esas credenciales → cae en `/onboarding`, paso 1 de 4.
+4. **Rama directa**: nivel → track → meta → resumen → «Entrar al Dashboard» →
+   `/ruta` con el árbol de tópicos. Solo `frontend` tiene tópicos sembrados; con
+   `backend` o `infrastructure` se ve el estado vacío, que también es correcto.
+5. **Rama guiada**: cerrar sesión, entrar con otra cuenta, elegir «Aún no lo sé»
+   en el paso 2 → contador «de 5», 3 preguntas, resultado con confirmación.
+6. **Reanudación**: abandonar en el paso 3 y volver a entrar → tiene que retomar
+   en el paso 3 con lo anterior marcado.
+7. **Guards**: escribir `/dashboard` en la barra del navegador sin sesión → cae
+   en `/login`.
 
 No arrancar el Módulo 2: necesita su propio handoff y el currículum es una
 decisión abierta.
@@ -683,3 +725,105 @@ los handoffs de E0.
   intención del AC —páginas `StatelessWidget` con la región reactiva alimentada
   por signals, sin `setState`— se cumple; lo que cambió es el nombre del widget,
   por la decisión de C1.
+
+- **C5 · `activeSteps` es la única definición del recorrido.** El total de pasos
+  —4 en la rama directa, 5 en la guiada— no se calcula en ningún widget: el
+  contador, la fracción de progreso, qué paso mostrar, si se puede omitir y si se
+  puede avanzar se derivan todos de esa lista. Ahí estaba la discrepancia entre
+  los dos mockups del prototipo, y así no puede volver.
+
+- **C5 · Se corrigió un defecto del contrato de C1.**
+  `OnboardingRepository.completeOnboarding` exigía `experienceLevel` y
+  `learningGoal` **no nulos**, pero sus pasos son omitibles. La única forma de
+  compilar el flujo era mandar valores por defecto, o sea **inventar datos de la
+  usuaria** y guardarlos como si los hubiera elegido. Los dos pasan a ser
+  nulables; `track` sigue obligatorio, que es la garantía del CA 1.3. Las
+  columnas de la base ya eran nulables. Lección: un contrato que obliga a
+  inventar datos para satisfacerlo está mal, no el código que lo usa.
+
+- **C5 · El auto-avance usa `Timer` y no `Future.delayed`.** Deja claro que es
+  una pausa de interfaz —para que se vea el feedback de selección— y no
+  reintroduce el patrón que el AC2 del #9 prohíbe. El grep de `Future.delayed`
+  sobre `lib/` sigue vacío.
+
+- **C5 · La grilla del paso 2 son filas de altura intrínseca, no un `GridView`.**
+  Las descripciones de los tracks tienen largos distintos y un
+  `childAspectRatio` fijo las recortaba con desborde visible. Misma técnica en el
+  cuestionario guía.
+
+- **C5 · El pie se apila en pantallas angostas.** «Entrar al Dashboard» no cabe
+  en una fila con «Regresar» y «Omitir» a 420px. Se mide el ancho del **propio
+  pie** y no el de la ventana, porque el pie vive dentro de un panel con
+  márgenes.
+
+- **C5 · La columna decorativa de escritorio no referencia ningún asset.** El
+  prototipo pone una ilustración ahí y el repositorio no la tiene; se resolvió
+  con los tokens del design system en vez de apuntar a un archivo inexistente.
+  Reemplazable sin tocar nada más.
+
+- **C6 · El cuestionario tiene 3 preguntas, no 1.** Con una sola sería un
+  selector de track disfrazado —la misma decisión del paso 2 con otra ropa— y la
+  recomendación dependería de un clic. Con muchas se vuelve un trámite. Tres
+  además permite empates reales, que es el caso que el criterio de desempate de
+  C1 existe para resolver. La primera es la del prototipo con sus textos
+  exactos; las otras dos se definieron acá, en
+  `presentation/utils/onboarding_quiz.dart`.
+
+- **C6 · El cuestionario es un paso del contador, con navegación interna.** El
+  prototipo muestra «Paso 02/05» para toda la guía, así que las preguntas no
+  pueden ser pasos del recorrido general. El pie del onboarding se conecta a la
+  navegación interna cuando el paso actual es el cuestionario. Desde la primera
+  pregunta, «Regresar» sale de la rama y la desactiva.
+
+- **C6 · El mapa de respuestas se reemplaza, no se muta.** Un signal compara por
+  identidad: modificar el mismo mapa no notifica a nadie. Es el tipo de bug que
+  se ve como «la UI no se actualiza» y cuesta encontrar.
+
+- **C7 · El hueco real no era la reanudación, era que omitir no dejaba rastro.**
+  Con el alcance tal como estaba escrito, reanudar mandaba a la usuaria de vuelta
+  a un paso que **había decidido saltear**: un paso omitido y un paso al que
+  nunca llegó se veían idénticos, los dos con la selección en `null`. Se resolvió
+  guardando el omitido con el valor `skipped` y decidiendo el punto de
+  reanudación por **la existencia de la fila**, no por el valor de la selección.
+
+- **C7 · La rama guiada se reconoce por dos rastros.** Al confirmar la
+  recomendación, el paso 2 se sobreescribe con el track real y el `unknown`
+  desaparece; si la rama se reconociera solo por ese valor, el contador volvería
+  a decir «de 4» después de reanudar. Se reconoce por `track = unknown` **o** por
+  la existencia de respuestas del cuestionario.
+
+- **C7 · La reanudación corre en `refreshProfile()`, no al montar la página.** El
+  route guard decide a dónde ir *antes* de que exista cualquier widget: si el
+  estado parcial se cargara al montar la pantalla, el guard ya habría decidido
+  con datos vacíos.
+
+- **C8 · `/ruta` es el destino post-onboarding, no `/dashboard`.** El CA 1.3 dice
+  «al definir la ruta se despliega el árbol de tópicos secuenciales», así que
+  terminar el onboarding tiene que llevar ahí. «Mi ruta» quedó como primer
+  destino del nav y el bottom nav pasó de 4 a 5 slots, que sigue dentro de lo que
+  Material admite.
+
+- **C8 · El avance se cuenta sobre las hojas, no sobre todos los nodos.** Un
+  módulo con tres tópicos adentro no es una cuarta cosa que completar: es el
+  conjunto de esos tres. Contarlo doblaría el denominador.
+
+- **C8 · El estado va en ícono y texto, no solo en color.** Distinguir tres
+  estados únicamente por color deja afuera a quien no los diferencia. Los
+  bloqueados además se montan **sin `InkWell`**, así que no hay forma de
+  dispararlos ni por accidente, y `Semantics(enabled: false)` lo comunica a los
+  lectores de pantalla.
+
+- **C8 · Dos consultas y no un join** para traer tópicos y avance:
+  `user_progress` está protegida por RLS a las filas de la usuaria, así que traer
+  solo los tópicos completados es una lista corta y evita que un join arrastre el
+  avance de nadie más.
+
+- **C8 · Para producto, no bloquea**: sin tópicos no se muestra un `0%
+  completado`, que parecería un fracaso cuando en realidad no hay contra qué
+  medir. Se muestra el estado vacío con su explicación.
+
+- **Para producto, decisión pendiente (de C7)**: el comportamiento de
+  reanudación debería incorporarse a la Historia 1.1 como CA 4. Hay una decisión
+  de producto embutida que conviene hacer explícita: *un paso omitido se recuerda
+  como omitido y no se vuelve a preguntar*. La alternativa —volver a ofrecerlo en
+  cada visita— también es defendible, y es una decisión de producto, no técnica.
