@@ -144,15 +144,18 @@ cada `CREATE TABLE` sobre `public`.
 - Aplicar migraciones a mano en el dashboard: van versionadas en
   `supabase/migrations/`.
 
-### Deuda conocida
+### Deuda conocida — las tres, cerradas
 
-1. ~~`Watch` está deprecado en signals_flutter 7.1~~ → **resuelta en C1**: se
-   decidió migrar a `SignalBuilder`. Ver §9.
-2. `main()` hace `await SupabaseConfig.initialize()` sin `try/catch`: cualquier
-   fallo del backend deja pantalla blanca indefinida y sin diagnóstico. Arreglar
-   al tocar el #9.
-3. `isAuthenticated` es un signal escribible que la UI pone en `true` a mano.
-   Debería ser `computed` derivado de la sesión real. Es trabajo del #9.
+1. ~~`Watch` está deprecado en signals_flutter 7.1~~ → **cerrada en C4**. Decidida
+   en C1, ejecutada en C4: no queda ningún `Watch` ni ningún
+   `// ignore: deprecated_member_use` en `lib/`.
+2. ~~`main()` hace `await SupabaseConfig.initialize()` sin `try/catch`~~ →
+   **cerrada en C4**. Ahora el arranque completo va en un `try/catch` y un fallo
+   muestra `ArranqueFallido` con el detalle técnico, en vez de una pantalla en
+   blanco indefinida.
+3. ~~`isAuthenticated` es un signal escribible~~ → **cerrada en C4**. Es un
+   `computed` derivado de `currentSession`, y `hasCompletedOnboarding` un
+   `computed` derivado del perfil. La UI ya no puede declararse autenticada.
 
 ## 4. Espejo del tablero
 
@@ -163,7 +166,7 @@ Reescribir desde `gh` en cada iteración.
 | C1 · Capa de dominio | #8 | `status:hecha` | — | `86fddba` |
 | C2 · Esquema Supabase + RLS | #7 | `status:bloqueada` — 5/7 AC | — (#3, #4 cerrados) | `8c17ab5` |
 | C3 · Átomos y moléculas del onboarding | #10 | `status:hecha` | — (#2 cerrado) | `d12a516` |
-| C4 · Autenticación real | #9 | `status:pendiente` | #7, #8 | |
+| C4 · Autenticación real | #9 | `status:bloqueada` — 5/7 AC | #7, #8 | `2ec1b98` |
 | C5 · Onboarding directo (4 pasos) | #11 | `status:pendiente` | #8, #10 | |
 | C6 · Cuestionario guía | #12 | `status:pendiente` | #11 | |
 | C7 · Persistencia y reanudación | #14 | `status:pendiente` | #11 (afina #12) | |
@@ -627,4 +630,56 @@ los handoffs de E0.
   `onSurfaceVariant`, y `CustomButton` no tiene esa variante (su secundaria es un
   `OutlinedButton`, con borde). Quedó resuelto con un `TextButton` privado dentro
   de `OnboardingFooter`. Cuando el #9 toque los botones del login, conviene
-  extraer una variante `ghost` de `CustomButton` y que las dos la usen.
+  extraer una variante `ghost` de `CustomButton` y que las dos la usen. **Sigue
+  abierto después de C4**: el login usa `TextButton` directo para sus enlaces.
+
+- **C4 · `auth_actions.dart` es el único archivo de `presentation` que toca
+  `getIt`.** Los widgets llaman funciones (`signInWithEmail`, `signOut`,
+  `resendConfirmationEmail`) y no resuelven casos de uso. La alternativa —cada
+  página resolviendo lo suyo— duplicaba la misma lógica en login, registro y
+  logout, y dejaba sin hogar la suscripción al stream de sesión, que no pertenece
+  a ninguna pantalla. `auth_state.dart` quedó con solo señales, sin
+  dependencias, para poder resetearlo desde un test sin arrastrar getIt.
+
+- **C4 · El tipo del error viaja en un signal aparte del mensaje.**
+  `authErrorKind` existe porque la UI necesita decidir *qué ofrecer*, no solo
+  *qué decir*: el botón de reenviar el correo aparece únicamente cuando el fallo
+  es `emailNotConfirmed`. Decidirlo comparando cadenas de texto sería frágil.
+
+- **C4 · Un correo ya registrado se detecta por `identities` vacío.** Con la
+  protección contra enumeración de correos activada, Supabase **no** devuelve
+  error al registrar un correo existente: devuelve un usuario con la lista de
+  identidades vacía. Sin ese chequeo, la app diría «revisá tu correo» a alguien
+  que ya tiene cuenta y que nunca iba a recibir nada. Es el tipo de bug que no
+  aparece en ninguna prueba feliz.
+
+- **C4 · Las páginas de autenticación no navegan; redirigen los guards.** Después
+  de un login exitoso, `LoginPage` solo cambia `currentSession`. El puente
+  `_SignalsRefreshListenable` dispara el `refreshListenable` de go_router y el
+  guard decide entre onboarding y dashboard. Un `context.go()` en la página
+  competiría con el guard y podría mandar a la usuaria al lugar equivocado.
+
+- **C4 · Los formularios guardan sus campos en signals, no en
+  `TextEditingController`.** Un controller necesita un `State` que lo libere, y
+  los widgets del proyecto son `StatelessWidget`. La contrapartida es que la
+  contraseña queda en una señal global, así que se limpia en cuanto se usa. Nota:
+  limpiar la señal no borra lo que muestra el `TextField`, que tiene su propio
+  estado interno; no molesta porque después de entrar se navega y el widget se
+  destruye.
+
+- **C4 · `OnboardingRepositoryImpl` se implementó completo acá**, no repartido
+  entre #9, #11 y #14. Los guards necesitan `loadProfile()`, y dejar los otros
+  tres métodos lanzando obligaba a volver a la misma clase dos veces más. #11 y
+  #14 quedan como trabajo de presentación y de comportamiento, que es donde está
+  su valor.
+
+- **C4 · `setupDependencies()` es idempotente y hay `overrideDependency<T>()`.**
+  Los tests montan la app más de una vez en el mismo proceso y necesitan
+  reemplazar los repositorios por dobles. Sin eso, probar login, registro,
+  logout y los tres guards habría exigido tocar Supabase de verdad.
+
+- **C4 · Para producto, no bloquea**: el AC7 del #9 pedía que las páginas usaran
+  `Watch(...)`. Se usa `SignalBuilder`, que es su reemplazo no deprecado. La
+  intención del AC —páginas `StatelessWidget` con la región reactiva alimentada
+  por signals, sin `setState`— se cumple; lo que cambió es el nombre del widget,
+  por la decisión de C1.
