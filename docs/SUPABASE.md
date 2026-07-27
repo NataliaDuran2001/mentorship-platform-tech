@@ -82,6 +82,71 @@ Para probar el camino de «cuenta sin confirmar» alcanza con registrar una
 dirección cualquiera desde `/registro` y **no** abrir el enlace: el login tiene
 que fallar con el mensaje en español y ofrecer el reenvío.
 
+### Trampa: crear usuarias por SQL rompe el login con un 500
+
+Si en vez del dashboard se inserta la usuaria directo en `auth.users` —por
+ejemplo desde el MCP, que no puede abrir el dashboard—, el login devuelve
+**HTTP 500** aunque la contraseña sea correcta:
+
+```
+error finding user: sql: Scan error on column index 3, name "confirmation_token":
+converting NULL to string is unsupported
+→ 500: Database error querying schema
+```
+
+GoTrue lee varias columnas de token en un `string` de Go y no en un puntero, así
+que un `NULL` lo hace fallar **antes** de validar nada. El dashboard las escribe
+como cadena vacía; un `insert` que las omite las deja en `NULL`.
+
+Hay que ponerlas explícitamente en `''`. `phone` sí puede quedar en `NULL`:
+
+```sql
+update auth.users
+set confirmation_token         = coalesce(confirmation_token, ''),
+    recovery_token             = coalesce(recovery_token, ''),
+    email_change               = coalesce(email_change, ''),
+    email_change_token_new     = coalesce(email_change_token_new, ''),
+    email_change_token_current = coalesce(email_change_token_current, ''),
+    phone_change               = coalesce(phone_change, ''),
+    phone_change_token         = coalesce(phone_change_token, ''),
+    reauthentication_token     = coalesce(reauthentication_token, '')
+where email = '...';
+```
+
+Comprobación de que no quedó ninguna:
+
+```sql
+select string_agg(c.column_name, ', ')
+from information_schema.columns c
+where c.table_schema = 'auth' and c.table_name = 'users'
+  and c.data_type in ('text', 'character varying')
+  and c.column_name <> 'phone'
+  and (select (to_jsonb(u) ->> c.column_name) is null
+       from auth.users u where u.email = '...');
+```
+
+Además de la fila en `auth.users` hace falta una en `auth.identities` con
+`provider = 'email'` y un `identity_data` que traiga `sub` y `email`. Sin ella,
+la detección de «este correo ya está registrado» del `AuthRepositoryImpl` —que
+mira si `identities` viene vacío— se confunde.
+
+**Cómo verificarlo sin navegador**, que es lo que conviene hacer antes de
+avisarle a alguien que pruebe:
+
+```bash
+curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+  -X POST 'https://dtvfucqamakudgbwuhbw.supabase.co/auth/v1/token?grant_type=password' \
+  -H 'apikey: <publishable key>' -H 'Content-Type: application/json' \
+  -d '{"email":"...","password":"..."}'
+```
+
+`200` con `access_token` y `refresh_token` es login correcto. `400` es
+contraseña incorrecta, que es lo esperable en ese caso. **`500` es esta
+trampa**, no un problema de credenciales.
+
+Nada de esto aplica a `supabase/tests/rls_modulo_1.sql`: esas usuarias nunca
+pasan por GoTrue, se impersonan por SQL con `request.jwt.claims`.
+
 ## Migraciones
 
 Van versionadas en [supabase/migrations/](../supabase/migrations/), nunca
