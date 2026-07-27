@@ -24,6 +24,8 @@ class LoginForm extends StatelessWidget {
     required this.onPasswordChanged,
     required this.onSubmit,
     required this.onGoToSignUp,
+    required this.obscurePassword,
+    required this.onToggleObscurePassword,
     this.errorMessage,
     this.onResendConfirmation,
   });
@@ -32,6 +34,11 @@ class LoginForm extends StatelessWidget {
   final ValueChanged<String> onPasswordChanged;
   final VoidCallback onSubmit;
   final VoidCallback onGoToSignUp;
+
+  /// Whether the password travels hidden. The page owns it: this organism
+  /// reads no signals.
+  final bool obscurePassword;
+  final VoidCallback onToggleObscurePassword;
 
   /// Already user-facing text. `null` when there is no error.
   final String? errorMessage;
@@ -69,7 +76,8 @@ class LoginForm extends StatelessWidget {
         CustomInput(
           hintText: 'Password',
           prefixIcon: Icons.lock,
-          obscureText: true,
+          obscureText: obscurePassword,
+          onToggleObscure: onToggleObscurePassword,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.password],
           onChanged: onPasswordChanged,
