@@ -17,14 +17,17 @@ class SubmitOnboardingUseCase {
   /// El track es obligatorio: el tipo lo hace imposible de omitir, que es
   /// justo la garantía que pide el CA 1.3 (sin track no hay roadmap). Por eso
   /// «Omitir» está prohibido en el paso 2 del onboarding.
+  ///
+  /// El nivel y la meta llegan nulables porque sus pasos sí se pueden omitir, y
+  /// omitir se guarda como `null`, no como un valor por defecto inventado.
   Future<UserProfile> call({
-    required ExperienceLevel experienceLevel,
     required RoadmapTrack track,
-    required LearningGoal learningGoal,
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
   }) {
     return repository.completeOnboarding(
-      experienceLevel: experienceLevel,
       track: track,
+      experienceLevel: experienceLevel,
       learningGoal: learningGoal,
     );
   }

@@ -124,9 +124,9 @@ class FakeOnboardingRepository implements OnboardingRepository {
 
   @override
   Future<UserProfile> completeOnboarding({
-    required ExperienceLevel experienceLevel,
     required RoadmapTrack track,
-    required LearningGoal learningGoal,
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
   }) async {
     throw UnimplementedError();
   }

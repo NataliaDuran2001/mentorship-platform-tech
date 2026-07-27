@@ -49,6 +49,11 @@ class AppConstants {
   static const double radioSize = 24.0;
   static const double radioDotSize = 12.0;
 
+  /// Ancho por debajo del cual el pie del onboarding se apila en vez de poner
+  /// sus tres botones en una fila. No es un breakpoint de pantalla: es el ancho
+  /// del propio pie, que en móvil queda mucho más angosto que la ventana.
+  static const double footerCompactWidth = 360.0;
+
   // Duraciones de transición del prototipo.
   // fast: cambios de color y opacidad. medium: transición entre pasos.
   // slow: la barra de progreso, que es la más lenta a propósito.

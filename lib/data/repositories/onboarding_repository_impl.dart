@@ -96,9 +96,9 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
 
   @override
   Future<UserProfile> completeOnboarding({
-    required ExperienceLevel experienceLevel,
     required RoadmapTrack track,
-    required LearningGoal learningGoal,
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
   }) async {
     final id = _idExigido;
 
@@ -106,9 +106,9 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
       final fila = await _client
           .from(_tablaPerfiles)
           .update(<String, dynamic>{
-            'experience_level': experienceLevel.slug,
+            'experience_level': experienceLevel?.slug,
             'track_id': track.slug,
-            'learning_goal': learningGoal.slug,
+            'learning_goal': learningGoal?.slug,
             'onboarding_completed_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', id)
