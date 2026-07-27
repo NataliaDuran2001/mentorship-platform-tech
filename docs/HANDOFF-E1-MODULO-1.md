@@ -168,9 +168,9 @@ Reescribir desde `gh` en cada iteración.
 | C3 · Átomos y moléculas del onboarding | #10 | `status:hecha` | — (#2 cerrado) | `d12a516` |
 | C4 · Autenticación real | #9 | `status:bloqueada` — 5/7 AC | #7, #8 | `2ec1b98` |
 | C5 · Onboarding directo (4 pasos) | #11 | `status:hecha` | #8, #10 | `5075cab` |
-| C6 · Cuestionario guía | #12 | `status:pendiente` | #11 | |
-| C7 · Persistencia y reanudación | #14 | `status:pendiente` | #11 (afina #12) | |
-| C8 · Árbol de tópicos | #13 | `status:pendiente` | #7, #8, #10 | |
+| C6 · Cuestionario guía | #12 | `status:hecha` | #11 | `78131cc` |
+| C7 · Persistencia y reanudación | #14 | `status:hecha` | #11 (afina #12) | `ae8365b` |
+| C8 · Árbol de tópicos | #13 | `status:hecha` | #7, #8, #10 | `0418446` |
 
 Orden recomendado: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8.
 
