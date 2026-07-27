@@ -36,4 +36,23 @@ class AppConstants {
   // ≤768: la sidebar colapsa a drawer. ≤480: los márgenes bajan a 16.
   static const double breakpointTablet = 768.0;
   static const double breakpointMobile = 480.0;
+
+  // Grosores de borde
+  static const double borderWidth = 1.0;
+  static const double borderWidthThick = 2.0;
+
+  // Tamaños de componentes del onboarding (issue #10). Viven acá y no en los
+  // widgets para que la regla «cero valores literales en widgets» se sostenga
+  // también para dimensiones, no solo para colores y spacing.
+  static const double progressBarHeight = 4.0;
+  static const double iconTileSize = 48.0;
+  static const double radioSize = 24.0;
+  static const double radioDotSize = 12.0;
+
+  // Duraciones de transición del prototipo.
+  // fast: cambios de color y opacidad. medium: transición entre pasos.
+  // slow: la barra de progreso, que es la más lenta a propósito.
+  static const Duration durationFast = Duration(milliseconds: 150);
+  static const Duration durationMedium = Duration(milliseconds: 400);
+  static const Duration durationSlow = Duration(milliseconds: 600);
 }
