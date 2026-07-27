@@ -15,9 +15,13 @@ import '../../core/di/injection.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
+import '../../domain/entities/onboarding_answer.dart';
+import '../../domain/repositories/onboarding_repository.dart';
+import '../../domain/usecases/recommend_track_usecase.dart';
 import '../../domain/usecases/submit_onboarding_usecase.dart';
 import '../utils/auth_error_messages.dart';
 import '../utils/constants.dart';
+import '../utils/onboarding_quiz.dart';
 import 'auth_state.dart';
 import 'onboarding_state.dart';
 
@@ -126,6 +130,125 @@ Future<bool> submitOnboarding() async {
   } finally {
     onboardingSaving.value = false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cuestionario guía (issue #12)
+// ---------------------------------------------------------------------------
+
+/// Responde la pregunta visible del cuestionario y avanza.
+///
+/// La respuesta se persiste al momento de elegirla, no al final: es lo que
+/// alimenta la reanudación del #14 y lo que exige el AC5 de este issue.
+Future<void> answerQuizQuestion(RoadmapTrack afinidad) async {
+  final pregunta = currentQuizQuestion.value;
+
+  // Mapa nuevo y no mutación in situ: un signal compara por identidad y no
+  // notificaría si se modifica el mismo mapa.
+  quizAnswers.value = <int, RoadmapTrack>{
+    ...quizAnswers.value,
+    pregunta.number: afinidad,
+  };
+
+  await _persistirRespuesta(
+    OnboardingKeys.quizQuestion(pregunta.number),
+    afinidad.slug,
+  );
+
+  _avanzarEnElCuestionarioConFeedback();
+}
+
+/// Vuelve a la pregunta anterior del cuestionario, o al paso del track si ya
+/// está en la primera.
+void goToPreviousQuizQuestion() {
+  cancelOnboardingTimers();
+
+  if (quizShowingResult.value) {
+    quizShowingResult.value = false;
+    return;
+  }
+  if (quizQuestionIndex.value > 0) {
+    quizQuestionIndex.value = quizQuestionIndex.value - 1;
+    return;
+  }
+  // En la primera pregunta, «Anterior» sale del cuestionario.
+  goToPreviousStep();
+}
+
+/// Avanza a la pregunta siguiente o calcula la recomendación si era la última.
+void advanceQuiz() {
+  cancelOnboardingTimers();
+
+  if (quizQuestionIndex.value < preguntasDelCuestionario.length - 1) {
+    quizQuestionIndex.value = quizQuestionIndex.value + 1;
+    return;
+  }
+  _calcularRecomendacion();
+}
+
+/// Acepta el track recomendado y sigue en el paso de la meta.
+///
+/// `usesGuidedQuiz` se deja en `true` a propósito: el recorrido siguió teniendo
+/// 5 pasos y el contador tiene que seguir diciéndolo.
+Future<void> confirmRecommendedTrack() async {
+  final track = quizRecommendation.value?.track;
+  if (track == null) return;
+  await _asignarTrackDelCuestionario(track);
+}
+
+/// Corrige la recomendación a mano y sigue en el paso de la meta.
+Future<void> overrideRecommendedTrack(RoadmapTrack track) =>
+    _asignarTrackDelCuestionario(track);
+
+/// Vuelve a las preguntas para responderlas de nuevo.
+void redoQuiz() {
+  cancelOnboardingTimers();
+  quizAnswers.value = <int, RoadmapTrack>{};
+  quizQuestionIndex.value = 0;
+  quizShowingResult.value = false;
+  quizRecommendation.value = null;
+}
+
+Future<void> _asignarTrackDelCuestionario(RoadmapTrack track) async {
+  selectedTrack.value = track;
+  await _persistirRespuesta(OnboardingKeys.track, track.slug);
+  goToNextStep();
+}
+
+/// La regla de decisión NO está acá: sale del caso de uso del dominio, que es
+/// lo que el AC3 de este issue verifica. Este método solo traduce el mapa de
+/// respuestas al formato del contrato.
+void _calcularRecomendacion() {
+  final respuestas = [
+    for (final entrada in quizAnswers.value.entries)
+      OnboardingAnswer(
+        stepKey: OnboardingKeys.quizQuestion(entrada.key),
+        value: entrada.value.slug,
+      ),
+  ];
+
+  quizRecommendation.value = getIt<RecommendTrackUseCase>()(respuestas);
+  quizShowingResult.value = true;
+}
+
+/// Guarda una respuesta suelta, sin romper el flujo si falla.
+///
+/// Un fallo de red al guardar no puede frenar el onboarding: la usuaria pierde
+/// la reanudación de ese paso, no el paso. El resultado final se persiste igual
+/// en `submitOnboarding()`, que sí reporta el error.
+Future<void> _persistirRespuesta(String stepKey, String valor) async {
+  try {
+    await getIt<OnboardingRepository>().saveAnswer(
+      OnboardingAnswer(stepKey: stepKey, value: valor),
+    );
+  } catch (_) {
+    // Silencio deliberado. Ver el comentario de arriba.
+  }
+}
+
+void _avanzarEnElCuestionarioConFeedback() {
+  _autoAvance?.cancel();
+  _autoAvance = Timer(AppConstants.durationMedium, advanceQuiz);
 }
 
 /// Cancela el temporizador pendiente. Para los tests y al salir de la pantalla.

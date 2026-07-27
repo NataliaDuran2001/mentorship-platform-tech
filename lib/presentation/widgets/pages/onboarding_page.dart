@@ -13,6 +13,8 @@ import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../state/onboarding_actions.dart';
 import '../../state/onboarding_state.dart';
+import '../../utils/onboarding_quiz.dart';
+import '../organisms/guided_quiz_step.dart';
 import '../organisms/onboarding_step_layout.dart';
 import '../organisms/onboarding_steps.dart';
 
@@ -31,6 +33,14 @@ class OnboardingPage extends StatelessWidget {
 
         final paso = currentStep.value;
         final esResumen = paso == OnboardingStepId.summary;
+        final esCuestionario = paso == OnboardingStepId.quiz;
+
+        // El cuestionario es un solo paso del contador pero tiene navegación
+        // interna: el pie maneja sus preguntas en vez del recorrido general.
+        final atras = esCuestionario ? goToPreviousQuizQuestion : goToPreviousStep;
+        final adelante = esCuestionario
+            ? (quizShowingResult.value ? confirmRecommendedTrack : advanceQuiz)
+            : (esResumen ? submitOnboarding : goToNextStep);
 
         return OnboardingStepLayout(
           currentStep: currentStepNumber.value,
@@ -42,14 +52,12 @@ class OnboardingPage extends StatelessWidget {
           // «Omitir» solo en los pasos omitibles: en el paso 2 desaparece,
           // porque sin track no hay roadmap (CA 1.3).
           showSkip: canSkipCurrentStep.value,
-          continueLabel: esResumen ? 'Entrar al Dashboard' : 'Continuar',
-          onBack: canGoBack.value ? goToPreviousStep : null,
+          continueLabel: _etiquetaDeContinuar(paso),
+          onBack: canGoBack.value ? atras : null,
           onSkip: canSkipCurrentStep.value ? skipCurrentStep : null,
           // En el paso del track «Continuar» queda deshabilitado hasta que haya
           // una selección; en el resumen guarda y sale.
-          onContinue: canAdvance.value
-              ? (esResumen ? submitOnboarding : goToNextStep)
-              : null,
+          onContinue: canAdvance.value ? adelante : null,
           child: _contenidoDe(paso),
         );
       },
@@ -71,9 +79,22 @@ class OnboardingPage extends StatelessWidget {
           onDontKnow: () => selectTrack(null),
         );
       case OnboardingStepId.quiz:
-        // Lo construye el issue #12. Hasta entonces el aviso es honesto: no un
-        // stub que finja funcionar.
-        return const _PasoPendiente();
+        final recomendacion = quizRecommendation.value;
+        if (quizShowingResult.value && recomendacion != null) {
+          return GuidedQuizResult(
+            recommendation: recomendacion,
+            onConfirm: confirmRecommendedTrack,
+            onOverride: overrideRecommendedTrack,
+            onRedo: redoQuiz,
+          );
+        }
+
+        final pregunta = currentQuizQuestion.value;
+        return GuidedQuizStep(
+          question: pregunta,
+          selected: quizAnswers.value[pregunta.number],
+          onSelected: answerQuizQuestion,
+        );
       case OnboardingStepId.goal:
         return OnboardingStepGoal(
           selected: selectedGoal.value,
@@ -88,6 +109,15 @@ class OnboardingPage extends StatelessWidget {
     }
   }
 
+  /// El botón principal cambia de nombre según lo que hace.
+  String _etiquetaDeContinuar(OnboardingStepId paso) {
+    if (paso == OnboardingStepId.summary) return 'Entrar al Dashboard';
+    if (paso == OnboardingStepId.quiz && quizShowingResult.value) {
+      return 'Confirmar esta ruta';
+    }
+    return 'Continuar';
+  }
+
   String _tituloDe(OnboardingStepId paso) {
     switch (paso) {
       case OnboardingStepId.level:
@@ -95,7 +125,9 @@ class OnboardingPage extends StatelessWidget {
       case OnboardingStepId.track:
         return '¿Cuál es tu especialidad?';
       case OnboardingStepId.quiz:
-        return '¿Qué tipo de problemas te entusiasma más resolver?';
+        return quizShowingResult.value
+            ? 'Encontramos tu ruta'
+            : currentQuizQuestion.value.prompt;
       case OnboardingStepId.goal:
         return '¿Cuál es tu meta principal?';
       case OnboardingStepId.summary:
@@ -112,7 +144,12 @@ class OnboardingPage extends StatelessWidget {
         return 'Elegí el área donde te sentís más cómoda o donde querés crecer. '
             'Si todavía no lo sabés, te ayudamos.';
       case OnboardingStepId.quiz:
-        return 'Tu respuesta nos ayuda a trazar tu ruta de aprendizaje ideal.';
+        if (quizShowingResult.value) {
+          return 'Podés aceptarla o elegir otra: la decisión final es tuya.';
+        }
+        final pregunta = currentQuizQuestion.value;
+        return 'Pregunta ${pregunta.number} de '
+            '${preguntasDelCuestionario.length}. ${pregunta.subtitle}';
       case OnboardingStepId.goal:
         return 'Contanos qué esperás lograr en los próximos 6 meses.';
       case OnboardingStepId.summary:
@@ -121,16 +158,3 @@ class OnboardingPage extends StatelessWidget {
   }
 }
 
-/// Aviso del paso que todavía no está construido (cuestionario guía, #12).
-class _PasoPendiente extends StatelessWidget {
-  const _PasoPendiente();
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      'El cuestionario guía llega con el issue #12. Volvé al paso anterior y '
-      'elegí una especialidad.',
-      style: Theme.of(context).textTheme.bodyMedium,
-    );
-  }
-}
