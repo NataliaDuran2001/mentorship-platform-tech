@@ -14,6 +14,8 @@ import 'package:signals_flutter/signals_flutter.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
+import '../../domain/entities/track_recommendation.dart';
+import '../utils/onboarding_quiz.dart';
 
 /// Los pasos posibles. `quiz` solo participa en la rama guiada.
 enum OnboardingStepId { level, track, quiz, goal, summary }
@@ -27,6 +29,38 @@ final currentStepIndex = signal<int>(0);
 final selectedLevel = signal<ExperienceLevel?>(null);
 final selectedTrack = signal<RoadmapTrack?>(null);
 final selectedGoal = signal<LearningGoal?>(null);
+
+// ---------------------------------------------------------------------------
+// Cuestionario guía (issue #12)
+//
+// El cuestionario es **un** paso del contador, no uno por pregunta: el
+// prototipo muestra «Paso 02/05» para toda la guía. Por eso su navegación
+// interna vive acá, aparte de currentStepIndex.
+// ---------------------------------------------------------------------------
+
+/// Respuestas del cuestionario: número de pregunta → track al que votó.
+final quizAnswers = signal<Map<int, RoadmapTrack>>(<int, RoadmapTrack>{});
+
+/// Pregunta que se está mostrando, empezando en 0.
+final quizQuestionIndex = signal<int>(0);
+
+/// Ya se respondieron todas y se está mostrando el resultado.
+final quizShowingResult = signal<bool>(false);
+
+/// Salida de RecommendTrackUseCase. `null` mientras no se calculó.
+final quizRecommendation = signal<TrackRecommendation?>(null);
+
+/// Pregunta actual del cuestionario.
+final currentQuizQuestion = computed<QuizQuestion>(() {
+  final indice =
+      quizQuestionIndex.value.clamp(0, preguntasDelCuestionario.length - 1);
+  return preguntasDelCuestionario[indice];
+});
+
+/// La pregunta actual ya está respondida.
+final currentQuizAnswered = computed(
+  () => quizAnswers.value.containsKey(currentQuizQuestion.value.number),
+);
 
 /// Guardando el resultado final.
 final onboardingSaving = signal<bool>(false);
@@ -99,7 +133,9 @@ final canSkipCurrentStep = computed(() {
 /// El paso actual tiene una respuesta que permita avanzar.
 ///
 /// En el paso del track exige una selección real: es lo que deshabilita
-/// «Continuar» hasta que haya track.
+/// «Continuar» hasta que haya track. En el cuestionario exige que la pregunta
+/// visible esté respondida, y en la pantalla de resultado, que haya una
+/// recomendación que confirmar.
 final canAdvance = computed(() {
   switch (currentStep.value) {
     case OnboardingStepId.level:
@@ -107,8 +143,11 @@ final canAdvance = computed(() {
     case OnboardingStepId.summary:
       return true;
     case OnboardingStepId.track:
-    case OnboardingStepId.quiz:
       return selectedTrack.value != null;
+    case OnboardingStepId.quiz:
+      return quizShowingResult.value
+          ? quizRecommendation.value?.hasRecommendation ?? false
+          : currentQuizAnswered.value;
   }
 });
 
@@ -116,6 +155,10 @@ final canAdvance = computed(() {
 void resetOnboarding() {
   usesGuidedQuiz.value = false;
   currentStepIndex.value = 0;
+  quizAnswers.value = <int, RoadmapTrack>{};
+  quizQuestionIndex.value = 0;
+  quizShowingResult.value = false;
+  quizRecommendation.value = null;
   selectedLevel.value = null;
   selectedTrack.value = null;
   selectedGoal.value = null;
