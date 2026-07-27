@@ -20,6 +20,8 @@ import '../../domain/usecases/sign_out_usecase.dart';
 import '../../domain/usecases/sign_up_usecase.dart';
 import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
+import 'onboarding_actions.dart';
+import 'onboarding_state.dart';
 
 StreamSubscription<AuthSession?>? _suscripcionSesion;
 
@@ -60,7 +62,16 @@ Future<void> bootstrapAuth() async {
 /// para que los route guards decidan con datos frescos.
 Future<void> refreshProfile() async {
   try {
-    currentProfile.value = await getIt<OnboardingRepository>().loadProfile();
+    final perfil = await getIt<OnboardingRepository>().loadProfile();
+    currentProfile.value = perfil;
+
+    // Onboarding a medio hacer: se reconstruye el estado parcial antes de que la
+    // pantalla se monte, para aterrizar en el primer paso sin responder con lo
+    // anterior ya marcado (issue #14). Acá y no en la página porque el route
+    // guard decide a dónde ir antes de que exista ningún widget.
+    if (perfil != null && !perfil.hasCompletedOnboarding) {
+      await restoreOnboarding();
+    }
   } catch (e) {
     // No se traduce a authError: el perfil se lee de fondo y un fallo acá no
     // debe pintar un error en la pantalla de login. El guard verá el perfil en
@@ -181,6 +192,10 @@ Future<void> signOut() async {
     currentProfile.value = null;
     pendingConfirmationEmail.value = null;
     limpiarFormulariosDeAuth();
+    // El onboarding de la usuaria que se va no puede quedar cargado para la que
+    // entre después.
+    cancelOnboardingTimers();
+    resetOnboarding();
     authLoading.value = false;
   }
 }
