@@ -1,7 +1,7 @@
-// Capa Domain: Caso de uso que encapsula una regla de negocio de la app.
+// Domain layer: Use case encapsulating one business rule of the app.
 //
-// Inicio de sesión con correo y contraseña. Reemplaza al `LoginUseCase` del
-// scaffold original, que llamaba a `loginWithGoogle()` (issue #8).
+// Sign-in with email and password. It replaces the `LoginUseCase` of the
+// original scaffold, which called `loginWithGoogle()` (issue #8).
 
 import '../entities/auth_session.dart';
 import '../repositories/auth_repository.dart';
@@ -11,8 +11,8 @@ class SignInUseCase {
 
   final AuthRepository repository;
 
-  /// Lanza `AuthFailure` si las credenciales no sirven o el correo sigue sin
-  /// confirmar. La traducción al español la hace la capa Presentation.
+  /// Throws `AuthFailure` if the credentials do not work or the email is
+  /// still unconfirmed. The Presentation layer turns it into user-facing copy.
   Future<AuthResult> call({
     required String email,
     required String password,

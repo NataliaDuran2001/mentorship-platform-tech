@@ -1,10 +1,10 @@
-// Atomic Design (Organismo): Sección funcional reutilizable.
-// Cartel de error o de aviso de las pantallas de autenticación.
+// Atomic Design (Organism): Reusable functional section.
+// Error or notice banner for the authentication screens.
 //
-// Recibe el texto ya traducido al español. Nunca recibe una excepción: la capa
-// Data traduce la excepción de Supabase a un AuthFailure y
-// utils/auth_error_messages.dart lo convierte en texto. Así ningún error crudo
-// del backend puede llegar a la pantalla ni por descuido.
+// It takes text that is already user-facing. It never takes an exception: the
+// Data layer turns the Supabase exception into an AuthFailure and
+// utils/auth_error_messages.dart turns that into text. That way no raw backend
+// error can reach the screen, not even by accident.
 
 import 'package:flutter/material.dart';
 
@@ -25,24 +25,25 @@ class AuthMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final esError = tone == AuthMessageTone.error;
-    final fondo = esError ? AppColors.errorContainer : AppColors.primaryFixed;
-    final texto =
-        esError ? AppColors.onErrorContainer : AppColors.onPrimaryFixed;
+    final isError = tone == AuthMessageTone.error;
+    final background =
+        isError ? AppColors.errorContainer : AppColors.primaryFixed;
+    final foreground =
+        isError ? AppColors.onErrorContainer : AppColors.onPrimaryFixed;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppConstants.spacingMd),
       decoration: BoxDecoration(
-        color: fondo,
+        color: background,
         borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            esError ? Icons.error_outline : Icons.mark_email_unread_outlined,
-            color: texto,
+            isError ? Icons.error_outline : Icons.mark_email_unread_outlined,
+            color: foreground,
           ),
           const SizedBox(width: AppConstants.spacingSm),
           Expanded(
@@ -51,7 +52,7 @@ class AuthMessage extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: texto),
+                  ?.copyWith(color: foreground),
             ),
           ),
         ],

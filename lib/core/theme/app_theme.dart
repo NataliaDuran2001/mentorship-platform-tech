@@ -1,7 +1,7 @@
-// Capa Core (Theme): ThemeData único de la app, construido desde los tokens
-// de AppColors/AppConstants (frontmatter de DESIGN.md). Las especificaciones
-// de componentes vienen de la prosa de DESIGN.md, que para componentes sí es
-// la fuente; sus valores hex no lo son.
+// Core layer (Theme): the app's single ThemeData, built from the
+// AppColors/AppConstants tokens (frontmatter of DESIGN.md). The component
+// specifications come from the prose of DESIGN.md, which for components is the
+// source; its hex values are not.
 
 import 'package:flutter/material.dart';
 
@@ -9,11 +9,11 @@ import '../../presentation/utils/app_colors.dart';
 import '../../presentation/utils/constants.dart';
 
 class AppTheme {
-  // Nivel `code` de la escala tipográfica. TextTheme no tiene slot para
-  // código, así que se expone acá. Usa GeistMono y no Geist (que es lo que
-  // declara el frontmatter): GeistMono-Regular es el único .ttf mono que el
-  // design system manda a registrar y su prosa pide distinguir los bloques de
-  // código del texto corrido. Decisión anotada en la §9 del handoff B.
+  // `code` level of the typographic scale. TextTheme has no slot for code, so
+  // it is exposed here. It uses GeistMono and not Geist (which is what the
+  // frontmatter declares): GeistMono-Regular is the only mono .ttf the design
+  // system asks to register and its prose asks to distinguish code blocks from
+  // running text. Decision recorded in §9 of handoff B.
   static const TextStyle code = TextStyle(
     fontFamily: 'GeistMono',
     fontSize: 13,
@@ -71,8 +71,8 @@ class AppTheme {
       surfaceTint: AppColors.surfaceTint,
     );
 
-    // Escala tipográfica del frontmatter. height = lineHeight / fontSize;
-    // letterSpacing en em convertido a píxeles lógicos (em × fontSize).
+    // Typographic scale from the frontmatter. height = lineHeight / fontSize;
+    // letterSpacing in em converted to logical pixels (em × fontSize).
     const textTheme = TextTheme(
       // headlineLg: 32 / 600 / lh 40 / -0.02em
       headlineLarge: TextStyle(
@@ -126,7 +126,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      // Única declaración de la familia: los widgets no la repiten.
+      // Single declaration of the family: widgets do not repeat it.
       fontFamily: 'Geist',
       textTheme: textTheme,
       scaffoldBackgroundColor: AppColors.background,
@@ -134,8 +134,8 @@ class AppTheme {
         color: AppColors.outlineVariant,
         thickness: 1,
       ),
-      // Nav del shell: fondo claro, sin tinte de scroll, indicador en el
-      // violeta fijo claro de la paleta.
+      // Shell nav: light background, no scroll tint, indicator in the light
+      // fixed violet of the palette.
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.onSurface,
@@ -150,7 +150,7 @@ class AppTheme {
         indicatorColor: AppColors.primaryFixed,
         surfaceTintColor: Colors.transparent,
       ),
-      // Botón primario: fondo primary, texto blanco, radio 8, sin sombra.
+      // Primary button: primary background, white text, radius 8, no shadow.
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -161,7 +161,7 @@ class AppTheme {
           shape: buttonShape,
         ),
       ),
-      // Botón secundario: transparente, borde de 1px, texto oscuro.
+      // Secondary button: transparent, 1px border, dark text.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.onSurface,
@@ -170,7 +170,7 @@ class AppTheme {
           shape: buttonShape,
         ),
       ),
-      // Botón ghost: sin fondo ni borde, texto violeta.
+      // Ghost button: no background nor border, violet text.
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
@@ -178,9 +178,9 @@ class AppTheme {
           shape: buttonShape,
         ),
       ),
-      // Inputs: fondo blanco, borde de 1px; al foco el borde pasa a primary.
-      // El glow de 2px al 20% vive en CustomInput: un InputBorder no puede
-      // pintar sombras.
+      // Inputs: white background, 1px border; on focus the border turns
+      // primary. The 2px glow at 20% lives in CustomInput: an InputBorder
+      // cannot paint shadows.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceContainerLowest,
@@ -198,8 +198,9 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.primary),
         ),
       ),
-      // Cards: definidas por borde de 1px, no por sombra. (La sombra leve de
-      // hover no es tematizable; va en el widget interactivo que la necesite.)
+      // Cards: defined by a 1px border, not by a shadow. (The slight hover
+      // shadow is not themeable; it goes in the interactive widget that needs
+      // it.)
       cardTheme: CardThemeData(
         color: AppColors.surfaceContainerLowest,
         elevation: 0,
@@ -208,15 +209,15 @@ class AppTheme {
           side: const BorderSide(color: AppColors.outlineVariant),
         ),
       ),
-      // Chips: pill, fondo gris claro, texto slate.
+      // Chips: pill, light grey background, slate text.
       chipTheme: const ChipThemeData(
         backgroundColor: AppColors.surfaceContainerLow,
         labelStyle: TextStyle(color: AppColors.onSurfaceVariant),
         shape: StadiumBorder(),
         side: BorderSide.none,
       ),
-      // Ítem de lista seleccionado: tinte violeta al 5% y texto primary. (La
-      // barra vertical activa de 2px no es tematizable; va en el widget.)
+      // Selected list item: violet tint at 5% and primary text. (The 2px
+      // active vertical bar is not themeable; it goes in the widget.)
       listTileTheme: ListTileThemeData(
         selectedTileColor: AppColors.primary.withValues(alpha: 0.05),
         selectedColor: AppColors.primary,

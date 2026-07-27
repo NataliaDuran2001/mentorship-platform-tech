@@ -1,12 +1,12 @@
-// Capa Domain: Caso de uso que encapsula una regla de negocio de la app.
+// Domain layer: Use case encapsulating one business rule of the app.
 //
-// Arma el árbol de tópicos de un track a partir de la lista plana que entrega
-// el repositorio, y le deriva la secuencialidad.
+// It builds the topic tree of a track from the flat list the repository
+// delivers, and derives the sequencing from it.
 //
-// La jerarquía y el «qué está desbloqueado» son reglas de negocio, no detalles
-// de presentación: si vivieran en el widget del issue #13 no se podrían
-// testear sin montar Flutter, y cada pantalla nueva podría interpretarlas
-// distinto.
+// The hierarchy and the "what is unlocked" are business rules, not
+// presentation details: if they lived in the widget of issue #13 they could
+// not be tested without booting Flutter, and every new screen could interpret
+// them differently.
 
 import '../entities/roadmap_track.dart';
 import '../entities/topic_node.dart';
@@ -17,23 +17,24 @@ class GetRoadmapTreeUseCase {
 
   final RoadmapRepository repository;
 
-  /// Tópicos de primer nivel del track, con sus hijos anidados, ordenados y
-  /// con el estado secuencial ya resuelto.
+  /// Top-level topics of the track, with their nested children, sorted and
+  /// with the sequential status already resolved.
   Future<List<TopicNode>> call(RoadmapTrack track) async {
     final flat = await repository.listTopics(track);
     return buildTree(flat);
   }
 
-  /// Convierte la lista plana en árbol y deriva el estado de cada nodo.
+  /// Turns the flat list into a tree and derives the status of each node.
   ///
-  /// Expuesto aparte del [call] para poder testear la regla sin repositorio.
+  /// Exposed apart from [call] so the rule can be tested without a
+  /// repository.
   List<TopicNode> buildTree(List<TopicNode> flat) {
     final byParent = <String?, List<TopicNode>>{};
     final knownIds = flat.map((node) => node.id).toSet();
 
     for (final node in flat) {
-      // Un `parentId` que no está en la lista se trata como raíz: preferimos
-      // mostrar el tópico huérfano que hacerlo desaparecer en silencio.
+      // A `parentId` that is not in the list is treated as a root: we prefer
+      // showing the orphan topic over making it disappear silently.
       final parent =
           knownIds.contains(node.parentId) ? node.parentId : null;
       byParent.putIfAbsent(parent, () => <TopicNode>[]).add(node);
@@ -52,10 +53,10 @@ class GetRoadmapTreeUseCase {
     return _deriveStatus(childrenOf(null));
   }
 
-  /// Marca el primer tópico hoja sin completar como [TopicStatus.available] y
-  /// todos los siguientes como [TopicStatus.locked]. Un nodo con hijos hereda:
-  /// está completado si todos sus hijos lo están, disponible si alguno de
-  /// ellos lo está, y bloqueado en cualquier otro caso.
+  /// Marks the first uncompleted leaf topic as [TopicStatus.available] and
+  /// every following one as [TopicStatus.locked]. A node with children
+  /// inherits: it is completed if all of its children are, available if any
+  /// of them is, and locked in any other case.
   List<TopicNode> _deriveStatus(List<TopicNode> roots) {
     var availableTaken = false;
 

@@ -1,9 +1,9 @@
-// Atomic Design (Átomo): Componente irreductible.
-// El contador «PASO 1 DE 4». Recibe los dos números; no los deduce.
+// Atomic Design (Atom): Irreducible component.
+// The "STEP 1 OF 4" counter. It takes both numbers; it doesn't infer them.
 //
-// El total es un parámetro y no una constante porque el onboarding tiene 4
-// pasos por la rama directa y 5 si se entra al cuestionario guía. De ahí venía
-// la discrepancia entre los dos mockups.
+// The total is a parameter and not a constant because the onboarding has 4
+// steps on the direct path and 5 if you enter the guided questionnaire. That's
+// where the discrepancy between the two mockups came from.
 
 import 'package:flutter/material.dart';
 
@@ -16,18 +16,18 @@ class StepCounterLabel extends StatelessWidget {
     required this.totalSteps,
   });
 
-  /// Paso actual, empezando en 1.
+  /// Current step, starting at 1.
   final int currentStep;
 
   final int totalSteps;
 
-  /// `tracking-widest` del prototipo: 0.1em sobre los 12px de labelMedium.
+  /// The prototype's `tracking-widest`: 0.1em over labelMedium's 12px.
   static const double _tracking = 1.2;
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Paso $currentStep de $totalSteps'.toUpperCase(),
+      'Step $currentStep of $totalSteps'.toUpperCase(),
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: AppColors.onSurfaceVariant,
             letterSpacing: _tracking,

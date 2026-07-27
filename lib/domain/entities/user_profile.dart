@@ -1,12 +1,12 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Perfil de la usuaria: identidad más el resultado del onboarding. Reemplaza
-// a la `UserEntity{id, name}` del scaffold original (issue #8).
+// The user's profile: identity plus the onboarding result. It replaces the
+// `UserEntity{id, name}` of the original scaffold (issue #8).
 //
-// Los tres campos del onboarding son nulables porque el perfil se crea vacío
-// al registrarse (trigger sobre `auth.users`, issue #7) y se va llenando paso
-// a paso. `onboardingCompletedAt` es lo que distingue un perfil a medio
-// llenar de uno terminado, y es el dato que leen los route guards.
+// The three onboarding fields are nullable because the profile is created
+// empty on sign-up (trigger on `auth.users`, issue #7) and is filled in step
+// by step. `onboardingCompletedAt` is what tells a half-filled profile from a
+// finished one, and it is the value the route guards read.
 
 import 'experience_level.dart';
 import 'learning_goal.dart';
@@ -23,24 +23,25 @@ class UserProfile {
     this.onboardingCompletedAt,
   });
 
-  /// Mismo identificador que `auth.users.id`.
+  /// Same identifier as `auth.users.id`.
   final String id;
   final String email;
 
-  /// Nombre para mostrar. Opcional: el registro por correo no lo pide.
+  /// Display name. Optional: email sign-up does not ask for it.
   final String? displayName;
 
   final ExperienceLevel? experienceLevel;
   final RoadmapTrack? track;
   final LearningGoal? learningGoal;
 
-  /// Momento en que se completó el onboarding, o `null` si sigue pendiente.
+  /// When the onboarding was completed, or `null` if it is still pending.
   final DateTime? onboardingCompletedAt;
 
-  /// El onboarding está terminado.
+  /// The onboarding is finished.
   ///
-  /// Exige track además de la marca de tiempo: sin track no hay roadmap que
-  /// mostrar, y dejar entrar al dashboard en ese estado rompe el CA 1.3.
+  /// It requires a track on top of the timestamp: without a track there is no
+  /// roadmap to show, and letting the user into the dashboard in that state
+  /// breaks AC 1.3.
   bool get hasCompletedOnboarding =>
       onboardingCompletedAt != null && track != null;
 

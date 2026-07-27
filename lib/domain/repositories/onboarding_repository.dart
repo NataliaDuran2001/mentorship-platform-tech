@@ -1,5 +1,5 @@
-// Capa Domain: Contrato (interfaz) del repositorio de onboarding.
-// Define QUÉ se puede hacer, no CÓMO. La implementación vive en `data`.
+// Domain layer: Contract (interface) of the onboarding repository.
+// It defines WHAT can be done, not HOW. The implementation lives in `data`.
 
 import '../entities/experience_level.dart';
 import '../entities/learning_goal.dart';
@@ -8,30 +8,31 @@ import '../entities/roadmap_track.dart';
 import '../entities/user_profile.dart';
 
 abstract class OnboardingRepository {
-  /// Guarda una respuesta de la usuaria autenticada, al momento de
-  /// seleccionarla y no al final del flujo (issue #14).
+  /// Saves an answer of the authenticated user, the moment it is selected and
+  /// not at the end of the flow (issue #14).
   ///
-  /// Es un upsert por (usuaria, `stepKey`): volver atrás y cambiar una
-  /// respuesta actualiza la fila existente en vez de agregar otra.
+  /// It is an upsert by (user, `stepKey`): going back and changing an answer
+  /// updates the existing row instead of adding another one.
   Future<void> saveAnswer(OnboardingAnswer answer);
 
-  /// Respuestas ya guardadas de la usuaria autenticada. Lista vacía si no
-  /// empezó. Es la base de la reanudación: el flujo retoma en el primer paso
-  /// sin responder, con lo anterior ya marcado.
+  /// Answers already saved by the authenticated user. Empty list if she has
+  /// not started. It is the basis of resuming: the flow picks up at the first
+  /// unanswered step, with the previous ones already marked.
   Future<List<OnboardingAnswer>> loadAnswers();
 
-  /// Perfil de la usuaria autenticada, o `null` si no hay sesión.
+  /// Profile of the authenticated user, or `null` if there is no session.
   Future<UserProfile?> loadProfile();
 
-  /// Marca el onboarding como completado y persiste el resultado en el perfil.
+  /// Marks the onboarding as completed and persists the result in the
+  /// profile.
   ///
-  /// El track es obligatorio y no nulable a propósito: sin track no hay roadmap
-  /// que mostrar (CA 1.3), y ningún camino puede dejar el perfil completo con
-  /// `track_id` nulo.
+  /// The track is required and non-nullable on purpose: without a track there
+  /// is no roadmap to show (AC 1.3), and no path may leave the profile
+  /// complete with a null `track_id`.
   ///
-  /// El nivel y la meta **sí** son nulables, porque sus pasos son omitibles y
-  /// omitir no puede traducirse en un valor inventado: se guardan en `null` y se
-  /// pueden completar después desde el perfil.
+  /// The level and the goal **are** nullable, because their steps can be
+  /// skipped and skipping cannot translate into a made-up value: they are
+  /// stored as `null` and can be filled in later from the profile.
   Future<UserProfile> completeOnboarding({
     required RoadmapTrack track,
     ExperienceLevel? experienceLevel,

@@ -1,8 +1,8 @@
-// Pruebas del árbol de tópicos secuenciales (issue #13).
+// Tests of the tree of sequential topics (issue #13).
 //
-// Lo que se verifica es que la pantalla **respete** la secuencialidad que
-// GetRoadmapTreeUseCase derivó: los tres estados distinguibles y los bloqueados
-// sin responder al tap. La regla en sí ya está probada en
+// What is verified is that the screen **respects** the sequencing that
+// GetRoadmapTreeUseCase derived: the three distinguishable states and the
+// locked ones not responding to a tap. The rule itself is already tested in
 // test/domain/get_roadmap_tree_usecase_test.dart.
 
 import 'package:flutter/material.dart';
@@ -21,18 +21,18 @@ import 'package:aspire_app/presentation/state/roadmap_state.dart';
 import 'package:aspire_app/presentation/widgets/organisms/roadmap_tree.dart';
 import 'package:aspire_app/presentation/widgets/pages/roadmap_page.dart';
 
-/// Repositorio en memoria. Devuelve la lista **plana**, como el contrato.
+/// In-memory repository. It returns the **flat** list, as per the contract.
 class FakeRoadmapRepository implements RoadmapRepository {
-  FakeRoadmapRepository({this.topics = const [], this.fallo});
+  FakeRoadmapRepository({this.topics = const [], this.failure});
 
   List<TopicNode> topics;
-  AuthFailure? fallo;
-  int llamadas = 0;
+  AuthFailure? failure;
+  int calls = 0;
 
   @override
   Future<List<TopicNode>> listTopics(RoadmapTrack track) async {
-    llamadas++;
-    if (fallo != null) throw fallo!;
+    calls++;
+    if (failure != null) throw failure!;
     return topics.where((t) => t.trackId == track).toList();
   }
 
@@ -40,7 +40,7 @@ class FakeRoadmapRepository implements RoadmapRepository {
   Future<List<Track>> listTracks() async => const <Track>[];
 }
 
-TopicNode _nodo(
+TopicNode _node(
   String id, {
   String? parentId,
   int sortOrder = 0,
@@ -56,16 +56,16 @@ TopicNode _nodo(
   );
 }
 
-/// Los 5 tópicos placeholder que la migración del #7 siembra en frontend.
+/// The 5 placeholder topics that the migration of #7 seeds in frontend.
 final _placeholders = [
-  _nodo('Módulo A', sortOrder: 1),
-  _nodo('Tópico A1', parentId: 'Módulo A', sortOrder: 1, isCompleted: true),
-  _nodo('Tópico A2', parentId: 'Módulo A', sortOrder: 2),
-  _nodo('Módulo B', sortOrder: 2),
-  _nodo('Tópico B1', parentId: 'Módulo B', sortOrder: 1),
+  _node('Module A', sortOrder: 1),
+  _node('Topic A1', parentId: 'Module A', sortOrder: 1, isCompleted: true),
+  _node('Topic A2', parentId: 'Module A', sortOrder: 2),
+  _node('Module B', sortOrder: 2),
+  _node('Topic B1', parentId: 'Module B', sortOrder: 1),
 ];
 
-Future<void> _montar(WidgetTester tester) async {
+Future<void> _mount(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1000, 2000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -93,65 +93,65 @@ void main() {
     );
   });
 
-  group('Despliegue del árbol', () {
-    testWidgets('muestra la jerarquía y el orden de sort_order',
+  group('Tree display', () {
+    testWidgets('it shows the hierarchy and the sort_order ordering',
         (tester) async {
       repo.topics = _placeholders;
-      await _montar(tester);
+      await _mount(tester);
 
       expect(find.text('Front-end'), findsOneWidget);
-      for (final titulo in [
-        'Módulo A',
-        'Tópico A1',
-        'Tópico A2',
-        'Módulo B',
-        'Tópico B1',
+      for (final title in [
+        'Module A',
+        'Topic A1',
+        'Topic A2',
+        'Module B',
+        'Topic B1',
       ]) {
-        expect(find.text(titulo), findsOneWidget);
+        expect(find.text(title), findsOneWidget);
       }
 
-      // El orden vertical refleja sort_order: Módulo A antes que Módulo B.
-      final yA = tester.getTopLeft(find.text('Módulo A')).dy;
-      final yB = tester.getTopLeft(find.text('Módulo B')).dy;
+      // The vertical order reflects sort_order: Module A before Module B.
+      final yA = tester.getTopLeft(find.text('Module A')).dy;
+      final yB = tester.getTopLeft(find.text('Module B')).dy;
       expect(yA, lessThan(yB));
 
-      // Y los hijos quedan indentados respecto a su módulo.
-      final xModulo = tester.getTopLeft(find.text('Módulo A')).dx;
-      final xHijo = tester.getTopLeft(find.text('Tópico A1')).dx;
-      expect(xHijo, greaterThan(xModulo));
+      // And the children end up indented relative to their module.
+      final xModule = tester.getTopLeft(find.text('Module A')).dx;
+      final xChild = tester.getTopLeft(find.text('Topic A1')).dx;
+      expect(xChild, greaterThan(xModule));
     });
 
-    testWidgets('los tres estados son visualmente distinguibles',
+    testWidgets('the three states are visually distinguishable',
         (tester) async {
       repo.topics = _placeholders;
-      await _montar(tester);
+      await _mount(tester);
 
-      // Completado, disponible y bloqueado, cada uno con su leyenda y su ícono.
-      // Se distinguen por forma además de por color.
-      expect(find.text('Completado'), findsWidgets);
-      expect(find.text('Disponible'), findsWidgets);
-      expect(find.text('Bloqueado'), findsWidgets);
+      // Completed, available and locked, each with its label and its icon.
+      // They are told apart by shape as well as by color.
+      expect(find.text('Completed'), findsWidgets);
+      expect(find.text('Available'), findsWidgets);
+      expect(find.text('Locked'), findsWidgets);
 
       expect(find.byIcon(Icons.check_circle), findsWidgets);
       expect(find.byIcon(Icons.play_circle_outline), findsWidgets);
       expect(find.byIcon(Icons.lock_outline), findsWidgets);
     });
 
-    testWidgets('hay un solo tópico disponible y los bloqueados no responden '
-        'al tap', (tester) async {
+    testWidgets('there is a single available topic and the locked ones do not '
+        'respond to a tap', (tester) async {
       repo.topics = _placeholders;
-      final tocados = <String>[];
+      final tapped = <String>[];
 
-      await _montar(tester);
+      await _mount(tester);
 
-      // Se monta el organismo suelto para poder pasarle el callback.
+      // The organism is mounted on its own so the callback can be passed in.
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
               child: RoadmapTree(
                 roots: roadmapTree.value,
-                onTopicTap: (n) => tocados.add(n.id),
+                onTopicTap: (n) => tapped.add(n.id),
               ),
             ),
           ),
@@ -159,99 +159,100 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // A1 está completado, A2 es el disponible, B1 está bloqueado.
-      await tester.tap(find.text('Tópico B1'));
+      // A1 is completed, A2 is the available one, B1 is locked.
+      await tester.tap(find.text('Topic B1'));
       await tester.pumpAndSettle();
-      expect(tocados, isEmpty, reason: 'un bloqueado no debe ser accionable');
+      expect(tapped, isEmpty, reason: 'a locked one must not be actionable');
 
-      await tester.tap(find.text('Tópico A2'));
+      await tester.tap(find.text('Topic A2'));
       await tester.pumpAndSettle();
-      expect(tocados, ['Tópico A2']);
+      expect(tapped, ['Topic A2']);
     });
   });
 
-  group('Porcentaje de avance', () {
-    testWidgets('calcula sobre las hojas completadas', (tester) async {
+  group('Progress percentage', () {
+    testWidgets('it is computed over the completed leaves', (tester) async {
       repo.topics = _placeholders;
-      await _montar(tester);
+      await _mount(tester);
 
-      // 3 hojas (A1, A2, B1), una completada → 33%.
+      // 3 leaves (A1, A2, B1), one completed → 33%.
       expect(roadmapLeaves.value, hasLength(3));
       expect(roadmapCompletedCount.value, 1);
-      expect(find.textContaining('33% completado'), findsOneWidget);
-      expect(find.textContaining('1 de 3 tópicos'), findsOneWidget);
+      expect(find.textContaining('33% complete'), findsOneWidget);
+      expect(find.textContaining('1 of 3 topics'), findsOneWidget);
     });
 
-    testWidgets('con todo completado llega al 100%', (tester) async {
+    testWidgets('with everything completed it reaches 100%', (tester) async {
       repo.topics = [
-        _nodo('Módulo A', sortOrder: 1),
-        _nodo('A1', parentId: 'Módulo A', sortOrder: 1, isCompleted: true),
-        _nodo('A2', parentId: 'Módulo A', sortOrder: 2, isCompleted: true),
+        _node('Module A', sortOrder: 1),
+        _node('A1', parentId: 'Module A', sortOrder: 1, isCompleted: true),
+        _node('A2', parentId: 'Module A', sortOrder: 2, isCompleted: true),
       ];
-      await _montar(tester);
+      await _mount(tester);
 
-      expect(find.textContaining('100% completado'), findsOneWidget);
-      expect(find.text('Bloqueado'), findsNothing);
+      expect(find.textContaining('100% complete'), findsOneWidget);
+      expect(find.text('Locked'), findsNothing);
     });
   });
 
-  group('Estado vacío', () {
-    testWidgets('sin tópicos no muestra pantalla en blanco ni error',
+  group('Empty state', () {
+    testWidgets('with no topics it shows neither a blank screen nor an error',
         (tester) async {
-      // Es el caso real hoy para backend e infrastructure.
+      // It is the real case today for backend and infrastructure.
       repo.topics = const [];
-      await _montar(tester);
+      await _mount(tester);
 
       expect(roadmapIsEmpty.value, isTrue);
       expect(find.byType(RoadmapEmptyState), findsOneWidget);
       expect(
-        find.textContaining('Tu ruta de Front-end se está armando'),
+        find.textContaining('Your Front-end path is being built'),
         findsOneWidget,
       );
       expect(find.byType(RoadmapErrorState), findsNothing);
-      // Y no se muestra un 0% que parecería un fracaso.
-      expect(find.textContaining('% completado'), findsNothing);
+      // And it does not show a 0% that would look like a failure.
+      expect(find.textContaining('% complete'), findsNothing);
     });
   });
 
-  group('Error de carga', () {
-    testWidgets('muestra el mensaje traducido y permite reintentar',
+  group('Load error', () {
+    testWidgets('it shows the translated message and allows retrying',
         (tester) async {
-      repo.fallo = const AuthFailure(
+      repo.failure = const AuthFailure(
         AuthFailureKind.network,
         technicalDetail: 'SocketException: Failed host lookup',
       );
 
-      await _montar(tester);
+      await _mount(tester);
 
       expect(find.byType(RoadmapErrorState), findsOneWidget);
-      expect(find.textContaining('No pudimos conectarnos'), findsOneWidget);
-      // Nada del error crudo a la vista.
+      expect(find.textContaining("We couldn't connect"), findsOneWidget);
+      // Nothing of the raw error in sight.
       expect(find.textContaining('SocketException'), findsNothing);
 
-      // El reintento vuelve a pedir los datos; esta vez con éxito.
-      repo.fallo = null;
+      // The retry asks for the data again; this time successfully.
+      repo.failure = null;
       repo.topics = _placeholders;
-      await tester.tap(find.text('Reintentar'));
+      await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
 
-      expect(repo.llamadas, 2);
+      expect(repo.calls, 2);
       expect(find.byType(RoadmapErrorState), findsNothing);
-      expect(find.text('Módulo A'), findsOneWidget);
+      expect(find.text('Module A'), findsOneWidget);
     });
   });
 
-  group('Sin track', () {
-    testWidgets('un perfil sin track no rompe la pantalla', (tester) async {
+  group('Without a track', () {
+    testWidgets('a profile without a track does not break the screen',
+        (tester) async {
       currentProfile.value = const UserProfile(
         id: 'u1',
         email: 'ana@example.com',
       );
 
-      await _montar(tester);
+      await _mount(tester);
 
-      // No se llamó al repositorio y se muestra el estado vacío.
-      expect(repo.llamadas, 0);
+      // The repository was not called and the empty state is shown.
+      expect(repo.calls, 0);
       expect(find.byType(RoadmapEmptyState), findsOneWidget);
     });
   });

@@ -1,9 +1,9 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Datos editoriales de un track, tal como vienen de la tabla `tracks`: el
-// título y la descripción que se muestran en las cards del paso 2 y del
-// cuestionario guía. El enum [RoadmapTrack] identifica el track; esta entidad
-// le cuelga el contenido.
+// Editorial data of a track, as it comes from the `tracks` table: the title
+// and description shown in the cards of step 2 and of the guided quiz. The
+// [RoadmapTrack] enum identifies the track; this entity hangs the content
+// off it.
 
 import 'roadmap_track.dart';
 
@@ -17,12 +17,12 @@ class Track {
 
   final RoadmapTrack id;
 
-  /// Nombre visible, en español, tal como está sembrado en la base.
+  /// Visible name, as seeded in the database.
   final String name;
   final String description;
 
-  /// Nombre del ícono de Material que le corresponde. Es texto y no un
-  /// `IconData` porque `domain` no puede importar Flutter; la capa
-  /// Presentation lo resuelve.
+  /// Name of the matching Material icon. It is text and not an `IconData`
+  /// because `domain` cannot import Flutter; the Presentation layer resolves
+  /// it.
   final String? iconName;
 }

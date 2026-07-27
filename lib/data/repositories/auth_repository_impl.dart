@@ -1,14 +1,14 @@
-// Capa Data: Implementación concreta del contrato AuthRepository contra
+// Data layer: Concrete implementation of the AuthRepository contract against
 // Supabase Auth.
 //
-// Toma el SupabaseClient por constructor —lo inyecta getIt— y nunca llama a
-// Supabase.instance.client.
+// It takes the SupabaseClient through the constructor —getIt injects it—
+// and never calls Supabase.instance.client.
 //
-// Su otra responsabilidad es traducir: ninguna excepción del SDK sale de esta
-// clase. Todo lo que falla sale como AuthFailure, con un caso de
-// AuthFailureKind que la capa Presentation convierte en un mensaje en español.
-// Es lo que permite cumplir «ningún error crudo de Supabase a la vista» sin
-// que presentation importe supabase_flutter.
+// Its other responsibility is translating: no SDK exception leaves this class.
+// Everything that fails comes out as an AuthFailure, with an AuthFailureKind
+// case that the Presentation layer turns into a message for the user. That is
+// what makes it possible to honour "no raw Supabase error in sight" without
+// presentation importing supabase_flutter.
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
@@ -27,31 +27,33 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     String? displayName,
   }) {
-    return _traducir(() async {
-      final respuesta = await _client.auth.signUp(
+    return _translate(() async {
+      final response = await _client.auth.signUp(
         email: email,
         password: password,
-        // Lo lee el trigger handle_new_user() para llenar
+        // The handle_new_user() trigger reads it to fill
         // profiles.display_name.
         data: displayName == null || displayName.isEmpty
             ? null
             : <String, dynamic>{'display_name': displayName},
       );
 
-      // Con la protección contra enumeración de correos activada, registrar un
-      // correo que ya existe NO devuelve error: devuelve un usuario con la
-      // lista de identidades vacía. Sin este chequeo la UI diría «revisá tu
-      // correo» a alguien que ya tiene cuenta y que nunca va a recibir nada.
-      final identidades = respuesta.user?.identities;
-      if (identidades != null && identidades.isEmpty) {
+      // With email enumeration protection enabled, signing up with an email
+      // that already exists does NOT return an error: it returns a user with
+      // an empty identity list. Without this check the UI would say "check
+      // your email" to someone who already has an account and will never
+      // receive anything.
+      final identities = response.user?.identities;
+      if (identities != null && identities.isEmpty) {
         throw const AuthFailure(AuthFailureKind.emailAlreadyRegistered);
       }
 
-      // Con mailer_autoconfirm en false esto es lo normal: usuario creado, sin
-      // sesión, esperando que confirme el correo. Es éxito, no fallo.
+      // With mailer_autoconfirm set to false this is the normal path: user
+      // created, no session, waiting for the email confirmation. It is
+      // success, not failure.
       return AuthResult(
-        session: _aSesion(respuesta.session),
-        requiresEmailConfirmation: respuesta.session == null,
+        session: _toSession(response.session),
+        requiresEmailConfirmation: response.session == null,
       );
     });
   }
@@ -61,92 +63,94 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
   }) {
-    return _traducir(() async {
-      final respuesta = await _client.auth.signInWithPassword(
+    return _translate(() async {
+      final response = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
-      return AuthResult(session: _aSesion(respuesta.session));
+      return AuthResult(session: _toSession(response.session));
     });
   }
 
-  /// Reservado para el issue #15 (`fase:post-mvp`).
+  /// Reserved for issue #15 (`fase:post-mvp`).
   ///
-  /// Lanza `UnimplementedError` a propósito, y no un `AuthFailure`: no es un
-  /// fallo de ejecución que la UI deba mostrar, es código que todavía no
-  /// existe. La pantalla de login deja el botón de Google deshabilitado, así
-  /// que este camino no se alcanza desde la interfaz.
+  /// It throws `UnimplementedError` on purpose, and not an `AuthFailure`: it
+  /// is not a runtime failure the UI should show, it is code that does not
+  /// exist yet. The login screen keeps the Google button disabled, so this
+  /// path is not reachable from the interface.
   @override
   Future<AuthResult> signInWithGoogle() async {
     throw UnimplementedError(
-      'Inicio de sesión con Google: issue #15 (post-MVP)',
+      'Sign in with Google: issue #15 (post-MVP)',
     );
   }
 
   @override
   Future<void> signOut() {
-    return _traducir(() => _client.auth.signOut());
+    return _translate(() => _client.auth.signOut());
   }
 
   @override
   Future<void> resendConfirmationEmail({required String email}) {
-    return _traducir(
+    return _translate(
       () => _client.auth.resend(type: sb.OtpType.signup, email: email),
     );
   }
 
   @override
-  AuthSession? get currentSession => _aSesion(_client.auth.currentSession);
+  AuthSession? get currentSession => _toSession(_client.auth.currentSession);
 
   @override
   Stream<AuthSession?> get sessionChanges =>
-      _client.auth.onAuthStateChange.map((estado) => _aSesion(estado.session));
+      _client.auth.onAuthStateChange.map((state) => _toSession(state.session));
 
   // ---------------------------------------------------------------------------
-  // Traducción
+  // Translation
   // ---------------------------------------------------------------------------
 
-  AuthSession? _aSesion(sb.Session? sesion) {
-    final usuario = sesion?.user;
-    if (sesion == null || usuario == null) return null;
+  AuthSession? _toSession(sb.Session? session) {
+    final user = session?.user;
+    if (session == null || user == null) return null;
 
-    final confirmado = usuario.emailConfirmedAt;
+    final confirmedAt = user.emailConfirmedAt;
 
     return AuthSession(
-      userId: usuario.id,
-      email: usuario.email ?? '',
+      userId: user.id,
+      email: user.email ?? '',
       emailConfirmedAt:
-          confirmado == null ? null : DateTime.tryParse(confirmado),
+          confirmedAt == null ? null : DateTime.tryParse(confirmedAt),
     );
   }
 
-  /// Corre [accion] y convierte cualquier excepción en un [AuthFailure].
-  Future<T> _traducir<T>(Future<T> Function() accion) async {
+  /// Runs [action] and converts any exception into an [AuthFailure].
+  Future<T> _translate<T>(Future<T> Function() action) async {
     try {
-      return await accion();
+      return await action();
     } on AuthFailure {
-      // Ya está traducida: la lanza signUp para el correo repetido.
+      // Already translated: signUp throws it for the duplicated email.
       rethrow;
     } on sb.AuthException catch (e) {
-      throw AuthFailure(_clasificar(e), technicalDetail: e.message);
+      throw AuthFailure(_classify(e), technicalDetail: e.message);
     } on sb.PostgrestException catch (e) {
       throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.message);
     } catch (e) {
-      // Sin red, el SDK deja escapar excepciones de socket o de http que no
-      // son AuthException. No se pueden capturar por tipo sin importar
-      // dart:io, que no compila en web.
+      // Without network, the SDK lets socket or http exceptions escape that
+      // are not AuthException. They cannot be caught by type without
+      // importing dart:io, which does not compile on web.
       throw AuthFailure(
-        _pareceDeRed(e) ? AuthFailureKind.network : AuthFailureKind.unknown,
+        _looksLikeNetwork(e)
+            ? AuthFailureKind.network
+            : AuthFailureKind.unknown,
         technicalDetail: e.toString(),
       );
     }
   }
 
-  /// Mapea el error de Supabase Auth a un caso del dominio.
+  /// Maps the Supabase Auth error to a domain case.
   ///
-  /// Decide por `code`, que es estable, y solo se cae al texto del mensaje
-  /// cuando el backend no lo manda.
-  AuthFailureKind _clasificar(sb.AuthException e) {
+  /// It decides by `code`, which is stable, and only falls back to the message
+  /// text when the backend does not send it.
+  AuthFailureKind _classify(sb.AuthException e) {
     switch (e.code) {
       case 'invalid_credentials':
       case 'invalid_grant':
@@ -166,27 +170,27 @@ class AuthRepositoryImpl implements AuthRepository {
         return AuthFailureKind.tooManyRequests;
     }
 
-    final mensaje = e.message.toLowerCase();
-    if (mensaje.contains('invalid login credentials')) {
+    final message = e.message.toLowerCase();
+    if (message.contains('invalid login credentials')) {
       return AuthFailureKind.invalidCredentials;
     }
-    if (mensaje.contains('not confirmed')) {
+    if (message.contains('not confirmed')) {
       return AuthFailureKind.emailNotConfirmed;
     }
-    if (mensaje.contains('already registered')) {
+    if (message.contains('already registered')) {
       return AuthFailureKind.emailAlreadyRegistered;
     }
-    if (mensaje.contains('password')) return AuthFailureKind.weakPassword;
+    if (message.contains('password')) return AuthFailureKind.weakPassword;
     return AuthFailureKind.unknown;
   }
 
-  bool _pareceDeRed(Object e) {
-    final texto = e.toString().toLowerCase();
-    return texto.contains('socketexception') ||
-        texto.contains('clientexception') ||
-        texto.contains('failed host lookup') ||
-        texto.contains('connection') ||
-        texto.contains('timeout') ||
-        texto.contains('xmlhttprequest');
+  bool _looksLikeNetwork(Object e) {
+    final text = e.toString().toLowerCase();
+    return text.contains('socketexception') ||
+        text.contains('clientexception') ||
+        text.contains('failed host lookup') ||
+        text.contains('connection') ||
+        text.contains('timeout') ||
+        text.contains('xmlhttprequest');
   }
 }

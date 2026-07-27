@@ -1,7 +1,7 @@
-// Capa Domain: Caso de uso que encapsula una regla de negocio de la app.
+// Domain layer: Use case encapsulating one business rule of the app.
 //
-// Cierre del onboarding: persiste nivel, track y meta, y marca el perfil como
-// completado.
+// Closing of the onboarding: it persists level, track and goal, and marks the
+// profile as completed.
 
 import '../entities/experience_level.dart';
 import '../entities/learning_goal.dart';
@@ -14,12 +14,13 @@ class SubmitOnboardingUseCase {
 
   final OnboardingRepository repository;
 
-  /// El track es obligatorio: el tipo lo hace imposible de omitir, que es
-  /// justo la garantía que pide el CA 1.3 (sin track no hay roadmap). Por eso
-  /// «Omitir» está prohibido en el paso 2 del onboarding.
+  /// The track is required: the type makes it impossible to omit, which is
+  /// exactly the guarantee AC 1.3 asks for (no track, no roadmap). That is
+  /// why "Skip" is forbidden in onboarding step 2.
   ///
-  /// El nivel y la meta llegan nulables porque sus pasos sí se pueden omitir, y
-  /// omitir se guarda como `null`, no como un valor por defecto inventado.
+  /// The level and the goal arrive nullable because their steps can indeed be
+  /// skipped, and skipping is stored as `null`, not as a made-up default
+  /// value.
   Future<UserProfile> call({
     required RoadmapTrack track,
     ExperienceLevel? experienceLevel,

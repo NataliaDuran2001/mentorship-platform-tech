@@ -1,52 +1,52 @@
-// Capa Domain: Contrato (interfaz) del repositorio de autenticación.
-// Define QUÉ se puede hacer, no CÓMO. La implementación vive en `data`.
+// Domain layer: Contract (interface) of the authentication repository.
+// It defines WHAT can be done, not HOW. The implementation lives in `data`.
 //
-// Todos los métodos que fallan lanzan `AuthFailure` (nunca la excepción cruda
-// del backend). La implementación real es del issue #9.
+// Every method that fails throws `AuthFailure` (never the raw backend
+// exception). The real implementation belongs to issue #9.
 
 import '../entities/auth_session.dart';
 
 abstract class AuthRepository {
-  /// Registra una cuenta nueva con correo y contraseña.
+  /// Registers a new account with email and password.
   ///
-  /// Con la confirmación por correo activa el resultado trae `session` en
-  /// `null` y `requiresEmailConfirmation` en `true`. Eso es éxito, no fallo.
+  /// With email confirmation enabled the result carries `session` as `null`
+  /// and `requiresEmailConfirmation` as `true`. That is success, not failure.
   ///
-  /// Lanza `AuthFailure` con `emailAlreadyRegistered`, `weakPassword` o
-  /// `invalidEmail` según corresponda.
+  /// Throws `AuthFailure` with `emailAlreadyRegistered`, `weakPassword` or
+  /// `invalidEmail` as appropriate.
   Future<AuthResult> signUp({
     required String email,
     required String password,
     String? displayName,
   });
 
-  /// Inicia sesión con correo y contraseña.
+  /// Signs in with email and password.
   ///
-  /// Lanza `AuthFailure` con `invalidCredentials` si no coinciden y con
-  /// `emailNotConfirmed` si la cuenta existe pero no está confirmada.
+  /// Throws `AuthFailure` with `invalidCredentials` if they do not match and
+  /// with `emailNotConfirmed` if the account exists but is unconfirmed.
   Future<AuthResult> signInWithEmail({
     required String email,
     required String password,
   });
 
-  /// Inicia sesión con Google.
+  /// Signs in with Google.
   ///
-  /// Reservado para el issue #15 (`fase:post-mvp`). El MVP es email/password,
-  /// así que la implementación lanza `UnimplementedError`. Está en el contrato
-  /// desde ahora para que el #15 sea puramente aditivo.
+  /// Reserved for issue #15 (`fase:post-mvp`). The MVP is email/password, so
+  /// the implementation throws `UnimplementedError`. It is in the contract
+  /// from now on so that #15 is purely additive.
   Future<AuthResult> signInWithGoogle();
 
-  /// Cierra la sesión actual. Idempotente: sin sesión no hace nada.
+  /// Closes the current session. Idempotent: with no session it does nothing.
   Future<void> signOut();
 
-  /// Reenvía el correo de confirmación de una cuenta sin confirmar.
+  /// Resends the confirmation email of an unconfirmed account.
   Future<void> resendConfirmationEmail({required String email});
 
-  /// Sesión vigente, o `null` si no hay. Lectura sincrónica: el SDK restaura
-  /// la sesión persistida antes de que arranque la UI.
+  /// Current session, or `null` if there is none. Synchronous read: the SDK
+  /// restores the persisted session before the UI starts.
   AuthSession? get currentSession;
 
-  /// Cambios de sesión: login, logout, refresco de token y confirmación de
-  /// correo. Emite `null` cuando la sesión se cierra.
+  /// Session changes: login, logout, token refresh and email confirmation.
+  /// Emits `null` when the session is closed.
   Stream<AuthSession?> get sessionChanges;
 }

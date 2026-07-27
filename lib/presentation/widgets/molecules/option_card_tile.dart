@@ -1,10 +1,11 @@
-// Atomic Design (Molécula): Combina átomos para formar un bloque funcional.
-// La opción horizontal del onboarding: recuadro de ícono + título + descripción.
-// Es la fila del paso 1 (nivel de experiencia).
+// Atomic Design (Molecule): Combines atoms into a functional block.
+// The onboarding's horizontal option: icon box + title + description.
+// It's the step 1 row (experience level).
 //
-// No sabe en qué paso está, ni si el paso permite omitir, ni qué opción es la
-// correcta: recibe [isSelected] y avisa por [onTap]. Eso es lo que permite que
-// los issues #11 y #12 la reutilicen sin duplicarla.
+// It doesn't know which step it's on, or whether the step allows skipping, or
+// which option is the right one: it takes [isSelected] and reports back
+// through [onTap]. That's what lets issues #11 and #12 reuse it without
+// duplicating it.
 
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,7 @@ class OptionCardTile extends StatelessWidget {
   final IconData icon;
   final String title;
 
-  /// Segunda línea, opcional: el paso 2 muestra solo el título.
+  /// Second line, optional: step 2 shows only the title.
   final String? description;
 
   final bool isSelected;

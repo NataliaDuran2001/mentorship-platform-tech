@@ -1,8 +1,8 @@
-// Capa Data: Implementación concreta del contrato RoadmapRepository contra las
-// tablas `tracks`, `topics` y `user_progress` (issue #7).
+// Data layer: Concrete implementation of the RoadmapRepository contract
+// against the `tracks`, `topics` and `user_progress` tables (issue #7).
 //
-// Devuelve los tópicos en **lista plana**, como manda el contrato: la jerarquía
-// y la secuencialidad las deriva GetRoadmapTreeUseCase.
+// It returns the topics as a **flat list**, as the contract mandates: the
+// hierarchy and the sequencing are derived by GetRoadmapTreeUseCase.
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
@@ -18,27 +18,27 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
 
   final sb.SupabaseClient _client;
 
-  static const String _tablaTracks = 'tracks';
-  static const String _tablaTopics = 'topics';
-  static const String _tablaProgreso = 'user_progress';
+  static const String _tracksTable = 'tracks';
+  static const String _topicsTable = 'topics';
+  static const String _progressTable = 'user_progress';
 
   @override
   Future<List<Track>> listTracks() {
-    return _traducir(() async {
-      final filas = await _client
-          .from(_tablaTracks)
+    return _translate(() async {
+      final rows = await _client
+          .from(_tracksTable)
           .select('id, name, description, icon_name')
           .order('sort_order');
 
-      return filas
-          .map((fila) {
-            final id = RoadmapTrack.fromSlug(fila['id'] as String?);
+      return rows
+          .map((row) {
+            final id = RoadmapTrack.fromSlug(row['id'] as String?);
             if (id == null) return null;
             return Track(
               id: id,
-              name: fila['name'] as String? ?? '',
-              description: fila['description'] as String? ?? '',
-              iconName: fila['icon_name'] as String?,
+              name: row['name'] as String? ?? '',
+              description: row['description'] as String? ?? '',
+              iconName: row['icon_name'] as String?,
             );
           })
           .whereType<Track>()
@@ -48,22 +48,22 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
 
   @override
   Future<List<TopicNode>> listTopics(RoadmapTrack track) {
-    return _traducir(() async {
-      final filas = await _client
-          .from(_tablaTopics)
+    return _translate(() async {
+      final rows = await _client
+          .from(_topicsTable)
           .select(TopicModel.columns)
           .eq('track_id', track.slug)
           .order('sort_order');
 
-      // Dos consultas y no un join: `user_progress` está protegida por RLS a las
-      // filas de la usuaria, así que traer solo los tópicos completados es una
-      // lista corta y evita que el join arrastre el avance de nadie más.
-      final completados = await _idsCompletados();
+      // Two queries and not a join: `user_progress` is protected by RLS to the
+      // rows of the user, so fetching only the completed topics is a short
+      // list and keeps the join from dragging in anyone else's progress.
+      final completed = await _completedIds();
 
-      return filas
+      return rows
           .map(
-            (fila) => TopicModel.fromJson(fila).toEntity(
-              isCompleted: completados.contains(fila['id'] as String),
+            (row) => TopicModel.fromJson(row).toEntity(
+              isCompleted: completed.contains(row['id'] as String),
             ),
           )
           .whereType<TopicNode>()
@@ -71,37 +71,37 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
     });
   }
 
-  Future<Set<String>> _idsCompletados() async {
+  Future<Set<String>> _completedIds() async {
     final id = _client.auth.currentUser?.id;
     if (id == null) return <String>{};
 
-    final filas = await _client
-        .from(_tablaProgreso)
+    final rows = await _client
+        .from(_progressTable)
         .select('topic_id')
         .eq('user_id', id)
         .eq('status', 'completed');
 
-    return filas.map((fila) => fila['topic_id'] as String).toSet();
+    return rows.map((row) => row['topic_id'] as String).toSet();
   }
 
-  /// Traduce los errores del backend a AuthFailure, igual que los otros
-  /// repositorios: presentation no importa supabase_flutter.
-  Future<T> _traducir<T>(Future<T> Function() accion) async {
+  /// Translates the backend errors into AuthFailure, just like the other
+  /// repositories: presentation does not import supabase_flutter.
+  Future<T> _translate<T>(Future<T> Function() action) async {
     try {
-      return await accion();
+      return await action();
     } on sb.PostgrestException catch (e) {
       throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.message);
     } catch (e) {
-      final texto = e.toString().toLowerCase();
-      final deRed = texto.contains('socketexception') ||
-          texto.contains('clientexception') ||
-          texto.contains('failed host lookup') ||
-          texto.contains('connection') ||
-          texto.contains('timeout') ||
-          texto.contains('xmlhttprequest');
+      final text = e.toString().toLowerCase();
+      final isNetwork = text.contains('socketexception') ||
+          text.contains('clientexception') ||
+          text.contains('failed host lookup') ||
+          text.contains('connection') ||
+          text.contains('timeout') ||
+          text.contains('xmlhttprequest');
 
       throw AuthFailure(
-        deRed ? AuthFailureKind.network : AuthFailureKind.unknown,
+        isNetwork ? AuthFailureKind.network : AuthFailureKind.unknown,
         technicalDetail: e.toString(),
       );
     }

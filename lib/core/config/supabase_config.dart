@@ -1,16 +1,18 @@
-// Capa Core: Configuración transversal de Supabase (credenciales e inicialización).
-// Ninguna otra capa debe llamar a Supabase.initialize ni leer las credenciales
-// directamente; el acceso al cliente se hace por get_it (ver di/injection.dart).
+// Core layer: Cross-cutting Supabase configuration (credentials and
+// initialization). No other layer should call Supabase.initialize nor read the
+// credentials directly; access to the client goes through get_it (see
+// di/injection.dart).
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseConfig {
   const SupabaseConfig._();
 
-  // La URL y la clave publishable son valores públicos por diseño: el cliente
-  // los expone en cualquier build. La protección real de los datos vive en las
-  // políticas RLS de la base de datos, no en ocultar esta clave.
-  // Se pueden sobreescribir por entorno sin tocar el código, por ejemplo:
+  // The URL and the publishable key are public values by design: the client
+  // exposes them in any build. The real protection of the data lives in the
+  // RLS policies of the database, not in hiding this key.
+  // They can be overridden per environment without touching the code, for
+  // example:
   //   fvm flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
@@ -22,11 +24,11 @@ class SupabaseConfig {
     defaultValue: 'sb_publishable_bAzEua7Wl02VoNofOuI7_g_iSXKUIwv',
   );
 
-  /// Arranca el SDK de Supabase. Debe llamarse en main() antes de runApp().
+  /// Boots the Supabase SDK. Must be called in main() before runApp().
   static Future<void> initialize() async {
     await Supabase.initialize(url: url, publishableKey: publishableKey);
   }
 
-  /// Cliente ya inicializado. Solo para el registro en get_it.
+  /// Already initialized client. Only for the get_it registration.
   static SupabaseClient get client => Supabase.instance.client;
 }

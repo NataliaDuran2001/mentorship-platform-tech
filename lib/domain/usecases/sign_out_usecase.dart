@@ -1,6 +1,6 @@
-// Capa Domain: Caso de uso que encapsula una regla de negocio de la app.
+// Domain layer: Use case encapsulating one business rule of the app.
 //
-// Cierre de sesión.
+// Sign-out.
 
 import '../repositories/auth_repository.dart';
 

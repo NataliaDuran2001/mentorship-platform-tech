@@ -1,11 +1,11 @@
-// Atomic Design (Organismo): Conjunto de moléculas y átomos que forman
-// una sección funcional completa e independiente dentro de una página.
+// Atomic Design (Organism): Set of molecules and atoms that form a complete,
+// self-contained functional section inside a page.
 //
-// Formulario de registro. Tiene dos caras, y la segunda existe porque la
-// confirmación por correo está activa (`mailer_autoconfirm: false`): un registro
-// exitoso NO devuelve sesión, así que la pantalla tiene que decir «revisá tu
-// correo» y ofrecer reenviarlo, en vez de dejar a la usuaria esperando algo que
-// no va a pasar.
+// Sign up form. It has two faces, and the second one exists because email
+// confirmation is on (`mailer_autoconfirm: false`): a successful sign up does
+// NOT return a session, so the screen has to say "check your email" and offer
+// to resend it, instead of leaving the user waiting for something that is not
+// going to happen.
 
 import 'package:flutter/material.dart';
 
@@ -43,7 +43,7 @@ class SignUpForm extends StatelessWidget {
           const SizedBox(height: AppConstants.defaultPadding),
         ],
         CustomInput(
-          hintText: 'Tu nombre (opcional)',
+          hintText: 'Your name (optional)',
           prefixIcon: Icons.person_outline,
           textInputAction: TextInputAction.next,
           autofillHints: const [AutofillHints.name],
@@ -51,7 +51,7 @@ class SignUpForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding),
         CustomInput(
-          hintText: 'Correo electrónico',
+          hintText: 'Email',
           prefixIcon: Icons.email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -60,7 +60,7 @@ class SignUpForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding),
         CustomInput(
-          hintText: 'Contraseña',
+          hintText: 'Password',
           prefixIcon: Icons.lock,
           obscureText: true,
           textInputAction: TextInputAction.done,
@@ -69,16 +69,16 @@ class SignUpForm extends StatelessWidget {
           onSubmitted: (_) => onSubmit(),
         ),
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        CustomButton(text: 'Crear cuenta', onPressed: onSubmit),
+        CustomButton(text: 'Create account', onPressed: onSubmit),
         const SizedBox(height: AppConstants.defaultPadding),
-        // Wrap y no Row: en pantallas angostas la pregunta y el enlace no
-        // caben en una línea y un Row desbordaría.
+        // Wrap and not Row: on narrow screens the question and the link do not
+        // fit in one line and a Row would overflow.
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              '¿Ya tenés cuenta?',
+              'Already have an account?',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -86,7 +86,7 @@ class SignUpForm extends StatelessWidget {
             ),
             TextButton(
               onPressed: onGoToLogin,
-              child: const Text('Ingresá'),
+              child: const Text('Sign in'),
             ),
           ],
         ),
@@ -95,7 +95,7 @@ class SignUpForm extends StatelessWidget {
   }
 }
 
-/// La segunda cara del registro: cuenta creada, falta confirmar el correo.
+/// The second face of sign up: account created, email still to be confirmed.
 class ConfirmationPending extends StatelessWidget {
   const ConfirmationPending({
     super.key,
@@ -110,7 +110,8 @@ class ConfirmationPending extends StatelessWidget {
   final VoidCallback onResend;
   final VoidCallback onGoToLogin;
 
-  /// El reenvío salió bien. Sin este feedback, tocar «reenviar» no se siente.
+  /// The resend went through. Without this feedback, tapping "resend" does not
+  /// feel like anything happened.
   final bool wasResent;
 
   final String? errorMessage;
@@ -122,13 +123,13 @@ class ConfirmationPending extends StatelessWidget {
       children: [
         AuthMessage(
           tone: AuthMessageTone.info,
-          message: 'Te enviamos un correo a $email. Abrí el enlace que está '
-              'adentro para confirmar tu cuenta y después ingresá.',
+          message: 'We sent an email to $email. Open the link inside to '
+              'confirm your account, then sign in.',
         ),
         if (wasResent) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            'Correo reenviado.',
+            'Email resent.',
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -140,11 +141,11 @@ class ConfirmationPending extends StatelessWidget {
           AuthMessage(message: errorMessage!),
         ],
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        CustomButton(text: 'Ir a ingresar', onPressed: onGoToLogin),
+        CustomButton(text: 'Go to sign in', onPressed: onGoToLogin),
         const SizedBox(height: AppConstants.spacingSm),
         TextButton(
           onPressed: onResend,
-          child: const Text('No me llegó, reenviar el correo'),
+          child: const Text("It didn't arrive, resend the email"),
         ),
       ],
     );

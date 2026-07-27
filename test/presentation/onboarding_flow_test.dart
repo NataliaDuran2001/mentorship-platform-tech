@@ -1,11 +1,11 @@
-// Pruebas del flujo de onboarding directo (issue #11).
+// Tests of the direct onboarding flow (issue #11).
 //
-// Lo que se prueba es el comportamiento del recorrido, que es donde está el
-// riesgo: qué pasos hay, cuál se puede omitir, qué conserva al volver, qué
-// muestra el contador y qué se persiste al terminar.
+// What is tested is the behavior of the journey, which is where the risk is:
+// which steps there are, which one can be skipped, what it keeps when going
+// back, what the counter shows and what gets persisted at the end.
 //
-// El estado del onboarding y el de auth son globales al proceso, así que cada
-// prueba los reinicia en setUp.
+// The onboarding state and the auth state are global to the process, so every
+// test resets them in setUp.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,13 +25,13 @@ import 'package:aspire_app/presentation/state/onboarding_state.dart';
 import 'package:aspire_app/presentation/utils/onboarding_labels.dart';
 import 'package:aspire_app/presentation/widgets/pages/onboarding_page.dart';
 
-/// Registra qué se guardó, para poder afirmar sobre las cuatro columnas.
+/// Records what was saved, so we can assert on the four columns.
 class SpyOnboardingRepository implements OnboardingRepository {
-  RoadmapTrack? trackGuardado;
-  ExperienceLevel? nivelGuardado;
-  LearningGoal? metaGuardada;
-  int llamadas = 0;
-  AuthFailure? fallo;
+  RoadmapTrack? savedTrack;
+  ExperienceLevel? savedLevel;
+  LearningGoal? savedGoal;
+  int calls = 0;
+  AuthFailure? failure;
 
   @override
   Future<UserProfile> completeOnboarding({
@@ -39,12 +39,12 @@ class SpyOnboardingRepository implements OnboardingRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
   }) async {
-    llamadas++;
-    if (fallo != null) throw fallo!;
+    calls++;
+    if (failure != null) throw failure!;
 
-    trackGuardado = track;
-    nivelGuardado = experienceLevel;
-    metaGuardada = learningGoal;
+    savedTrack = track;
+    savedLevel = experienceLevel;
+    savedGoal = learningGoal;
 
     return UserProfile(
       id: 'u1',
@@ -67,9 +67,9 @@ class SpyOnboardingRepository implements OnboardingRepository {
   Future<void> saveAnswer(OnboardingAnswer answer) async {}
 }
 
-/// Monta la página sola, con el tema por defecto y una ventana amplia.
-Future<void> _montar(WidgetTester tester, {Size? tamano}) async {
-  tester.view.physicalSize = tamano ?? const Size(1200, 2400);
+/// Mounts the page on its own, with the default theme and a wide window.
+Future<void> _mount(WidgetTester tester, {Size? size}) async {
+  tester.view.physicalSize = size ?? const Size(1200, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -77,8 +77,8 @@ Future<void> _montar(WidgetTester tester, {Size? tamano}) async {
   await tester.pumpWidget(const MaterialApp(home: OnboardingPage()));
 }
 
-/// Espera el auto-avance de 400 ms.
-Future<void> _esperarAutoAvance(WidgetTester tester) =>
+/// Waits for the 400 ms auto-advance.
+Future<void> _waitForAutoAdvance(WidgetTester tester) =>
     tester.pumpAndSettle(const Duration(milliseconds: 600));
 
 void main() {
@@ -96,41 +96,45 @@ void main() {
 
   tearDown(cancelOnboardingTimers);
 
-  group('Recorrido y contador', () {
-    testWidgets('arranca en el paso 1 de 4', (tester) async {
-      await _montar(tester);
+  group('Journey and counter', () {
+    testWidgets('it starts on step 1 of 4', (tester) async {
+      await _mount(tester);
 
-      expect(find.text('PASO 1 DE 4'), findsOneWidget);
-      expect(find.text('¡Hola! ¿Cómo te identificás hoy?'), findsOneWidget);
-      // Los 3 niveles del prototipo, con sus textos exactos.
-      expect(find.text('Estudiante / Autodidacta'), findsOneWidget);
+      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      expect(
+        find.text('Hi! How would you describe yourself today?'),
+        findsOneWidget,
+      );
+      // The 3 levels of the prototype, with their exact texts.
+      expect(find.text('Student / Self-taught'), findsOneWidget);
       expect(find.text('Junior Developer'), findsOneWidget);
-      expect(find.text('Cambiando de Carrera'), findsOneWidget);
+      expect(find.text('Career Switcher'), findsOneWidget);
     });
 
-    testWidgets('elegir una opción avanza sola tras 400 ms', (tester) async {
-      await _montar(tester);
+    testWidgets('choosing an option advances on its own after 400 ms',
+        (tester) async {
+      await _mount(tester);
 
       await tester.tap(find.text('Junior Developer'));
       await tester.pump();
 
-      // Antes del temporizador sigue en el paso 1, con la opción marcada: es el
-      // feedback visual que la pausa existe para mostrar.
-      expect(find.text('PASO 1 DE 4'), findsOneWidget);
+      // Before the timer it is still on step 1, with the option marked: that
+      // is the visual feedback the pause exists to show.
+      expect(find.text('STEP 1 OF 4'), findsOneWidget);
       expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
 
-      await _esperarAutoAvance(tester);
+      await _waitForAutoAdvance(tester);
 
-      expect(find.text('PASO 2 DE 4'), findsOneWidget);
-      expect(find.text('¿Cuál es tu especialidad?'), findsOneWidget);
+      expect(find.text('STEP 2 OF 4'), findsOneWidget);
+      expect(find.text('What is your specialty?'), findsOneWidget);
     });
 
-    testWidgets('la barra de progreso refleja el total real de pasos',
+    testWidgets('the progress bar reflects the real total of steps',
         (tester) async {
-      await _montar(tester);
+      await _mount(tester);
       await tester.pumpAndSettle();
 
-      // Paso 1 de 4 → 25%, igual que el prototipo.
+      // Step 1 of 4 → 25%, same as the prototype.
       expect(
         tester
             .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
@@ -138,13 +142,13 @@ void main() {
         closeTo(0.25, 0.001),
       );
 
-      // Al entrar a la rama guiada el total pasa a 5 y la misma posición vale
-      // otra fracción.
+      // On entering the guided branch the total becomes 5 and the same
+      // position is worth a different fraction.
       usesGuidedQuiz.value = true;
       currentStepIndex.value = 0;
       await tester.pumpAndSettle();
 
-      expect(find.text('PASO 1 DE 5'), findsOneWidget);
+      expect(find.text('STEP 1 OF 5'), findsOneWidget);
       expect(
         tester
             .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
@@ -154,237 +158,239 @@ void main() {
     });
   });
 
-  group('Paso 2: especialidad', () {
-    testWidgets('ofrece los 3 tracks decididos más «Aún no lo sé»',
+  group('Step 2: specialty', () {
+    testWidgets("it offers the 3 decided tracks plus the I am not sure yet option",
         (tester) async {
       currentStepIndex.value = 1;
-      await _montar(tester);
+      await _mount(tester);
 
       expect(find.text('Front-end'), findsOneWidget);
       expect(find.text('Back-end'), findsOneWidget);
-      expect(find.text('Infraestructura'), findsOneWidget);
-      expect(find.text(opcionNoLoSe.label), findsOneWidget);
+      expect(find.text('Infrastructure'), findsOneWidget);
+      expect(find.text(notSureOption.label), findsOneWidget);
 
-      // Los tracks que el mockup ofrece pero el MVP no tiene.
+      // The tracks the mockup offers but the MVP does not have.
       expect(find.text('Mobile'), findsNothing);
       expect(find.text('UI / UX Design'), findsNothing);
     });
 
-    testWidgets('«Omitir» no está disponible acá, pero sí en los pasos 1 y 3',
+    testWidgets('"Skip" is not available here, but it is on steps 1 and 3',
         (tester) async {
-      // Paso 1: omitible.
-      await _montar(tester);
-      expect(find.text('Omitir'), findsOneWidget);
+      // Step 1: skippable.
+      await _mount(tester);
+      expect(find.text('Skip'), findsOneWidget);
 
-      // Paso 2: prohibido. Sin track no hay roadmap (CA 1.3).
+      // Step 2: forbidden. Without a track there is no roadmap (AC 1.3).
       currentStepIndex.value = 1;
       await tester.pumpAndSettle();
-      expect(find.text('Omitir'), findsNothing);
+      expect(find.text('Skip'), findsNothing);
 
-      // Paso 3: omitible otra vez.
+      // Step 3: skippable again.
       currentStepIndex.value = 2;
       await tester.pumpAndSettle();
-      expect(find.text('¿Cuál es tu meta principal?'), findsOneWidget);
-      expect(find.text('Omitir'), findsOneWidget);
+      expect(find.text('What is your main goal?'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
     });
 
-    testWidgets('«Continuar» está deshabilitado hasta elegir un track',
+    testWidgets('"Continue" is disabled until a track is chosen',
         (tester) async {
       currentStepIndex.value = 1;
-      await _montar(tester);
+      await _mount(tester);
 
-      final boton = find.widgetWithText(ElevatedButton, 'Continuar');
-      expect(tester.widget<ElevatedButton>(boton).onPressed, isNull);
+      final button = find.widgetWithText(ElevatedButton, 'Continue');
+      expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
 
       await tester.tap(find.text('Back-end'));
       await tester.pump();
 
-      expect(tester.widget<ElevatedButton>(boton).onPressed, isNotNull);
+      expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
 
-      // Deja correr el auto-avance: un temporizador pendiente al terminar la
-      // prueba hace fallar al framework.
-      await _esperarAutoAvance(tester);
+      // Let the auto-advance run: a pending timer when the test finishes makes
+      // the framework fail.
+      await _waitForAutoAdvance(tester);
     });
 
-    testWidgets('«Aún no lo sé» activa la rama guiada y el contador pasa a 5',
-        (tester) async {
+    testWidgets("The I am not sure yet option turns on the guided branch and the counter "
+        'goes to 5', (tester) async {
       currentStepIndex.value = 1;
-      await _montar(tester);
+      await _mount(tester);
 
-      await tester.tap(find.text(opcionNoLoSe.label));
-      await _esperarAutoAvance(tester);
+      await tester.tap(find.text(notSureOption.label));
+      await _waitForAutoAdvance(tester);
 
       expect(usesGuidedQuiz.value, isTrue);
       expect(selectedTrack.value, isNull);
       expect(totalSteps.value, 5);
       expect(currentStep.value, OnboardingStepId.quiz);
-      expect(find.text('PASO 3 DE 5'), findsOneWidget);
+      expect(find.text('STEP 3 OF 5'), findsOneWidget);
     });
   });
 
-  group('Regresar', () {
-    testWidgets('preserva lo ya seleccionado', (tester) async {
-      await _montar(tester);
+  group('Back', () {
+    testWidgets('it preserves what was already selected', (tester) async {
+      await _mount(tester);
 
       await tester.tap(find.text('Junior Developer'));
-      await _esperarAutoAvance(tester);
+      await _waitForAutoAdvance(tester);
       await tester.tap(find.text('Front-end'));
-      await _esperarAutoAvance(tester);
+      await _waitForAutoAdvance(tester);
 
-      expect(find.text('¿Cuál es tu meta principal?'), findsOneWidget);
+      expect(find.text('What is your main goal?'), findsOneWidget);
 
-      await tester.tap(find.text('Regresar'));
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
 
-      // Vuelve al paso 2 con Front-end todavía elegido.
-      expect(find.text('¿Cuál es tu especialidad?'), findsOneWidget);
+      // It goes back to step 2 with Front-end still chosen.
+      expect(find.text('What is your specialty?'), findsOneWidget);
       expect(selectedTrack.value, RoadmapTrack.frontend);
 
-      await tester.tap(find.text('Regresar'));
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
 
-      // Y al paso 1 con el nivel todavía elegido.
+      // And to step 1 with the level still chosen.
       expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
-      expect(find.text('PASO 1 DE 4'), findsOneWidget);
+      expect(find.text('STEP 1 OF 4'), findsOneWidget);
     });
 
-    testWidgets('volver desde el cuestionario guía reabre el paso del track',
+    testWidgets('going back from the guided quiz reopens the track step',
         (tester) async {
       currentStepIndex.value = 1;
-      await _montar(tester);
+      await _mount(tester);
 
-      await tester.tap(find.text(opcionNoLoSe.label));
-      await _esperarAutoAvance(tester);
+      await tester.tap(find.text(notSureOption.label));
+      await _waitForAutoAdvance(tester);
       expect(currentStep.value, OnboardingStepId.quiz);
 
-      await tester.tap(find.text('Regresar'));
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
 
-      // La rama se desactiva y el total vuelve a 4: la usuaria está
-      // reconsiderando su especialidad.
+      // The branch is turned off and the total goes back to 4: the user is
+      // reconsidering her specialty.
       expect(usesGuidedQuiz.value, isFalse);
       expect(totalSteps.value, 4);
       expect(currentStep.value, OnboardingStepId.track);
     });
 
-    testWidgets('en el primer paso no se ofrece «Regresar»', (tester) async {
-      await _montar(tester);
+    testWidgets('on the first step "Back" is not offered', (tester) async {
+      await _mount(tester);
 
-      final boton = find.widgetWithText(TextButton, 'Regresar');
-      expect(tester.widget<TextButton>(boton).onPressed, isNull);
+      final button = find.widgetWithText(TextButton, 'Back');
+      expect(tester.widget<TextButton>(button).onPressed, isNull);
     });
   });
 
-  group('Resumen y persistencia', () {
-    testWidgets('completar el flujo persiste nivel, track y meta',
+  group('Summary and persistence', () {
+    testWidgets('completing the flow persists level, track and goal',
         (tester) async {
-      await _montar(tester);
+      await _mount(tester);
 
       await tester.tap(find.text('Junior Developer'));
-      await _esperarAutoAvance(tester);
+      await _waitForAutoAdvance(tester);
       await tester.tap(find.text('Front-end'));
-      await _esperarAutoAvance(tester);
-      await tester.tap(find.text('Conseguir mi primer empleo profesional'));
-      await _esperarAutoAvance(tester);
+      await _waitForAutoAdvance(tester);
+      await tester.tap(find.text('Land my first professional job'));
+      await _waitForAutoAdvance(tester);
 
-      // Paso 4: el resumen, con Nivel y Foco como en el prototipo.
-      expect(find.text('PASO 4 DE 4'), findsOneWidget);
-      expect(find.text('¡Todo listo!'), findsOneWidget);
+      // Step 4: the summary, with Level and Focus like the prototype.
+      expect(find.text('STEP 4 OF 4'), findsOneWidget);
+      expect(find.text("You're all set!"), findsOneWidget);
       expect(find.text('Junior Developer'), findsOneWidget);
       expect(find.text('Front-end'), findsOneWidget);
-      expect(find.text('Entrar al Dashboard'), findsOneWidget);
+      expect(find.text('Go to Dashboard'), findsOneWidget);
 
-      await tester.tap(find.text('Entrar al Dashboard'));
+      await tester.tap(find.text('Go to Dashboard'));
       await tester.pumpAndSettle();
 
-      expect(repo.llamadas, 1);
-      expect(repo.nivelGuardado, ExperienceLevel.juniorDeveloper);
-      expect(repo.trackGuardado, RoadmapTrack.frontend);
-      expect(repo.metaGuardada, LearningGoal.firstJob);
+      expect(repo.calls, 1);
+      expect(repo.savedLevel, ExperienceLevel.juniorDeveloper);
+      expect(repo.savedTrack, RoadmapTrack.frontend);
+      expect(repo.savedGoal, LearningGoal.firstJob);
 
-      // Deja el perfil completo en el estado: es lo que hace que el route guard
-      // del #9 deje pasar al dashboard.
+      // It leaves the complete profile in the state: that is what makes the
+      // route guard of #9 let the user through to the dashboard.
       expect(currentProfile.value?.hasCompletedOnboarding, isTrue);
     });
 
-    testWidgets('omitir un paso guarda null, no un valor inventado',
+    testWidgets('skipping a step saves null, not a made-up value',
         (tester) async {
-      await _montar(tester);
+      await _mount(tester);
 
-      // Omite el nivel.
-      await tester.tap(find.text('Omitir'));
+      // Skips the level.
+      await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Infraestructura'));
-      await _esperarAutoAvance(tester);
+      await tester.tap(find.text('Infrastructure'));
+      await _waitForAutoAdvance(tester);
 
-      // Omite la meta.
-      await tester.tap(find.text('Omitir'));
+      // Skips the goal.
+      await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
 
-      expect(find.text('¡Todo listo!'), findsOneWidget);
-      // Lo omitido se muestra, no se esconde.
-      expect(find.text('Sin definir'), findsNWidgets(2));
+      expect(find.text("You're all set!"), findsOneWidget);
+      // What was skipped is shown, not hidden.
+      expect(find.text('Not set'), findsNWidgets(2));
 
-      await tester.tap(find.text('Entrar al Dashboard'));
+      await tester.tap(find.text('Go to Dashboard'));
       await tester.pumpAndSettle();
 
-      expect(repo.trackGuardado, RoadmapTrack.infrastructure);
-      expect(repo.nivelGuardado, isNull);
-      expect(repo.metaGuardada, isNull);
+      expect(repo.savedTrack, RoadmapTrack.infrastructure);
+      expect(repo.savedLevel, isNull);
+      expect(repo.savedGoal, isNull);
     });
 
-    testWidgets('un fallo al guardar se muestra traducido y no navega',
-        (tester) async {
-      repo.fallo = const AuthFailure(
+    testWidgets('a failure while saving is shown translated and does not '
+        'navigate', (tester) async {
+      repo.failure = const AuthFailure(
         AuthFailureKind.network,
         technicalDetail: 'SocketException',
       );
       selectedTrack.value = RoadmapTrack.backend;
       currentStepIndex.value = 3;
 
-      await _montar(tester);
-      await tester.tap(find.text('Entrar al Dashboard'));
+      await _mount(tester);
+      await tester.tap(find.text('Go to Dashboard'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('No pudimos conectarnos'), findsOneWidget);
+      expect(find.textContaining("We couldn't connect"), findsOneWidget);
       expect(find.textContaining('SocketException'), findsNothing);
       expect(currentProfile.value, isNull);
     });
 
-    testWidgets('sin track no se guarda nada y devuelve al paso 2',
+    testWidgets('without a track nothing is saved and it goes back to step 2',
         (tester) async {
-      // Estado imposible por la UI, pero la regla no puede depender de eso.
+      // A state the UI cannot reach, but the rule cannot depend on that.
       currentStepIndex.value = 3;
-      await _montar(tester);
+      await _mount(tester);
 
-      await tester.tap(find.text('Entrar al Dashboard'));
+      await tester.tap(find.text('Go to Dashboard'));
       await tester.pumpAndSettle();
 
-      expect(repo.llamadas, 0);
+      expect(repo.calls, 0);
       expect(currentStep.value, OnboardingStepId.track);
       expect(
-        find.textContaining('Necesitamos saber tu especialidad'),
+        find.textContaining('We need to know your specialty'),
         findsOneWidget,
       );
     });
   });
 
-  group('Responsivo', () {
-    testWidgets('en móvil no se muestra la columna decorativa',
-        (tester) async {
-      await _montar(tester, tamano: const Size(420, 1600));
+  group('Responsive', () {
+    testWidgets('on mobile the decorative column is not shown', (tester) async {
+      await _mount(tester, size: const Size(420, 1600));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tu futuro empieza acá'), findsNothing);
-      expect(find.text('¡Hola! ¿Cómo te identificás hoy?'), findsOneWidget);
+      expect(find.text('Your future starts here'), findsNothing);
+      expect(
+        find.text('Hi! How would you describe yourself today?'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('en escritorio sí', (tester) async {
-      await _montar(tester, tamano: const Size(1200, 2400));
+    testWidgets('on desktop it is', (tester) async {
+      await _mount(tester, size: const Size(1200, 2400));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tu futuro empieza acá'), findsOneWidget);
+      expect(find.text('Your future starts here'), findsOneWidget);
     });
   });
 }

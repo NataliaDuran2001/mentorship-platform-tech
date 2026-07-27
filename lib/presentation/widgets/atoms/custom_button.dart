@@ -1,15 +1,15 @@
-// Atomic Design (Átomo): Componente irreductible.
-// Es un botón base genérico y reutilizable que no conoce su contexto. Los
-// estilos viven en el tema (AppTheme): acá solo se elige la variante —
-// ElevatedButton es el primario y OutlinedButton el secundario.
+// Atomic Design (Atom): Irreducible component.
+// A generic, reusable base button that doesn't know its context. The styles
+// live in the theme (AppTheme): here we only pick the variant —
+// ElevatedButton is the primary one and OutlinedButton the secondary one.
 
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
 
-  /// `null` deshabilita el botón, como cualquier botón de Material. Es como el
-  /// paso 2 del onboarding impide avanzar sin haber elegido un track.
+  /// `null` disables the button, like any Material button. It's how step 2 of
+  /// the onboarding keeps you from moving on without having picked a track.
   final VoidCallback? onPressed;
 
   final bool isPrimary;

@@ -1,8 +1,8 @@
-// Pruebas de widget de los átomos y moléculas del onboarding (issue #10).
+// Widget tests of the onboarding atoms and molecules (issue #10).
 //
-// El AC5 pide dos cosas: que el callback de selección dispare y que el estado
-// visual `selected` se aplique. Lo segundo se verifica leyendo la decoración
-// real del widget, no una captura: los valores tienen que coincidir con
+// AC5 asks for two things: that the selection callback fires and that the
+// `selected` visual state is applied. The second one is verified by reading
+// the widget's real decoration, not a screenshot: the values have to match
 // `descubre_tu_ruta_onboarding/code.html` (AC3).
 
 import 'package:flutter/material.dart';
@@ -19,8 +19,8 @@ import 'package:aspire_app/presentation/widgets/molecules/onboarding_footer.dart
 import 'package:aspire_app/presentation/widgets/molecules/option_card_tile.dart';
 import 'package:aspire_app/presentation/widgets/molecules/track_card.dart';
 
-/// Monta un widget suelto con el tema real de la app.
-Future<void> _montar(WidgetTester tester, Widget child) {
+/// Mounts a standalone widget with the app's real theme.
+Future<void> _mount(WidgetTester tester, Widget child) {
   return tester.pumpWidget(
     MaterialApp(
       home: Scaffold(body: Center(child: SizedBox(width: 600, child: child))),
@@ -28,10 +28,10 @@ Future<void> _montar(WidgetTester tester, Widget child) {
   );
 }
 
-/// Decoración de la tarjeta, no la del recuadro del ícono.
+/// The card's decoration, not the one of the icon box.
 ///
-/// Las dos son AnimatedContainer; la de la tarjeta es la única con borde.
-BoxDecoration _decoracionDeTarjeta(WidgetTester tester) {
+/// Both are AnimatedContainer; the card's is the only one with a border.
+BoxDecoration _cardDecoration(WidgetTester tester) {
   return tester
       .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
       .map((c) => c.decoration! as BoxDecoration)
@@ -40,80 +40,80 @@ BoxDecoration _decoracionDeTarjeta(WidgetTester tester) {
 
 void main() {
   group('OptionCardTile', () {
-    testWidgets('el tap dispara el callback de selección', (tester) async {
-      var toques = 0;
+    testWidgets('the tap fires the selection callback', (tester) async {
+      var taps = 0;
 
-      await _montar(
+      await _mount(
         tester,
         OptionCardTile(
           icon: Icons.school,
-          title: 'Estudiante / Autodidacta',
-          description: 'Estoy aprendiendo las bases y busco mi primer empleo.',
+          title: 'Student / Self-taught',
+          description: 'I am learning the basics and looking for my first job.',
           isSelected: false,
-          onTap: () => toques++,
+          onTap: () => taps++,
         ),
       );
 
-      await tester.tap(find.text('Estudiante / Autodidacta'));
+      await tester.tap(find.text('Student / Self-taught'));
       await tester.pumpAndSettle();
 
-      expect(toques, 1);
+      expect(taps, 1);
     });
 
-    testWidgets('sin seleccionar: borde outlineVariant y sin anillo',
+    testWidgets('unselected: outlineVariant border and no ring',
         (tester) async {
-      await _montar(
+      await _mount(
         tester,
         OptionCardTile(
           icon: Icons.school,
-          title: 'Estudiante',
+          title: 'Student',
           isSelected: false,
           onTap: () {},
         ),
       );
 
-      final decoracion = _decoracionDeTarjeta(tester);
+      final decoration = _cardDecoration(tester);
 
-      expect(decoracion.border, isA<Border>());
-      expect((decoracion.border! as Border).top.color,
+      expect(decoration.border, isA<Border>());
+      expect((decoration.border! as Border).top.color,
           AppColors.outlineVariant);
-      expect(decoracion.color, Colors.transparent);
-      expect(decoracion.boxShadow, isNull);
+      expect(decoration.color, Colors.transparent);
+      expect(decoration.boxShadow, isNull);
     });
 
     testWidgets(
-        'seleccionado: borde primary, fondo primary al 8% y anillo de 1px',
+        'selected: primary border, primary background at 8% and a 1px ring',
         (tester) async {
-      await _montar(
+      await _mount(
         tester,
         OptionCardTile(
           icon: Icons.school,
-          title: 'Estudiante',
+          title: 'Student',
           isSelected: true,
           onTap: () {},
         ),
       );
 
-      final decoracion = _decoracionDeTarjeta(tester);
+      final decoration = _cardDecoration(tester);
 
-      // Borde #674BB5 del prototipo, vía token.
-      expect((decoracion.border! as Border).top.color, AppColors.primary);
+      // The prototype's #674BB5 border, through the token.
+      expect((decoration.border! as Border).top.color, AppColors.primary);
       // rgba(103, 75, 181, 0.08)
-      expect(decoracion.color, AppColors.primary.withValues(alpha: 0.08));
+      expect(decoration.color, AppColors.primary.withValues(alpha: 0.08));
       // box-shadow: 0 0 0 1px #674bb5
-      expect(decoracion.boxShadow, hasLength(1));
-      expect(decoracion.boxShadow!.first.color, AppColors.primary);
-      expect(decoracion.boxShadow!.first.spreadRadius,
+      expect(decoration.boxShadow, hasLength(1));
+      expect(decoration.boxShadow!.first.color, AppColors.primary);
+      expect(decoration.boxShadow!.first.spreadRadius,
           AppConstants.borderWidth);
-      expect(decoracion.boxShadow!.first.blurRadius, 0);
+      expect(decoration.boxShadow!.first.blurRadius, 0);
     });
 
-    testWidgets('seleccionado resalta el recuadro del ícono', (tester) async {
-      await _montar(
+    testWidgets('selected highlights the icon box', (tester) async {
+      await _mount(
         tester,
         OptionCardTile(
           icon: Icons.school,
-          title: 'Estudiante',
+          title: 'Student',
           isSelected: true,
           onTap: () {},
         ),
@@ -125,8 +125,8 @@ void main() {
       );
     });
 
-    testWidgets('la descripción es opcional', (tester) async {
-      await _montar(
+    testWidgets('the description is optional', (tester) async {
+      await _mount(
         tester,
         OptionCardTile(
           icon: Icons.web,
@@ -137,35 +137,35 @@ void main() {
       );
 
       expect(find.text('Frontend'), findsOneWidget);
-      // Solo el título: la card del paso 2 no lleva segunda línea.
+      // Only the title: the step 2 card has no second line.
       expect(find.byType(Text), findsOneWidget);
     });
   });
 
   group('TrackCard', () {
-    testWidgets('el tap dispara el callback', (tester) async {
-      var toques = 0;
+    testWidgets('the tap fires the callback', (tester) async {
+      var taps = 0;
 
-      await _montar(
+      await _mount(
         tester,
         TrackCard(
           icon: Icons.storage,
           title: 'Back-end',
-          description: 'Diseñar la lógica detrás de escena.',
+          description: 'Design the logic behind the scenes.',
           isSelected: false,
-          onTap: () => toques++,
+          onTap: () => taps++,
         ),
       );
 
       await tester.tap(find.text('Back-end'));
       await tester.pumpAndSettle();
 
-      expect(toques, 1);
+      expect(taps, 1);
     });
 
-    testWidgets('seleccionado aplica el mismo estado visual que la opción',
+    testWidgets('selected applies the same visual state as the option',
         (tester) async {
-      await _montar(
+      await _mount(
         tester,
         TrackCard(
           icon: Icons.storage,
@@ -175,37 +175,37 @@ void main() {
         ),
       );
 
-      final decoracion = _decoracionDeTarjeta(tester);
+      final decoration = _cardDecoration(tester);
 
-      expect((decoracion.border! as Border).top.color, AppColors.primary);
-      expect(decoracion.color, AppColors.primary.withValues(alpha: 0.08));
-      expect(decoracion.boxShadow, hasLength(1));
+      expect((decoration.border! as Border).top.color, AppColors.primary);
+      expect(decoration.color, AppColors.primary.withValues(alpha: 0.08));
+      expect(decoration.boxShadow, hasLength(1));
     });
   });
 
-  group('GoalRadioRow y AppRadio', () {
-    testWidgets('la fila completa es clickeable, no solo el círculo',
+  group('GoalRadioRow and AppRadio', () {
+    testWidgets('the whole row is clickable, not just the circle',
         (tester) async {
-      var toques = 0;
+      var taps = 0;
 
-      await _montar(
+      await _mount(
         tester,
         GoalRadioRow(
-          label: 'Conseguir mi primer empleo profesional',
+          label: 'Land my first professional job',
           isSelected: false,
-          onTap: () => toques++,
+          onTap: () => taps++,
         ),
       );
 
-      // Toca la etiqueta, en el extremo opuesto al círculo.
-      await tester.tap(find.text('Conseguir mi primer empleo profesional'));
+      // Taps the label, at the opposite end from the circle.
+      await tester.tap(find.text('Land my first professional job'));
       await tester.pumpAndSettle();
 
-      expect(toques, 1);
+      expect(taps, 1);
     });
 
-    testWidgets('sin seleccionar el punto está en opacidad 0', (tester) async {
-      await _montar(tester, const AppRadio(isSelected: false));
+    testWidgets('unselected, the dot is at opacity 0', (tester) async {
+      await _mount(tester, const AppRadio(isSelected: false));
       await tester.pumpAndSettle();
 
       expect(
@@ -214,8 +214,8 @@ void main() {
       );
     });
 
-    testWidgets('seleccionado el punto está en opacidad 1', (tester) async {
-      await _montar(tester, const AppRadio(isSelected: true));
+    testWidgets('selected, the dot is at opacity 1', (tester) async {
+      await _mount(tester, const AppRadio(isSelected: true));
       await tester.pumpAndSettle();
 
       expect(
@@ -226,81 +226,81 @@ void main() {
   });
 
   group('OnboardingFooter', () {
-    testWidgets('«Continuar» dispara su callback', (tester) async {
-      var toques = 0;
+    testWidgets('"Continue" fires its callback', (tester) async {
+      var taps = 0;
 
-      await _montar(tester, OnboardingFooter(onContinue: () => toques++));
-      await tester.tap(find.text('Continuar'));
+      await _mount(tester, OnboardingFooter(onContinue: () => taps++));
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
-      expect(toques, 1);
+      expect(taps, 1);
     });
 
-    testWidgets('onContinue en null deshabilita el botón', (tester) async {
-      await _montar(tester, const OnboardingFooter(onContinue: null));
+    testWidgets('onContinue set to null disables the button', (tester) async {
+      await _mount(tester, const OnboardingFooter(onContinue: null));
 
-      final boton = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Continuar'),
+      final button = tester.widget<ElevatedButton>(
+        find.widgetWithText(ElevatedButton, 'Continue'),
       );
 
-      expect(boton.onPressed, isNull);
+      expect(button.onPressed, isNull);
     });
 
-    testWidgets('«Omitir» se puede ocultar por completo, como en el paso 2',
+    testWidgets('"Skip" can be hidden entirely, like on step 2',
         (tester) async {
-      await _montar(
+      await _mount(
         tester,
         OnboardingFooter(onContinue: () {}, showSkip: false),
       );
 
-      expect(find.text('Omitir'), findsNothing);
-      expect(find.text('Regresar'), findsOneWidget);
+      expect(find.text('Skip'), findsNothing);
+      expect(find.text('Back'), findsOneWidget);
     });
 
-    testWidgets('«Regresar» oculto conserva su espacio', (tester) async {
-      await _montar(
+    testWidgets('a hidden "Back" keeps its space', (tester) async {
+      await _mount(
         tester,
         OnboardingFooter(onContinue: () {}, showBack: false),
       );
 
-      // Sigue en el árbol (maintainSize) pero no es accionable.
-      expect(find.text('Regresar'), findsOneWidget);
+      // It is still in the tree (maintainSize) but it is not actionable.
+      expect(find.text('Back'), findsOneWidget);
       expect(
         tester
-            .widget<TextButton>(find.widgetWithText(TextButton, 'Regresar'))
+            .widget<TextButton>(find.widgetWithText(TextButton, 'Back'))
             .onPressed,
         isNull,
       );
     });
 
-    testWidgets('la etiqueta de «Continuar» se puede cambiar', (tester) async {
-      await _montar(
+    testWidgets('the "Continue" label can be changed', (tester) async {
+      await _mount(
         tester,
         OnboardingFooter(
           onContinue: () {},
-          continueLabel: 'Entrar al Dashboard',
+          continueLabel: 'Go to Dashboard',
         ),
       );
 
-      expect(find.text('Entrar al Dashboard'), findsOneWidget);
-      expect(find.text('Continuar'), findsNothing);
+      expect(find.text('Go to Dashboard'), findsOneWidget);
+      expect(find.text('Continue'), findsNothing);
     });
   });
 
-  group('Átomos sin estado propio', () {
-    testWidgets('StepCounterLabel rinde el total que recibe, en mayúsculas',
+  group('Atoms with no state of their own', () {
+    testWidgets('StepCounterLabel renders the total it receives, in uppercase',
         (tester) async {
-      await _montar(
+      await _mount(
         tester,
         const StepCounterLabel(currentStep: 2, totalSteps: 5),
       );
 
-      expect(find.text('PASO 2 DE 5'), findsOneWidget);
+      expect(find.text('STEP 2 OF 5'), findsOneWidget);
     });
 
-    testWidgets('AppProgressBar anima hasta la fracción recibida',
+    testWidgets('AppProgressBar animates up to the fraction it receives',
         (tester) async {
-      await _montar(tester, const AppProgressBar(value: 0.4));
+      await _mount(tester, const AppProgressBar(value: 0.4));
       await tester.pumpAndSettle();
 
       expect(
@@ -311,9 +311,8 @@ void main() {
       );
     });
 
-    testWidgets('AppProgressBar recorta valores fuera de rango',
-        (tester) async {
-      await _montar(tester, const AppProgressBar(value: 1.8));
+    testWidgets('AppProgressBar clamps out-of-range values', (tester) async {
+      await _mount(tester, const AppProgressBar(value: 1.8));
       await tester.pumpAndSettle();
 
       expect(

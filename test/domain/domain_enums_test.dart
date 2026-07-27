@@ -1,5 +1,5 @@
-// Pruebas unitarias de los enums del Módulo 1 (issue #8, AC5): tienen que
-// cubrir exactamente los valores decididos, ni uno más.
+// Unit tests of the Module 1 enums (issue #8, AC5): they have to cover
+// exactly the decided values, not one more.
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,7 +8,7 @@ import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/roadmap_track.dart';
 
 void main() {
-  test('hay exactamente 3 tracks: frontend, backend, infrastructure', () {
+  test('there are exactly 3 tracks: frontend, backend, infrastructure', () {
     expect(RoadmapTrack.values.map((t) => t.slug), [
       'frontend',
       'backend',
@@ -16,7 +16,7 @@ void main() {
     ]);
   });
 
-  test('hay exactamente 3 niveles de experiencia', () {
+  test('there are exactly 3 experience levels', () {
     expect(ExperienceLevel.values.map((l) => l.slug), [
       'student',
       'junior_developer',
@@ -24,7 +24,7 @@ void main() {
     ]);
   });
 
-  test('hay exactamente 4 metas de aprendizaje', () {
+  test('there are exactly 4 learning goals', () {
     expect(LearningGoal.values.map((g) => g.slug), [
       'first_job',
       'new_language',
@@ -33,7 +33,7 @@ void main() {
     ]);
   });
 
-  test('fromSlug es inverso de slug en los tres enums', () {
+  test('fromSlug is the inverse of slug in the three enums', () {
     for (final track in RoadmapTrack.values) {
       expect(RoadmapTrack.fromSlug(track.slug), track);
     }
@@ -45,7 +45,7 @@ void main() {
     }
   });
 
-  test('fromSlug tolera null y valores desconocidos', () {
+  test('fromSlug tolerates null and unknown values', () {
     expect(RoadmapTrack.fromSlug(null), isNull);
     expect(RoadmapTrack.fromSlug('mobile'), isNull);
     expect(RoadmapTrack.fromSlug('unknown'), isNull);

@@ -1,9 +1,9 @@
-// Capa Presentation (Utils): Constantes globales de la interfaz según el
-// frontmatter de DESIGN.md (Luminous Clarity): escala de spacing en grid de
-// 4px, radios de borde, anchos de layout y breakpoints responsivos.
+// Presentation layer (Utils): Global interface constants taken from the
+// DESIGN.md frontmatter (Luminous Clarity): spacing scale on a 4px grid,
+// border radii, layout widths and responsive breakpoints.
 
 class AppConstants {
-  // Escala de spacing (grid de 4px)
+  // Spacing scale (4px grid)
   static const double spacingUnit = 4.0;
   static const double spacingXs = 4.0;
   static const double spacingSm = 8.0;
@@ -11,11 +11,11 @@ class AppConstants {
   static const double spacingLg = 24.0;
   static const double spacingXl = 40.0;
 
-  // Alias histórico del paso base de padding; los widgets existentes lo
-  // multiplican para huecos mayores.
+  // Historical alias of the base padding step; the existing widgets multiply
+  // it for larger gaps.
   static const double defaultPadding = spacingMd;
 
-  // Radios de borde
+  // Border radii
   static const double radiusSm = 4.0;
   static const double radiusDefault = 8.0;
   static const double radiusMd = 12.0;
@@ -23,43 +23,43 @@ class AppConstants {
   static const double radiusXl = 24.0;
   static const double radiusFull = 9999.0;
 
-  // Alias histórico del radio por defecto.
+  // Historical alias of the default radius.
   static const double borderRadius = radiusDefault;
 
   // Layout
   static const double containerMax = 1200.0;
   static const double sidebarWidth = 260.0;
-  // Ancho máximo legible para vistas con mucho texto.
+  // Maximum readable width for text-heavy views.
   static const double maxReadableWidth = 800.0;
 
-  // Breakpoints responsivos
-  // ≤768: la sidebar colapsa a drawer. ≤480: los márgenes bajan a 16.
+  // Responsive breakpoints
+  // ≤768: the sidebar collapses into a drawer. ≤480: margins drop to 16.
   static const double breakpointTablet = 768.0;
   static const double breakpointMobile = 480.0;
 
-  // Grosores de borde
+  // Border widths
   static const double borderWidth = 1.0;
   static const double borderWidthThick = 2.0;
 
-  // Tamaños de componentes del onboarding (issue #10). Viven acá y no en los
-  // widgets para que la regla «cero valores literales en widgets» se sostenga
-  // también para dimensiones, no solo para colores y spacing.
+  // Sizes of the onboarding components (issue #10). They live here and not in
+  // the widgets so that the "no literal values in widgets" rule also holds for
+  // dimensions, not just for colors and spacing.
   static const double progressBarHeight = 4.0;
   static const double iconTileSize = 48.0;
-  /// Ícono chico, el de los estados del árbol de tópicos.
+  /// Small icon, the one used by the states of the topic tree.
   static const double iconSizeSm = 20.0;
 
   static const double radioSize = 24.0;
   static const double radioDotSize = 12.0;
 
-  /// Ancho por debajo del cual el pie del onboarding se apila en vez de poner
-  /// sus tres botones en una fila. No es un breakpoint de pantalla: es el ancho
-  /// del propio pie, que en móvil queda mucho más angosto que la ventana.
+  /// Width below which the onboarding footer stacks instead of putting its
+  /// three buttons in a row. It is not a screen breakpoint: it is the width of
+  /// the footer itself, which on mobile ends up much narrower than the window.
   static const double footerCompactWidth = 360.0;
 
-  // Duraciones de transición del prototipo.
-  // fast: cambios de color y opacidad. medium: transición entre pasos.
-  // slow: la barra de progreso, que es la más lenta a propósito.
+  // Transition durations from the prototype.
+  // fast: color and opacity changes. medium: transition between steps.
+  // slow: the progress bar, the slowest one on purpose.
   static const Duration durationFast = Duration(milliseconds: 150);
   static const Duration durationMedium = Duration(milliseconds: 400);
   static const Duration durationSlow = Duration(milliseconds: 600);

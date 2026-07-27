@@ -1,18 +1,18 @@
-// Atomic Design (Organismo): Contenido placeholder de un destino del shell
-// que aún no está construido. Mantiene el texto dentro del ancho legible de
-// 800px que fija el design system para vistas de texto.
+// Atomic Design (Organism): Placeholder content for a shell destination that
+// is not built yet. Keeps the text inside the 800px readable width that the
+// design system sets for text views.
 
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
 
-class PlaceholderDestino extends StatelessWidget {
-  final String titulo;
-  final String detalle;
+class DestinationPlaceholder extends StatelessWidget {
+  final String title;
+  final String detail;
 
-  const PlaceholderDestino({
+  const DestinationPlaceholder({
     super.key,
-    required this.titulo,
-    required this.detalle,
+    required this.title,
+    required this.detail,
   });
 
   @override
@@ -24,10 +24,10 @@ class PlaceholderDestino extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(titulo, style: Theme.of(context).textTheme.headlineMedium),
+            Text(title, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: AppConstants.spacingSm),
             Text(
-              detalle,
+              detail,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

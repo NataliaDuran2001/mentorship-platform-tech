@@ -1,8 +1,8 @@
-// Atomic Design (Átomo): Componente irreductible.
-// Barra de progreso del onboarding. No sabe cuántos pasos hay ni en cuál está:
-// recibe una fracción ya calculada, porque el total de pasos es variable —4 en
-// la rama directa, 5 si se entra al cuestionario guía— y esa cuenta es
-// responsabilidad de la página.
+// Atomic Design (Atom): Irreducible component.
+// Onboarding progress bar. It doesn't know how many steps there are or which
+// one it's on: it takes an already-computed fraction, because the total number
+// of steps varies —4 on the direct path, 5 if you enter the guided
+// questionnaire— and that count is the page's responsibility.
 
 import 'package:flutter/material.dart';
 
@@ -16,23 +16,24 @@ class AppProgressBar extends StatelessWidget {
     this.semanticsLabel,
   });
 
-  /// Fracción de avance, de 0 a 1. Se recorta al rango: un valor fuera de
-  /// rango es un error de cálculo de la página, no algo que deba romper la UI.
+  /// Progress fraction, from 0 to 1. It gets clamped to the range: a value out
+  /// of range is a math error in the page, not something that should break the
+  /// UI.
   final double value;
 
-  /// Texto para lectores de pantalla, ej. «Paso 2 de 5».
+  /// Text for screen readers, e.g. "Step 2 of 5".
   final String? semanticsLabel;
 
-  /// Curva del prototipo (`transition: width 0.6s cubic-bezier(0.65,0,0.35,1)`).
-  static const Curve _curva = Cubic(0.65, 0, 0.35, 1);
+  /// Prototype curve (`transition: width 0.6s cubic-bezier(0.65,0,0.35,1)`).
+  static const Curve _curve = Cubic(0.65, 0, 0.35, 1);
 
   @override
   Widget build(BuildContext context) {
-    final fraccion = value.clamp(0.0, 1.0);
+    final fraction = value.clamp(0.0, 1.0);
 
     return Semantics(
       label: semanticsLabel,
-      value: '${(fraccion * 100).round()}%',
+      value: '${(fraction * 100).round()}%',
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppConstants.radiusFull),
         child: SizedBox(
@@ -40,13 +41,13 @@ class AppProgressBar extends StatelessWidget {
           child: ColoredBox(
             color: AppColors.surfaceContainer,
             child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(end: fraccion),
+              tween: Tween<double>(end: fraction),
               duration: AppConstants.durationSlow,
-              curve: _curva,
-              builder: (context, animado, child) {
+              curve: _curve,
+              builder: (context, animated, child) {
                 return FractionallySizedBox(
                   alignment: Alignment.centerLeft,
-                  widthFactor: animado,
+                  widthFactor: animated,
                   child: const ColoredBox(color: AppColors.primary),
                 );
               },

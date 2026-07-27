@@ -1,13 +1,13 @@
-// Capa Presentation (State): Acciones del onboarding.
+// Presentation layer (State): Onboarding actions.
 //
-// Junto con auth_actions.dart, es el único lugar de `presentation` que toca
-// getIt. Los organismos de pasos no saben avanzar ni guardar: avisan qué se
-// eligió y estas funciones deciden.
+// Together with auth_actions.dart, it is the only place in `presentation` that
+// touches getIt. The step organisms do not know how to move forward or save:
+// they report what was chosen and these functions decide.
 //
-// El auto-avance de 400 ms usa `Timer` y no `Future.delayed` a propósito: deja
-// claro que es una pausa de interfaz —para que se vea el feedback de selección
-// antes de cambiar de paso— y no una petición de red simulada, que es lo que el
-// AC2 del issue #9 prohíbe volver a introducir.
+// The 400 ms auto-advance uses `Timer` and not `Future.delayed` on purpose: it
+// makes clear that it is an interface pause —so the selection feedback can be
+// seen before changing step— and not a simulated network request, which is what
+// AC2 of issue #9 forbids reintroducing.
 
 import 'dart:async';
 
@@ -25,62 +25,62 @@ import '../utils/onboarding_quiz.dart';
 import 'auth_state.dart';
 import 'onboarding_state.dart';
 
-Timer? _autoAvance;
+Timer? _autoAdvance;
 
-/// Elige el nivel de experiencia y avanza.
+/// Picks the experience level and moves forward.
 ///
-/// La respuesta se persiste **al elegirla**, no al final del flujo: es lo que
-/// hace reanudable el onboarding (issue #14).
-void selectLevel(ExperienceLevel nivel) {
-  selectedLevel.value = nivel;
-  _persistirRespuesta(OnboardingKeys.experienceLevel, nivel.slug);
-  _avanzarConFeedback();
+/// The answer is persisted **when it is chosen**, not at the end of the flow:
+/// that is what makes the onboarding resumable (issue #14).
+void selectLevel(ExperienceLevel level) {
+  selectedLevel.value = level;
+  _persistAnswer(OnboardingKeys.experienceLevel, level.slug);
+  _advanceWithFeedback();
 }
 
-/// Elige el track y avanza.
+/// Picks the track and moves forward.
 ///
-/// `null` representa «Aún no lo sé»: activa la rama del cuestionario guía, lo
-/// que cambia el total de pasos de 4 a 5.
+/// `null` stands for "I'm not sure yet": it turns on the guided quiz branch,
+/// which changes the step total from 4 to 5.
 void selectTrack(RoadmapTrack? track) {
   selectedTrack.value = track;
   usesGuidedQuiz.value = track == null;
-  // «Aún no lo sé» también se guarda: al reanudar hay que saber que la usuaria
-  // pidió la guía, no que dejó el paso sin responder.
-  _persistirRespuesta(
+  // "I'm not sure yet" is saved too: when resuming we need to know the user
+  // asked for the guide, not that they left the step unanswered.
+  _persistAnswer(
     OnboardingKeys.track,
     track?.slug ?? OnboardingKeys.unknownTrackValue,
   );
-  _avanzarConFeedback();
+  _advanceWithFeedback();
 }
 
-/// Elige la meta y avanza.
-void selectGoal(LearningGoal meta) {
-  selectedGoal.value = meta;
-  _persistirRespuesta(OnboardingKeys.goal, meta.slug);
-  _avanzarConFeedback();
+/// Picks the goal and moves forward.
+void selectGoal(LearningGoal goal) {
+  selectedGoal.value = goal;
+  _persistAnswer(OnboardingKeys.goal, goal.slug);
+  _advanceWithFeedback();
 }
 
-/// Avanza al paso siguiente sin esperar.
+/// Moves to the next step without waiting.
 void goToNextStep() {
-  _autoAvance?.cancel();
+  _autoAdvance?.cancel();
   if (currentStepIndex.value < totalSteps.value - 1) {
     currentStepIndex.value = currentStepIndex.value + 1;
   }
 }
 
-/// Vuelve al paso anterior conservando lo ya elegido.
+/// Goes back to the previous step keeping what was already chosen.
 ///
-/// No borra ninguna selección: es lo que hace que regresar muestre la opción
-/// marcada. Si se vuelve desde el cuestionario guía, sí se desactiva la rama,
-/// porque la usuaria está reconsiderando el paso del track.
+/// It erases no selection: that is what makes going back show the marked
+/// option. If coming back from the guided quiz, the branch is turned off,
+/// because the user is reconsidering the track step.
 void goToPreviousStep() {
-  _autoAvance?.cancel();
+  _autoAdvance?.cancel();
   if (currentStepIndex.value == 0) return;
 
-  final anterior = activeSteps.value[currentStepIndex.value - 1];
+  final previous = activeSteps.value[currentStepIndex.value - 1];
   if (currentStep.value == OnboardingStepId.quiz ||
-      anterior == OnboardingStepId.quiz) {
-    // Se está volviendo al paso del track: se reabre la decisión.
+      previous == OnboardingStepId.quiz) {
+    // We are going back to the track step: the decision is reopened.
     usesGuidedQuiz.value = false;
     selectedTrack.value = null;
     currentStepIndex.value =
@@ -91,28 +91,28 @@ void goToPreviousStep() {
   currentStepIndex.value = currentStepIndex.value - 1;
 }
 
-/// Omite el paso actual sin responderlo.
+/// Skips the current step without answering it.
 ///
-/// Solo llega acá desde los pasos omitibles: el pie del onboarding no muestra
-/// «Omitir» en los demás. La comprobación está igual, porque una regla que
-/// depende de que la UI no ofrezca el botón no es una regla.
+/// It is only reached from the skippable steps: the onboarding footer does not
+/// show "Skip" on the others. The check is here anyway, because a rule that
+/// depends on the UI not offering the button is not a rule.
 void skipCurrentStep() {
   if (!canSkipCurrentStep.value) return;
 
-  // Omitir deja rastro. Sin él, reanudar devolvería a la usuaria a un paso que
-  // ya decidió saltear, porque una selección en `null` se ve igual que un paso
-  // al que nunca llegó.
-  final clave = _claveDelPaso(currentStep.value);
-  if (clave != null) {
-    _persistirRespuesta(clave, OnboardingKeys.skippedValue);
+  // Skipping leaves a trace. Without it, resuming would send the user back to a
+  // step they already decided to skip, because a `null` selection looks the
+  // same as a step they never reached.
+  final key = _stepKey(currentStep.value);
+  if (key != null) {
+    _persistAnswer(key, OnboardingKeys.skippedValue);
   }
 
   goToNextStep();
 }
 
-/// Clave de `onboarding_answers` del paso, o `null` si el paso no guarda nada.
-String? _claveDelPaso(OnboardingStepId paso) {
-  switch (paso) {
+/// `onboarding_answers` key of the step, or `null` if the step saves nothing.
+String? _stepKey(OnboardingStepId step) {
+  switch (step) {
     case OnboardingStepId.level:
       return OnboardingKeys.experienceLevel;
     case OnboardingStepId.track:
@@ -125,19 +125,19 @@ String? _claveDelPaso(OnboardingStepId paso) {
   }
 }
 
-/// Guarda el resultado del onboarding y devuelve `true` si salió bien.
+/// Saves the onboarding result and returns `true` if it went well.
 ///
-/// Sin track no se guarda nada: el caso de uso lo exige por tipos y la base lo
-/// exige por constraint, así que llegar acá sin track es un bug, no un estado
-/// que haya que tolerar en silencio.
+/// Without a track nothing is saved: the use case requires it by types and the
+/// database requires it by constraint, so getting here without a track is a
+/// bug, not a state to tolerate in silence.
 Future<bool> submitOnboarding() async {
-  final nivel = selectedLevel.value;
+  final level = selectedLevel.value;
   final track = selectedTrack.value;
-  final meta = selectedGoal.value;
+  final goal = selectedGoal.value;
 
   if (track == null) {
     onboardingError.value =
-        'Necesitamos saber tu especialidad para armar tu ruta.';
+        'We need to know your specialty to build your path.';
     currentStepIndex.value = activeSteps.value.indexOf(OnboardingStepId.track);
     return false;
   }
@@ -146,21 +146,22 @@ Future<bool> submitOnboarding() async {
   onboardingError.value = null;
 
   try {
-    // Nivel y meta van tal como quedaron: si se omitieron, viajan en `null` y
-    // se guardan en `null`. Poner un valor por defecto sería inventar datos de
-    // la usuaria, y las dos columnas son nulables justamente para esto.
-    final perfil = await getIt<SubmitOnboardingUseCase>()(
+    // Level and goal go exactly as they ended up: if they were skipped, they
+    // travel as `null` and are saved as `null`. Putting a default value would
+    // be inventing the user's data, and both columns are nullable precisely
+    // for this.
+    final profile = await getIt<SubmitOnboardingUseCase>()(
       track: track,
-      experienceLevel: nivel,
-      learningGoal: meta,
+      experienceLevel: level,
+      learningGoal: goal,
     );
 
-    // Deja el perfil fresco en el estado para que los route guards dejen pasar
-    // al dashboard sin tener que volver a leerlo de la base.
-    currentProfile.value = perfil;
+    // It leaves a fresh profile in the state so the route guards let the user
+    // into the dashboard without having to read it from the database again.
+    currentProfile.value = profile;
     return true;
   } catch (e) {
-    onboardingError.value = mensajeDeError(e);
+    onboardingError.value = errorMessage(e);
     return false;
   } finally {
     onboardingSaving.value = false;
@@ -168,105 +169,105 @@ Future<bool> submitOnboarding() async {
 }
 
 // ---------------------------------------------------------------------------
-// Reanudación (issue #14)
+// Resuming (issue #14)
 // ---------------------------------------------------------------------------
 
-/// Lee el estado parcial guardado y deja el flujo listo para continuar.
+/// Reads the saved partial state and leaves the flow ready to continue.
 ///
-/// Se llama al leer el perfil de una usuaria con el onboarding incompleto, o
-/// sea antes de que la pantalla se monte. Reanudar es reconstruir dos cosas: las
-/// selecciones previas —para que se vean marcadas— y el primer paso sin
-/// responder, que es donde hay que aterrizar.
+/// It is called when reading the profile of a user with the onboarding
+/// unfinished, that is, before the screen is mounted. Resuming means rebuilding
+/// two things: the previous selections —so they show up marked— and the first
+/// unanswered step, which is where we have to land.
 Future<void> restoreOnboarding() async {
-  final List<OnboardingAnswer> respuestas;
+  final List<OnboardingAnswer> answers;
   try {
-    respuestas = await getIt<OnboardingRepository>().loadAnswers();
+    answers = await getIt<OnboardingRepository>().loadAnswers();
   } catch (_) {
-    // Sin poder leer el estado parcial se empieza de cero, que es el
-    // comportamiento anterior al #14: peor experiencia, no un error.
+    // If the partial state cannot be read we start from scratch, which is the
+    // behavior from before #14: a worse experience, not an error.
     return;
   }
-  if (respuestas.isEmpty) return;
+  if (answers.isEmpty) return;
 
-  final porClave = <String, String>{
-    for (final r in respuestas) r.stepKey: r.value,
+  final byKey = <String, String>{
+    for (final a in answers) a.stepKey: a.value,
   };
-  storedStepKeys.value = porClave.keys.toSet();
+  storedStepKeys.value = byKey.keys.toSet();
 
   selectedLevel.value =
-      ExperienceLevel.fromSlug(porClave[OnboardingKeys.experienceLevel]);
-  selectedGoal.value = LearningGoal.fromSlug(porClave[OnboardingKeys.goal]);
-  selectedTrack.value = RoadmapTrack.fromSlug(porClave[OnboardingKeys.track]);
+      ExperienceLevel.fromSlug(byKey[OnboardingKeys.experienceLevel]);
+  selectedGoal.value = LearningGoal.fromSlug(byKey[OnboardingKeys.goal]);
+  selectedTrack.value = RoadmapTrack.fromSlug(byKey[OnboardingKeys.track]);
 
-  final delCuestionario = _respuestasDelCuestionario(respuestas);
-  quizAnswers.value = delCuestionario;
+  final fromQuiz = _quizAnswersFrom(answers);
+  quizAnswers.value = fromQuiz;
 
-  // La rama guiada se reconoce por cualquiera de dos rastros: el paso 2 guardado
-  // como «unknown», o respuestas del cuestionario ya dadas. El segundo importa
-  // porque al confirmar la recomendación el paso 2 se sobreescribe con el track
-  // real, y sin ese rastro el contador volvería a decir «de 4».
+  // The guided branch is recognized by either of two traces: step 2 saved as
+  // "unknown", or quiz answers already given. The second one matters because
+  // when the recommendation is confirmed step 2 is overwritten with the real
+  // track, and without that trace the counter would go back to saying "of 4".
   usesGuidedQuiz.value =
-      porClave[OnboardingKeys.track] == OnboardingKeys.unknownTrackValue ||
-          delCuestionario.isNotEmpty;
+      byKey[OnboardingKeys.track] == OnboardingKeys.unknownTrackValue ||
+          fromQuiz.isNotEmpty;
 
-  _situarEnElCuestionario(delCuestionario);
-  currentStepIndex.value = _primerPasoSinResponder();
+  _placeInQuiz(fromQuiz);
+  currentStepIndex.value = _firstUnansweredStep();
 }
 
-Map<int, RoadmapTrack> _respuestasDelCuestionario(
-  List<OnboardingAnswer> respuestas,
+Map<int, RoadmapTrack> _quizAnswersFrom(
+  List<OnboardingAnswer> answers,
 ) {
-  final resultado = <int, RoadmapTrack>{};
-  for (final r in respuestas) {
-    if (!r.stepKey.startsWith(OnboardingKeys.quizPrefix)) continue;
-    final numero =
-        int.tryParse(r.stepKey.substring(OnboardingKeys.quizPrefix.length));
-    final track = RoadmapTrack.fromSlug(r.value);
-    if (numero != null && track != null) resultado[numero] = track;
+  final result = <int, RoadmapTrack>{};
+  for (final a in answers) {
+    if (!a.stepKey.startsWith(OnboardingKeys.quizPrefix)) continue;
+    final number =
+        int.tryParse(a.stepKey.substring(OnboardingKeys.quizPrefix.length));
+    final track = RoadmapTrack.fromSlug(a.value);
+    if (number != null && track != null) result[number] = track;
   }
-  return resultado;
+  return result;
 }
 
-/// Deja el cuestionario en la primera pregunta sin responder, o en el resultado
-/// si ya están todas.
-void _situarEnElCuestionario(Map<int, RoadmapTrack> respondidas) {
+/// Leaves the quiz on the first unanswered question, or on the result if they
+/// are all done.
+void _placeInQuiz(Map<int, RoadmapTrack> answered) {
   if (!usesGuidedQuiz.value) return;
 
-  final indice = preguntasDelCuestionario.indexWhere(
-    (p) => !respondidas.containsKey(p.number),
+  final index = quizQuestions.indexWhere(
+    (q) => !answered.containsKey(q.number),
   );
 
-  if (indice >= 0) {
-    quizQuestionIndex.value = indice;
+  if (index >= 0) {
+    quizQuestionIndex.value = index;
     quizShowingResult.value = false;
     return;
   }
 
-  // Todas respondidas. Si además falta confirmar el track, se vuelve a mostrar
-  // el resultado, recalculado por el caso de uso.
-  quizQuestionIndex.value = preguntasDelCuestionario.length - 1;
+  // All answered. If the track still needs confirming, the result is shown
+  // again, recomputed by the use case.
+  quizQuestionIndex.value = quizQuestions.length - 1;
   if (selectedTrack.value == null) {
-    _calcularRecomendacion();
+    _computeRecommendation();
   }
 }
 
-/// Índice del primer paso del recorrido que no tiene respuesta.
+/// Index of the first step of the journey that has no answer.
 ///
-/// Si están todos respondidos, aterriza en el resumen.
-int _primerPasoSinResponder() {
-  final pasos = activeSteps.value;
+/// If they are all answered, it lands on the summary.
+int _firstUnansweredStep() {
+  final steps = activeSteps.value;
 
-  for (var i = 0; i < pasos.length; i++) {
-    switch (pasos[i]) {
+  for (var i = 0; i < steps.length; i++) {
+    switch (steps[i]) {
       case OnboardingStepId.level:
-        // Se pregunta por la fila guardada y no por la selección: omitir deja la
-        // selección en `null` igual que no haber llegado.
+        // It asks for the saved row and not for the selection: skipping leaves
+        // the selection at `null` just like never having got there.
         if (!storedStepKeys.value.contains(OnboardingKeys.experienceLevel)) {
           return i;
         }
       case OnboardingStepId.track:
-        // Con la rama guiada activa el paso 2 ya está contestado: la respuesta
-        // fue «no lo sé».
+        // With the guided branch on, step 2 is already answered: the answer was
+        // "I'm not sure".
         if (selectedTrack.value == null && !usesGuidedQuiz.value) return i;
       case OnboardingStepId.quiz:
         if (selectedTrack.value == null) return i;
@@ -276,37 +277,37 @@ int _primerPasoSinResponder() {
         return i;
     }
   }
-  return pasos.length - 1;
+  return steps.length - 1;
 }
 
 // ---------------------------------------------------------------------------
-// Cuestionario guía (issue #12)
+// Guided quiz (issue #12)
 // ---------------------------------------------------------------------------
 
-/// Responde la pregunta visible del cuestionario y avanza.
+/// Answers the visible question of the quiz and moves forward.
 ///
-/// La respuesta se persiste al momento de elegirla, no al final: es lo que
-/// alimenta la reanudación del #14 y lo que exige el AC5 de este issue.
-Future<void> answerQuizQuestion(RoadmapTrack afinidad) async {
-  final pregunta = currentQuizQuestion.value;
+/// The answer is persisted the moment it is chosen, not at the end: that is
+/// what feeds the resuming of #14 and what AC5 of this issue requires.
+Future<void> answerQuizQuestion(RoadmapTrack affinity) async {
+  final question = currentQuizQuestion.value;
 
-  // Mapa nuevo y no mutación in situ: un signal compara por identidad y no
-  // notificaría si se modifica el mismo mapa.
+  // A new map and not an in-place mutation: a signal compares by identity and
+  // would not notify if the same map is modified.
   quizAnswers.value = <int, RoadmapTrack>{
     ...quizAnswers.value,
-    pregunta.number: afinidad,
+    question.number: affinity,
   };
 
-  await _persistirRespuesta(
-    OnboardingKeys.quizQuestion(pregunta.number),
-    afinidad.slug,
+  await _persistAnswer(
+    OnboardingKeys.quizQuestion(question.number),
+    affinity.slug,
   );
 
-  _avanzarEnElCuestionarioConFeedback();
+  _advanceInQuizWithFeedback();
 }
 
-/// Vuelve a la pregunta anterior del cuestionario, o al paso del track si ya
-/// está en la primera.
+/// Goes back to the previous question of the quiz, or to the track step if it
+/// is already on the first one.
 void goToPreviousQuizQuestion() {
   cancelOnboardingTimers();
 
@@ -318,36 +319,37 @@ void goToPreviousQuizQuestion() {
     quizQuestionIndex.value = quizQuestionIndex.value - 1;
     return;
   }
-  // En la primera pregunta, «Anterior» sale del cuestionario.
+  // On the first question, "Back" leaves the quiz.
   goToPreviousStep();
 }
 
-/// Avanza a la pregunta siguiente o calcula la recomendación si era la última.
+/// Moves to the next question or computes the recommendation if it was the
+/// last one.
 void advanceQuiz() {
   cancelOnboardingTimers();
 
-  if (quizQuestionIndex.value < preguntasDelCuestionario.length - 1) {
+  if (quizQuestionIndex.value < quizQuestions.length - 1) {
     quizQuestionIndex.value = quizQuestionIndex.value + 1;
     return;
   }
-  _calcularRecomendacion();
+  _computeRecommendation();
 }
 
-/// Acepta el track recomendado y sigue en el paso de la meta.
+/// Accepts the recommended track and carries on to the goal step.
 ///
-/// `usesGuidedQuiz` se deja en `true` a propósito: el recorrido siguió teniendo
-/// 5 pasos y el contador tiene que seguir diciéndolo.
+/// `usesGuidedQuiz` is left at `true` on purpose: the journey still had 5 steps
+/// and the counter has to keep saying so.
 Future<void> confirmRecommendedTrack() async {
   final track = quizRecommendation.value?.track;
   if (track == null) return;
-  await _asignarTrackDelCuestionario(track);
+  await _assignQuizTrack(track);
 }
 
-/// Corrige la recomendación a mano y sigue en el paso de la meta.
+/// Overrides the recommendation by hand and carries on to the goal step.
 Future<void> overrideRecommendedTrack(RoadmapTrack track) =>
-    _asignarTrackDelCuestionario(track);
+    _assignQuizTrack(track);
 
-/// Vuelve a las preguntas para responderlas de nuevo.
+/// Goes back to the questions to answer them again.
 void redoQuiz() {
   cancelOnboardingTimers();
   quizAnswers.value = <int, RoadmapTrack>{};
@@ -356,60 +358,60 @@ void redoQuiz() {
   quizRecommendation.value = null;
 }
 
-Future<void> _asignarTrackDelCuestionario(RoadmapTrack track) async {
+Future<void> _assignQuizTrack(RoadmapTrack track) async {
   selectedTrack.value = track;
-  await _persistirRespuesta(OnboardingKeys.track, track.slug);
+  await _persistAnswer(OnboardingKeys.track, track.slug);
   goToNextStep();
 }
 
-/// La regla de decisión NO está acá: sale del caso de uso del dominio, que es
-/// lo que el AC3 de este issue verifica. Este método solo traduce el mapa de
-/// respuestas al formato del contrato.
-void _calcularRecomendacion() {
-  final respuestas = [
-    for (final entrada in quizAnswers.value.entries)
+/// The decision rule is NOT here: it comes out of the domain use case, which is
+/// what AC3 of this issue verifies. This method only translates the map of
+/// answers into the format of the contract.
+void _computeRecommendation() {
+  final answers = [
+    for (final entry in quizAnswers.value.entries)
       OnboardingAnswer(
-        stepKey: OnboardingKeys.quizQuestion(entrada.key),
-        value: entrada.value.slug,
+        stepKey: OnboardingKeys.quizQuestion(entry.key),
+        value: entry.value.slug,
       ),
   ];
 
-  quizRecommendation.value = getIt<RecommendTrackUseCase>()(respuestas);
+  quizRecommendation.value = getIt<RecommendTrackUseCase>()(answers);
   quizShowingResult.value = true;
 }
 
-/// Guarda una respuesta suelta, sin romper el flujo si falla.
+/// Saves a single answer, without breaking the flow if it fails.
 ///
-/// Un fallo de red al guardar no puede frenar el onboarding: la usuaria pierde
-/// la reanudación de ese paso, no el paso. El resultado final se persiste igual
-/// en `submitOnboarding()`, que sí reporta el error.
-Future<void> _persistirRespuesta(String stepKey, String valor) async {
-  // Se marca como guardada apenas se intenta: la reanudación de esta sesión no
-  // debería depender de que el viaje al backend haya terminado.
+/// A network failure while saving cannot stall the onboarding: the user loses
+/// the resuming of that step, not the step. The final result is persisted all
+/// the same in `submitOnboarding()`, which does report the error.
+Future<void> _persistAnswer(String stepKey, String value) async {
+  // It is marked as saved as soon as it is attempted: resuming within this
+  // session should not depend on the round trip to the backend being finished.
   storedStepKeys.value = <String>{...storedStepKeys.value, stepKey};
 
   try {
     await getIt<OnboardingRepository>().saveAnswer(
-      OnboardingAnswer(stepKey: stepKey, value: valor),
+      OnboardingAnswer(stepKey: stepKey, value: value),
     );
   } catch (_) {
-    // Silencio deliberado. Ver el comentario de arriba.
+    // Deliberate silence. See the comment above.
   }
 }
 
-void _avanzarEnElCuestionarioConFeedback() {
-  _autoAvance?.cancel();
-  _autoAvance = Timer(AppConstants.durationMedium, advanceQuiz);
+void _advanceInQuizWithFeedback() {
+  _autoAdvance?.cancel();
+  _autoAdvance = Timer(AppConstants.durationMedium, advanceQuiz);
 }
 
-/// Cancela el temporizador pendiente. Para los tests y al salir de la pantalla.
+/// Cancels the pending timer. For the tests and when leaving the screen.
 void cancelOnboardingTimers() {
-  _autoAvance?.cancel();
-  _autoAvance = null;
+  _autoAdvance?.cancel();
+  _autoAdvance = null;
 }
 
-/// Avanza después de una pausa corta, para que se vea la selección.
-void _avanzarConFeedback() {
-  _autoAvance?.cancel();
-  _autoAvance = Timer(AppConstants.durationMedium, goToNextStep);
+/// Moves forward after a short pause, so the selection can be seen.
+void _advanceWithFeedback() {
+  _autoAdvance?.cancel();
+  _autoAdvance = Timer(AppConstants.durationMedium, goToNextStep);
 }

@@ -1,15 +1,16 @@
-// Capa Presentation (Utils): El set de preguntas del cuestionario guía.
+// Presentation layer (Utils): The set of questions of the guided quiz.
 //
-// Cada opción declara a qué track tira (`affinity`). Eso es lo único que el
-// cuestionario aporta a la decisión: contar los votos y resolver empates es de
-// `RecommendTrackUseCase` (capa domain), no de acá y mucho menos de un widget.
+// Each option declares which track it leans towards (`affinity`). That is the
+// only thing the quiz contributes to the decision: counting the votes and
+// breaking ties belongs to `RecommendTrackUseCase` (domain layer), not here
+// and much less to a widget.
 //
-// La primera pregunta es la del prototipo `orientaci_n_de_ruta_test`, con sus
-// textos exactos. Las otras dos se definen acá, como pide el alcance del issue
-// #12. Son tres y no una para que la recomendación no dependa de un solo clic:
-// con una sola pregunta el cuestionario sería un selector de track disfrazado, y
-// con muchas se volvería un trámite. Tres permite además que haya empates
-// reales, que es el caso que el desempate del #8 tiene que resolver.
+// The first question is the one from the `orientaci_n_de_ruta_test` prototype,
+// with its exact texts. The other two are defined here, as the scope of issue
+// #12 asks. There are three and not one so that the recommendation does not
+// hang on a single click: with a single question the quiz would be a track
+// picker in disguise, and with many it would turn into paperwork. Three also
+// allows real ties, which is the case the tie-break of #8 has to resolve.
 
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,7 @@ class QuizOption {
     required this.icon,
   });
 
-  /// Track al que suma un voto esta opción.
+  /// Track this option adds a vote to.
   final RoadmapTrack affinity;
 
   final String label;
@@ -39,8 +40,8 @@ class QuizQuestion {
     required this.options,
   });
 
-  /// Empieza en 1. Es lo que forma la clave `quiz_1`, `quiz_2`, … con la que se
-  /// persiste la respuesta.
+  /// Starts at 1. It is what forms the `quiz_1`, `quiz_2`, … key the answer is
+  /// persisted with.
   final int number;
 
   final String prompt;
@@ -48,98 +49,102 @@ class QuizQuestion {
   final List<QuizOption> options;
 }
 
-/// Las preguntas, en orden.
-const List<QuizQuestion> preguntasDelCuestionario = [
+/// The questions, in order.
+const List<QuizQuestion> quizQuestions = [
   QuizQuestion(
     number: 1,
-    prompt: '¿Qué tipo de problemas te entusiasma más resolver?',
-    subtitle: 'Tu respuesta nos ayuda a trazar tu ruta de aprendizaje ideal '
-        'hacia el dominio técnico.',
+    prompt: 'What kind of problems do you enjoy solving the most?',
+    subtitle: 'Your answer helps us map out your ideal learning path towards '
+        'technical mastery.',
     options: [
       QuizOption(
         affinity: RoadmapTrack.frontend,
         label: 'Front-end',
-        description: 'Crear interfaces visuales y experiencias de usuario que '
-            'cautiven a primera vista.',
+        description: 'Build visual interfaces and user experiences that win '
+            'people over at first sight.',
         icon: Icons.brush_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.backend,
         label: 'Back-end',
-        description: 'Diseñar la lógica detrás de escena y bases de datos '
-            'robustas para escalar sistemas.',
+        description: 'Design the logic behind the scenes and solid databases '
+            'to scale systems.',
         icon: Icons.storage_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.infrastructure,
-        label: 'Infraestructura',
-        description: 'Organizar procesos, automatizar tareas y optimizar flujos '
-            'de trabajo masivos.',
+        label: 'Infrastructure',
+        description: 'Organize processes, automate tasks and smooth out huge '
+            'workflows.',
         icon: Icons.settings_suggest_outlined,
       ),
     ],
   ),
   QuizQuestion(
     number: 2,
-    prompt: '¿Qué parte de un proyecto te resulta más fácil de imaginar?',
-    subtitle: 'No hay respuesta correcta: elegí la que se te venga primero a '
-        'la cabeza.',
+    prompt: 'Which part of a project is easiest for you to picture?',
+    subtitle: 'There is no right answer: pick the one that comes to mind '
+        'first.',
     options: [
       QuizOption(
         affinity: RoadmapTrack.frontend,
-        label: 'Cómo se ve y cómo se usa',
-        description: 'Las pantallas, los colores, qué pasa al tocar cada cosa.',
+        label: 'How it looks and how it is used',
+        description: 'The screens, the colors, what happens when you tap '
+            'something.',
         icon: Icons.palette_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.backend,
-        label: 'Cómo se guardan los datos',
-        description: 'Qué información hace falta y cómo se relaciona entre sí.',
+        label: 'How the data is stored',
+        description: 'What information is needed and how it all connects.',
         icon: Icons.account_tree_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.infrastructure,
-        label: 'Cómo llega a la gente',
-        description: 'Dónde vive, cómo se publica y qué pasa si se cae.',
+        label: 'How it reaches people',
+        description: 'Where it lives, how it ships and what happens if it '
+            'goes down.',
         icon: Icons.rocket_launch_outlined,
       ),
     ],
   ),
   QuizQuestion(
     number: 3,
-    prompt: 'Cuando algo no funciona, ¿qué te da más satisfacción resolver?',
-    subtitle: 'Pensá en la última vez que te trabaste con algo y lo sacaste '
-        'adelante.',
+    prompt: 'When something breaks, what do you most enjoy fixing?',
+    subtitle: 'Think of the last time you got stuck on something and pulled '
+        'it through.',
     options: [
       QuizOption(
         affinity: RoadmapTrack.frontend,
-        label: 'Que algo se vea mal o no responda',
-        description: 'Un botón que no reacciona, un texto que se desborda.',
+        label: 'Something looks off or does not respond',
+        description: 'A button that does nothing, a text that overflows.',
         icon: Icons.smartphone_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.backend,
-        label: 'Que un cálculo dé mal',
-        description: 'Un total que no cierra, un dato que se pierde.',
+        label: 'A calculation comes out wrong',
+        description: 'A total that does not add up, a piece of data that '
+            'goes missing.',
         icon: Icons.functions,
       ),
       QuizOption(
         affinity: RoadmapTrack.infrastructure,
-        label: 'Que algo esté lento o caído',
-        description: 'El sistema anda, pero tarda o se cae cada tanto.',
+        label: 'Something is slow or down',
+        description: 'The system works, but it lags or goes down every now '
+            'and then.',
         icon: Icons.speed_outlined,
       ),
     ],
   ),
 ];
 
-/// Justificación en español del track recomendado, para la pantalla de
-/// resultado. Es texto de UI, así que vive en esta capa.
-const Map<RoadmapTrack, String> justificacionDeRecomendacion = {
-  RoadmapTrack.frontend: 'Tus respuestas apuntan a lo que la gente ve y toca: '
-      'interfaces, experiencia de uso y detalle visual.',
-  RoadmapTrack.backend: 'Tus respuestas apuntan a la lógica y los datos: cómo '
-      'se organiza la información y cómo se sostiene un sistema.',
-  RoadmapTrack.infrastructure: 'Tus respuestas apuntan a que las cosas '
-      'funcionen y escalen: automatización, despliegue y operación.',
+/// Rationale for the recommended track, for the result screen. It is UI text,
+/// so it lives in this layer.
+const Map<RoadmapTrack, String> recommendationRationale = {
+  RoadmapTrack.frontend: 'Your answers point to what people see and touch: '
+      'interfaces, how it feels to use and visual detail.',
+  RoadmapTrack.backend: 'Your answers point to logic and data: how the '
+      'information is organized and how a system holds up.',
+  RoadmapTrack.infrastructure: 'Your answers point to things running and '
+      'scaling: automation, deployment and operations.',
 };

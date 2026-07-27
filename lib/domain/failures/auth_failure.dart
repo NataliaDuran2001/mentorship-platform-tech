@@ -1,38 +1,38 @@
-// Capa Domain: Vocabulario de fallos de los contratos (Dart puro).
+// Domain layer: Failure vocabulary of the contracts (pure Dart).
 //
-// Existe para cumplir la regla «ningún error crudo de Supabase a la vista»
-// (issue #9) sin que `presentation` importe supabase_flutter: la capa Data
-// traduce cada `AuthException` del SDK a uno de estos casos, y la capa
-// Presentation los mapea a mensajes en español.
+// It exists to honour the "no raw Supabase error in sight" rule (issue #9)
+// without `presentation` importing supabase_flutter: the Data layer
+// translates every SDK `AuthException` into one of these cases, and the
+// Presentation layer maps them to user-facing messages.
 
-/// Casos de fallo de autenticación que la UI necesita distinguir.
+/// Authentication failure cases the UI needs to tell apart.
 enum AuthFailureKind {
-  /// Correo o contraseña incorrectos.
+  /// Wrong email or password.
   invalidCredentials,
 
-  /// Las credenciales son válidas pero el correo sigue sin confirmar.
-  /// La UI ofrece reenviar el correo de confirmación.
+  /// The credentials are valid but the email is still unconfirmed.
+  /// The UI offers to resend the confirmation email.
   emailNotConfirmed,
 
-  /// Ya existe una cuenta con ese correo.
+  /// An account with that email already exists.
   emailAlreadyRegistered,
 
-  /// La contraseña no cumple la política mínima de Supabase.
+  /// The password does not meet Supabase's minimum policy.
   weakPassword,
 
-  /// El correo no tiene formato válido.
+  /// The email is not well-formed.
   invalidEmail,
 
-  /// Demasiados intentos seguidos.
+  /// Too many attempts in a row.
   tooManyRequests,
 
-  /// No se pudo hablar con el backend.
+  /// The backend could not be reached.
   network,
 
-  /// El proveedor todavía no está implementado (Google, issue #15).
+  /// The provider is not implemented yet (Google, issue #15).
   notImplemented,
 
-  /// Cualquier otra cosa. La UI muestra un mensaje genérico.
+  /// Anything else. The UI shows a generic message.
   unknown,
 }
 
@@ -41,8 +41,8 @@ class AuthFailure implements Exception {
 
   final AuthFailureKind kind;
 
-  /// Mensaje original del backend. Solo para diagnóstico y logs: nunca se
-  /// muestra tal cual a la usuaria.
+  /// Original message from the backend. For diagnostics and logs only: it is
+  /// never shown as-is to the user.
   final String? technicalDetail;
 
   @override

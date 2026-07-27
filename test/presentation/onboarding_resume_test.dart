@@ -1,8 +1,9 @@
-// Pruebas de persistencia y reanudación del onboarding incompleto (issue #14).
+// Tests of the persistence and resuming of an unfinished onboarding (issue
+// #14).
 //
-// El repositorio falso emula el upsert real de `onboarding_answers`: clave
-// (usuaria, `step_key`). Es lo que permite verificar que reanudar no acumula
-// filas, que es el AC5.
+// The fake repository emulates the real upsert of `onboarding_answers`: key
+// (user, `step_key`). That is what allows verifying that resuming does not
+// pile up rows, which is AC5.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,23 +24,23 @@ import 'package:aspire_app/presentation/utils/onboarding_labels.dart';
 import 'package:aspire_app/presentation/utils/onboarding_quiz.dart';
 import 'package:aspire_app/presentation/widgets/pages/onboarding_page.dart';
 
-/// Repositorio en memoria con la misma semántica de upsert que la tabla.
+/// In-memory repository with the same upsert semantics as the table.
 class FakeOnboardingRepository implements OnboardingRepository {
-  final Map<String, OnboardingAnswer> filas = <String, OnboardingAnswer>{};
+  final Map<String, OnboardingAnswer> rows = <String, OnboardingAnswer>{};
 
-  /// Cuántas escrituras se pidieron, para distinguir «actualizó» de «acumuló».
-  int escrituras = 0;
+  /// How many writes were requested, to tell "it updated" from "it piled up".
+  int writes = 0;
 
   @override
   Future<void> saveAnswer(OnboardingAnswer answer) async {
-    escrituras++;
-    // unique (user_id, step_key): la clave es el paso, no la fila.
-    filas[answer.stepKey] = answer;
+    writes++;
+    // unique (user_id, step_key): the key is the step, not the row.
+    rows[answer.stepKey] = answer;
   }
 
   @override
   Future<List<OnboardingAnswer>> loadAnswers() async =>
-      filas.values.toList(growable: false);
+      rows.values.toList(growable: false);
 
   @override
   Future<UserProfile?> loadProfile() async => null;
@@ -61,7 +62,7 @@ class FakeOnboardingRepository implements OnboardingRepository {
   }
 }
 
-Future<void> _montar(WidgetTester tester) async {
+Future<void> _mount(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1200, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -70,12 +71,12 @@ Future<void> _montar(WidgetTester tester) async {
   await tester.pumpWidget(const MaterialApp(home: OnboardingPage()));
 }
 
-Future<void> _esperar(WidgetTester tester) =>
+Future<void> _settle(WidgetTester tester) =>
     tester.pumpAndSettle(const Duration(milliseconds: 600));
 
-/// Simula cerrar el navegador: se pierde todo el estado en memoria, queda solo
-/// lo que hay en la base.
-void _simularCerrarNavegador() {
+/// Simulates closing the browser: all the in-memory state is lost, only what
+/// is in the database remains.
+void _simulateBrowserClose() {
   cancelOnboardingTimers();
   resetOnboarding();
 }
@@ -96,285 +97,287 @@ void main() {
 
   tearDown(cancelOnboardingTimers);
 
-  group('Persistencia al seleccionar', () {
-    testWidgets('cada respuesta queda guardada antes de completar el flujo',
+  group('Persistence on selection', () {
+    testWidgets('every answer is saved before completing the flow',
         (tester) async {
-      await _montar(tester);
+      await _mount(tester);
 
       await tester.tap(find.text('Junior Developer'));
-      await _esperar(tester);
+      await _settle(tester);
 
-      // Ya está en la base, sin haber terminado el onboarding.
-      expect(repo.filas.keys, contains('experience_level'));
-      expect(repo.filas['experience_level']!.value, 'junior_developer');
+      // It is already in the database, without having finished the onboarding.
+      expect(repo.rows.keys, contains('experience_level'));
+      expect(repo.rows['experience_level']!.value, 'junior_developer');
 
       await tester.tap(find.text('Front-end'));
-      await _esperar(tester);
+      await _settle(tester);
 
-      expect(repo.filas['track']!.value, 'frontend');
+      expect(repo.rows['track']!.value, 'frontend');
 
-      await tester.tap(find.text('Conseguir mi primer empleo profesional'));
-      await _esperar(tester);
+      await tester.tap(find.text('Land my first professional job'));
+      await _settle(tester);
 
-      expect(repo.filas['goal']!.value, 'first_job');
-      // Y el perfil todavía no se marcó como completo.
+      expect(repo.rows['goal']!.value, 'first_job');
+      // And the profile has not been marked as complete yet.
       expect(currentProfile.value, isNull);
     });
 
-    testWidgets('«Aún no lo sé» también se guarda', (tester) async {
+    testWidgets("The I am not sure yet option is saved too", (tester) async {
       currentStepIndex.value = 1;
-      await _montar(tester);
+      await _mount(tester);
 
-      await tester.tap(find.text(opcionNoLoSe.label));
-      await _esperar(tester);
+      await tester.tap(find.text(notSureOption.label));
+      await _settle(tester);
 
-      // Guardar «unknown» es lo que permite saber, al reanudar, que pidió la
-      // guía y no que dejó el paso sin responder.
-      expect(repo.filas['track']!.value, 'unknown');
+      // Saving "unknown" is what allows knowing, when resuming, that she asked
+      // for the guide and not that she left the step unanswered.
+      expect(repo.rows['track']!.value, 'unknown');
     });
 
-    testWidgets('cambiar una respuesta actualiza la fila, no acumula',
+    testWidgets('changing an answer updates the row, it does not pile up',
         (tester) async {
-      await _montar(tester);
+      await _mount(tester);
 
       await tester.tap(find.text('Junior Developer'));
-      await _esperar(tester);
-      await tester.tap(find.text('Regresar'));
+      await _settle(tester);
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Cambiando de Carrera'));
-      await _esperar(tester);
+      await tester.tap(find.text('Career Switcher'));
+      await _settle(tester);
 
-      // Dos escrituras, una sola fila, con el valor nuevo.
-      expect(repo.escrituras, 2);
+      // Two writes, a single row, with the new value.
+      expect(repo.writes, 2);
       expect(
-        repo.filas.keys.where((k) => k == 'experience_level'),
+        repo.rows.keys.where((k) => k == 'experience_level'),
         hasLength(1),
       );
-      expect(repo.filas['experience_level']!.value, 'career_switcher');
+      expect(repo.rows['experience_level']!.value, 'career_switcher');
     });
   });
 
-  group('Reanudación en la rama directa', () {
-    testWidgets('volver reanuda en el paso 3, con los pasos 1 y 2 marcados',
+  group('Resuming on the direct branch', () {
+    testWidgets('coming back resumes on step 3, with steps 1 and 2 marked',
         (tester) async {
-      await _montar(tester);
+      await _mount(tester);
 
       await tester.tap(find.text('Junior Developer'));
-      await _esperar(tester);
+      await _settle(tester);
       await tester.tap(find.text('Front-end'));
-      await _esperar(tester);
+      await _settle(tester);
 
-      // Está en el paso 3 y abandona.
-      expect(find.text('¿Cuál es tu meta principal?'), findsOneWidget);
-      _simularCerrarNavegador();
+      // She is on step 3 and abandons.
+      expect(find.text('What is your main goal?'), findsOneWidget);
+      _simulateBrowserClose();
 
-      // El estado en memoria se fue.
+      // The in-memory state is gone.
       expect(selectedLevel.value, isNull);
       expect(selectedTrack.value, isNull);
 
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
       await tester.pumpAndSettle();
 
-      // Reanuda en el paso 3.
+      // It resumes on step 3.
       expect(currentStep.value, OnboardingStepId.goal);
-      expect(find.text('PASO 3 DE 4'), findsOneWidget);
-      // Con los pasos 1 y 2 ya marcados.
+      expect(find.text('STEP 3 OF 4'), findsOneWidget);
+      // With steps 1 and 2 already marked.
       expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
       expect(selectedTrack.value, RoadmapTrack.frontend);
     });
 
-    testWidgets('al regresar se ven las selecciones previas marcadas',
+    testWidgets('going back shows the previous selections marked',
         (tester) async {
-      repo.filas['experience_level'] = const OnboardingAnswer(
+      repo.rows['experience_level'] = const OnboardingAnswer(
         stepKey: 'experience_level',
         value: 'student',
       );
-      repo.filas['track'] =
+      repo.rows['track'] =
           const OnboardingAnswer(stepKey: 'track', value: 'backend');
 
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
 
-      await tester.tap(find.text('Regresar'));
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
 
-      // El paso 2 muestra Back-end como elegido.
+      // Step 2 shows Back-end as chosen.
       expect(currentStep.value, OnboardingStepId.track);
       expect(selectedTrack.value, RoadmapTrack.backend);
     });
 
-    testWidgets('sin nada guardado arranca en el paso 1', (tester) async {
+    testWidgets('with nothing saved it starts on step 1', (tester) async {
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
 
       expect(currentStep.value, OnboardingStepId.level);
-      expect(find.text('PASO 1 DE 4'), findsOneWidget);
+      expect(find.text('STEP 1 OF 4'), findsOneWidget);
     });
 
-    testWidgets('con todo respondido reanuda en el resumen', (tester) async {
-      repo.filas['experience_level'] = const OnboardingAnswer(
+    testWidgets('with everything answered it resumes on the summary',
+        (tester) async {
+      repo.rows['experience_level'] = const OnboardingAnswer(
         stepKey: 'experience_level',
         value: 'student',
       );
-      repo.filas['track'] =
+      repo.rows['track'] =
           const OnboardingAnswer(stepKey: 'track', value: 'backend');
-      repo.filas['goal'] =
+      repo.rows['goal'] =
           const OnboardingAnswer(stepKey: 'goal', value: 'middle_level');
 
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
 
       expect(currentStep.value, OnboardingStepId.summary);
-      expect(find.text('¡Todo listo!'), findsOneWidget);
+      expect(find.text("You're all set!"), findsOneWidget);
     });
   });
 
-  group('Omitir deja rastro', () {
-    testWidgets('un paso omitido se guarda como «skipped»', (tester) async {
-      await _montar(tester);
+  group('Skipping leaves a trace', () {
+    testWidgets('a skipped step is saved as "skipped"', (tester) async {
+      await _mount(tester);
 
-      await tester.tap(find.text('Omitir'));
+      await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
 
-      expect(repo.filas['experience_level']!.value, 'skipped');
+      expect(repo.rows['experience_level']!.value, 'skipped');
     });
 
-    testWidgets('reanudar no devuelve a un paso que se omitió a propósito',
-        (tester) async {
-      await _montar(tester);
+    testWidgets('resuming does not go back to a step that was skipped on '
+        'purpose', (tester) async {
+      await _mount(tester);
 
-      // Omite el nivel y elige el track.
-      await tester.tap(find.text('Omitir'));
+      // Skips the level and picks the track.
+      await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Front-end'));
-      await _esperar(tester);
+      await _settle(tester);
 
-      _simularCerrarNavegador();
+      _simulateBrowserClose();
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
       await tester.pumpAndSettle();
 
-      // Retoma en la meta, no en el nivel que ya decidió saltear.
+      // It picks up on the goal, not on the level she already decided to skip.
       expect(currentStep.value, OnboardingStepId.goal);
       expect(selectedLevel.value, isNull);
       expect(selectedTrack.value, RoadmapTrack.frontend);
     });
   });
 
-  group('Reanudación en la rama del cuestionario guía', () {
-    testWidgets('reanuda en la primera pregunta sin responder', (tester) async {
-      repo.filas['experience_level'] = const OnboardingAnswer(
+  group('Resuming on the guided quiz branch', () {
+    testWidgets('it resumes on the first unanswered question', (tester) async {
+      repo.rows['experience_level'] = const OnboardingAnswer(
         stepKey: 'experience_level',
         value: 'student',
       );
-      repo.filas['track'] =
+      repo.rows['track'] =
           const OnboardingAnswer(stepKey: 'track', value: 'unknown');
-      repo.filas['quiz_1'] =
+      repo.rows['quiz_1'] =
           const OnboardingAnswer(stepKey: 'quiz_1', value: 'backend');
 
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
 
-      // Rama guiada reconocida: 5 pasos.
+      // Guided branch recognized: 5 steps.
       expect(usesGuidedQuiz.value, isTrue);
       expect(totalSteps.value, 5);
       expect(currentStep.value, OnboardingStepId.quiz);
-      // Con la 1 ya respondida, retoma en la 2.
-      expect(find.textContaining('Pregunta 2 de 3'), findsOneWidget);
+      // With number 1 already answered, it picks up on number 2.
+      expect(find.textContaining('Question 2 of 3'), findsOneWidget);
       expect(quizAnswers.value[1], RoadmapTrack.backend);
     });
 
-    testWidgets('con las 3 respondidas y sin confirmar, vuelve al resultado',
-        (tester) async {
-      repo.filas['experience_level'] = const OnboardingAnswer(
+    testWidgets('with the 3 answered and not confirmed, it goes back to the '
+        'result', (tester) async {
+      repo.rows['experience_level'] = const OnboardingAnswer(
         stepKey: 'experience_level',
         value: 'student',
       );
-      repo.filas['track'] =
+      repo.rows['track'] =
           const OnboardingAnswer(stepKey: 'track', value: 'unknown');
-      for (final p in preguntasDelCuestionario) {
-        repo.filas['quiz_${p.number}'] = OnboardingAnswer(
-          stepKey: 'quiz_${p.number}',
+      for (final q in quizQuestions) {
+        repo.rows['quiz_${q.number}'] = OnboardingAnswer(
+          stepKey: 'quiz_${q.number}',
           value: 'infrastructure',
         );
       }
 
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
 
       expect(quizShowingResult.value, isTrue);
-      // La recomendación se recalcula con el caso de uso real: 3 votos a
-      // infraestructura.
+      // The recommendation is recomputed with the real use case: 3 votes for
+      // infrastructure.
       expect(quizRecommendation.value?.track, RoadmapTrack.infrastructure);
-      expect(find.text('Encontramos tu ruta'), findsOneWidget);
+      expect(find.text('We found your path'), findsOneWidget);
     });
 
-    testWidgets('con el track ya confirmado sigue en la meta y el contador '
-        'mantiene los 5 pasos', (tester) async {
-      // Al confirmar, el paso 2 se sobreescribió con el track real; el rastro de
-      // la rama guiada son las respuestas del cuestionario.
-      repo.filas['experience_level'] = const OnboardingAnswer(
+    testWidgets('with the track already confirmed it stays on the goal and '
+        'the counter keeps the 5 steps', (tester) async {
+      // On confirming, step 2 was overwritten with the real track; the trace
+      // of the guided branch are the quiz answers.
+      repo.rows['experience_level'] = const OnboardingAnswer(
         stepKey: 'experience_level',
         value: 'student',
       );
-      repo.filas['track'] =
+      repo.rows['track'] =
           const OnboardingAnswer(stepKey: 'track', value: 'frontend');
-      repo.filas['quiz_1'] =
+      repo.rows['quiz_1'] =
           const OnboardingAnswer(stepKey: 'quiz_1', value: 'frontend');
 
       await restoreOnboarding();
-      await _montar(tester);
+      await _mount(tester);
 
       expect(usesGuidedQuiz.value, isTrue);
       expect(totalSteps.value, 5);
       expect(currentStep.value, OnboardingStepId.goal);
-      expect(find.text('PASO 4 DE 5'), findsOneWidget);
+      expect(find.text('STEP 4 OF 5'), findsOneWidget);
     });
   });
 
-  group('Ningún camino llega al dashboard sin track', () {
-    test('un perfil sin track no cuenta como onboarding completo', () {
-      const sinTrack = UserProfile(id: 'u1', email: 'ana@example.com');
+  group('No path reaches the dashboard without a track', () {
+    test('a profile without a track does not count as a complete onboarding',
+        () {
+      const withoutTrack = UserProfile(id: 'u1', email: 'ana@example.com');
 
-      expect(sinTrack.hasCompletedOnboarding, isFalse);
+      expect(withoutTrack.hasCompletedOnboarding, isFalse);
       expect(
-        sinTrack
+        withoutTrack
             .copyWith(onboardingCompletedAt: DateTime(2026, 7, 26))
             .hasCompletedOnboarding,
         isFalse,
       );
     });
 
-    testWidgets('omitir todo lo omitible no permite terminar sin track',
-        (tester) async {
-      await _montar(tester);
+    testWidgets('skipping everything skippable does not allow finishing '
+        'without a track', (tester) async {
+      await _mount(tester);
 
-      // Omite el nivel.
-      await tester.tap(find.text('Omitir'));
+      // Skips the level.
+      await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
 
-      // En el paso del track no hay «Omitir» y «Continuar» está deshabilitado.
-      expect(find.text('Omitir'), findsNothing);
+      // On the track step there is no "Skip" and "Continue" is disabled.
+      expect(find.text('Skip'), findsNothing);
       expect(
         tester
             .widget<ElevatedButton>(
-              find.widgetWithText(ElevatedButton, 'Continuar'),
+              find.widgetWithText(ElevatedButton, 'Continue'),
             )
             .onPressed,
         isNull,
       );
-      // Así que no hay forma de llegar al resumen sin track.
+      // So there is no way to reach the summary without a track.
       expect(currentStep.value, OnboardingStepId.track);
     });
 
-    testWidgets('forzar el resumen sin track no guarda y devuelve al paso 2',
-        (tester) async {
-      // Estado inalcanzable por la UI; la regla no puede depender de eso.
+    testWidgets('forcing the summary without a track saves nothing and goes '
+        'back to step 2', (tester) async {
+      // A state unreachable through the UI; the rule cannot depend on that.
       currentStepIndex.value = 3;
-      await _montar(tester);
+      await _mount(tester);
 
-      await tester.tap(find.text('Entrar al Dashboard'));
+      await tester.tap(find.text('Go to Dashboard'));
       await tester.pumpAndSettle();
 
       expect(currentProfile.value, isNull);

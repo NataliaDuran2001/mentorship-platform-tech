@@ -1,8 +1,8 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Sesión de autenticación en términos del dominio. Existe para que ni
-// `presentation` ni `domain` tengan que conocer el tipo `Session` de
-// supabase_flutter: la capa Data traduce uno al otro.
+// Authentication session in domain terms. It exists so that neither
+// `presentation` nor `domain` has to know supabase_flutter's `Session`
+// type: the Data layer translates one into the other.
 
 class AuthSession {
   const AuthSession({
@@ -14,18 +14,18 @@ class AuthSession {
   final String userId;
   final String email;
 
-  /// Cuándo se confirmó el correo, o `null` si sigue sin confirmar.
+  /// When the email was confirmed, or `null` if it is still unconfirmed.
   final DateTime? emailConfirmedAt;
 
   bool get isEmailConfirmed => emailConfirmedAt != null;
 }
 
-/// Resultado de un registro o un inicio de sesión.
+/// Result of a sign-up or a sign-in.
 ///
-/// La confirmación por correo está activa (`mailer_autoconfirm: false`), así
-/// que un registro exitoso devuelve [session] en `null` y
-/// [requiresEmailConfirmation] en `true`. No es un error: es el estado
-/// «revisá tu correo» que la UI tiene que mostrar.
+/// Email confirmation is enabled (`mailer_autoconfirm: false`), so a
+/// successful sign-up returns [session] as `null` and
+/// [requiresEmailConfirmation] as `true`. That is not an error: it is the
+/// "check your inbox" state the UI has to show.
 class AuthResult {
   const AuthResult({
     this.session,
@@ -35,6 +35,6 @@ class AuthResult {
   final AuthSession? session;
   final bool requiresEmailConfirmation;
 
-  /// Hay sesión utilizable.
+  /// There is a usable session.
   bool get isSignedIn => session != null;
 }

@@ -1,6 +1,6 @@
-// Atomic Design (Molécula): Combina átomos para formar un bloque funcional.
-// La fila de una meta del paso 3: círculo de selección + etiqueta, con toda la
-// fila clickeable y no solo el círculo.
+// Atomic Design (Molecule): Combines atoms into a functional block.
+// The row for a step 3 goal: selection circle + label, with the whole row
+// clickable and not just the circle.
 
 import 'package:flutter/material.dart';
 
@@ -32,11 +32,11 @@ class GoalRadioRow extends StatelessWidget {
         builder: (context, isHovered) {
           return AnimatedContainer(
             duration: AppConstants.durationFast,
-            // Misma decoración que las cards. El prototipo solo cambia el borde
-            // en hover y deja la selección al punto del círculo; acá la fila
-            // seleccionada también se resalta, porque un punto de 12px es poca
-            // señal para el estado elegido y el resto del flujo ya marca la
-            // selección así. Anotado en la §9 del handoff.
+            // Same decoration as the cards. The prototype only changes the
+            // border on hover and leaves the selection to the circle's dot;
+            // here the selected row is highlighted too, because a 12px dot is
+            // a weak signal for the chosen state and the rest of the flow
+            // already marks selection this way. Noted in §9 of the handoff.
             decoration: selectableCardDecoration(
               isSelected: isSelected,
               isHovered: isHovered,

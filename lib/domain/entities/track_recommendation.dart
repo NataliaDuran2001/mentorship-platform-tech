@@ -1,8 +1,8 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Salida de `RecommendTrackUseCase`. Es una sugerencia, no una asignación: el
-// issue #12 exige que la usuaria confirme el resultado y pueda corregirlo a
-// mano antes de que se persista.
+// Output of `RecommendTrackUseCase`. It is a suggestion, not an assignment:
+// issue #12 requires the user to confirm the result and be able to correct it
+// by hand before it is persisted.
 
 import 'roadmap_track.dart';
 
@@ -13,7 +13,7 @@ class TrackRecommendation {
     required this.wasTie,
   });
 
-  /// Sin respuestas utilizables no hay nada que recomendar.
+  /// With no usable answers there is nothing to recommend.
   const TrackRecommendation.empty()
       : track = null,
         scores = const <RoadmapTrack, int>{
@@ -23,15 +23,15 @@ class TrackRecommendation {
         },
         wasTie = false;
 
-  /// Track sugerido, o `null` si no hubo ninguna respuesta utilizable.
+  /// Suggested track, or `null` if there was no usable answer.
   final RoadmapTrack? track;
 
-  /// Votos por track, incluidos los que sacaron cero.
+  /// Votes per track, including the ones that scored zero.
   final Map<RoadmapTrack, int> scores;
 
-  /// El puntaje máximo lo compartían dos o más tracks y [track] salió de un
-  /// desempate. La UI debería decirlo en vez de presentar el resultado como
-  /// concluyente.
+  /// The highest score was shared by two or more tracks and [track] came out
+  /// of a tie-break. The UI should say so instead of presenting the result as
+  /// conclusive.
   final bool wasTie;
 
   bool get hasRecommendation => track != null;

@@ -1,12 +1,13 @@
-// Atomic Design (Página): Estructura principal que une organismos y maneja
-// la inyección de dependencias y el estado global o de la vista.
+// Atomic Design (Page): Main structure that wires organisms together and
+// handles dependency injection and the global or view state.
 //
-// Antes de este issue no existía forma de crear una cuenta: solo había login.
+// Before this issue there was no way to create an account: there was only
+// login.
 //
-// La pantalla tiene dos caras porque la confirmación por correo está activa
-// (`mailer_autoconfirm: false`): un registro exitoso NO devuelve sesión, así que
-// después de crear la cuenta se muestra «revisá tu correo» con la opción de
-// reenviarlo. Navegar directo al dashboard sería mentir.
+// The screen has two faces because email confirmation is on
+// (`mailer_autoconfirm: false`): a successful sign up does NOT return a
+// session, so after creating the account it shows "check your email" with the
+// option to resend it. Going straight to the dashboard would be a lie.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -26,24 +27,24 @@ class SignUpPage extends StatelessWidget {
       builder: (context) {
         if (authLoading.value) {
           return const AuthLayout(
-            title: 'Creá tu cuenta',
+            title: 'Create your account',
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final pendiente = pendingConfirmationEmail.value;
+        final pendingEmail = pendingConfirmationEmail.value;
 
-        if (pendiente != null) {
+        if (pendingEmail != null) {
           return AuthLayout(
-            title: 'Revisá tu correo',
+            title: 'Check your email',
             child: ConfirmationPending(
-              email: pendiente,
+              email: pendingEmail,
               wasResent: confirmationEmailResent.value,
               errorMessage: authError.value,
               onResend: resendConfirmationEmail,
               onGoToLogin: () {
                 pendingConfirmationEmail.value = null;
-                limpiarFormulariosDeAuth();
+                clearAuthForms();
                 context.go('/login');
               },
             ),
@@ -51,7 +52,7 @@ class SignUpPage extends StatelessWidget {
         }
 
         return AuthLayout(
-          title: 'Creá tu cuenta',
+          title: 'Create your account',
           child: SignUpForm(
             errorMessage: authError.value,
             onNameChanged: (v) => signUpName.value = v,
@@ -59,7 +60,7 @@ class SignUpPage extends StatelessWidget {
             onPasswordChanged: (v) => signUpPassword.value = v,
             onSubmit: signUpWithEmail,
             onGoToLogin: () {
-              limpiarFormulariosDeAuth();
+              clearAuthForms();
               context.go('/login');
             },
           ),

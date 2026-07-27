@@ -1,28 +1,28 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Las 4 metas del paso 3 del onboarding, exactamente las del prototipo
-// `descubre_tu_ruta_onboarding`. El `slug` se persiste en
+// The 4 goals of onboarding step 3, exactly the ones from the
+// `descubre_tu_ruta_onboarding` prototype. The `slug` is persisted in
 // `profiles.learning_goal`.
 
 enum LearningGoal {
-  /// Conseguir su primer empleo profesional.
+  /// Land their first professional job.
   firstJob('first_job'),
 
-  /// Aprender un nuevo lenguaje de programación.
+  /// Learn a new programming language.
   newLanguage('new_language'),
 
-  /// Mejorar sus habilidades de entrevista técnica.
+  /// Improve their technical interview skills.
   interviewSkills('interview_skills'),
 
-  /// Escalar a un puesto de nivel middle.
+  /// Move up to a middle-level position.
   middleLevel('middle_level');
 
   const LearningGoal(this.slug);
 
-  /// Valor estable para persistencia. Nunca cambiar sin migrar los datos.
+  /// Stable value for persistence. Never change it without migrating data.
   final String slug;
 
-  /// Devuelve la meta cuyo [slug] coincide, o `null` si no hay ninguna.
+  /// Returns the goal whose [slug] matches, or `null` if there is none.
   static LearningGoal? fromSlug(String? slug) {
     for (final goal in LearningGoal.values) {
       if (goal.slug == slug) return goal;

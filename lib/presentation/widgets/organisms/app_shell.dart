@@ -1,8 +1,9 @@
-// Atomic Design (Organismo): Shell de navegación responsivo. Cambia de forma
-// según los breakpoints de AppConstants: sidebar fija de 260px arriba de 768,
-// drawer + bottom nav en el rango intermedio (481–768) y bottom nav con
-// márgenes de 16 en ≤480. No conoce rutas, estado ni DI: recibe los destinos,
-// el índice seleccionado y un callback; el wiring vive en el router.
+// Atomic Design (Organism): Responsive navigation shell. It changes shape
+// according to the AppConstants breakpoints: fixed 260px sidebar above 768,
+// drawer + bottom nav in the middle range (481–768) and bottom nav with
+// margins of 16 at ≤480. It knows nothing about routes, state or DI: it takes
+// the destinations, the selected index and a callback; the wiring lives in the
+// router.
 
 import 'package:flutter/material.dart';
 
@@ -10,31 +11,32 @@ import '../molecules/nav_item.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 
-/// Descriptor de un destino de navegación del shell.
+/// Descriptor of a navigation destination of the shell.
 class AppDestination {
   final String label;
   final IconData icon;
 
-  /// Si ocupa uno de los 4 slots del bottom nav. Perfil no lo hace: en ≤768
-  /// se llega por el ícono del AppBar (decisión anotada en la §9 del handoff).
-  final bool enBottomNav;
+  /// Whether it takes one of the 4 bottom nav slots. Profile does not: at ≤768
+  /// it is reached through the AppBar icon (decision noted in §9 of the
+  /// handoff).
+  final bool inBottomNav;
 
   const AppDestination({
     required this.label,
     required this.icon,
-    this.enBottomNav = true,
+    this.inBottomNav = true,
   });
 }
 
 class AppShell extends StatelessWidget {
-  /// Título del producto para el encabezado de sidebar y drawer.
+  /// Product title for the sidebar and drawer header.
   final String title;
   final List<AppDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
 
-  /// Cierra la sesión. Si es `null` no se muestra la acción, para que el shell
-  /// siga sirviendo en pruebas o pantallas sin autenticación.
+  /// Signs out. If it is `null` the action is not shown, so that the shell
+  /// keeps working in tests or on screens without authentication.
   final VoidCallback? onLogout;
 
   final Widget child;
@@ -51,76 +53,76 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ancho = MediaQuery.sizeOf(context).width;
-    final esMovil = ancho <= AppConstants.breakpointMobile;
-    final esEscritorio = ancho > AppConstants.breakpointTablet;
+    final width = MediaQuery.sizeOf(context).width;
+    final isMobile = width <= AppConstants.breakpointMobile;
+    final isDesktop = width > AppConstants.breakpointTablet;
 
-    // Contenido central: limitado a containerMax; en móvil los márgenes
-    // laterales bajan a 16 (spacingMd), como manda DESIGN.md.
-    final margen = esMovil ? AppConstants.spacingMd : AppConstants.spacingLg;
-    final contenido = Center(
+    // Central content: capped at containerMax; on mobile the side margins drop
+    // to 16 (spacingMd), as DESIGN.md requires.
+    final margin = isMobile ? AppConstants.spacingMd : AppConstants.spacingLg;
+    final content = Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: AppConstants.containerMax),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: margen),
+          padding: EdgeInsets.symmetric(horizontal: margin),
           child: child,
         ),
       ),
     );
 
-    if (esEscritorio) {
+    if (isDesktop) {
       return Scaffold(
         body: Row(
           children: [
             _buildSidebar(context),
-            Expanded(child: contenido),
+            Expanded(child: content),
           ],
         ),
       );
     }
 
-    // Rango intermedio y móvil: AppBar + bottom nav con los destinos marcados
-    // para él; el drawer con la lista completa solo existe en el rango
-    // intermedio.
+    // Middle range and mobile: AppBar + bottom nav with the destinations
+    // flagged for it; the drawer with the full list only exists in the middle
+    // range.
     final bottomDestinations =
-        destinations.where((d) => d.enBottomNav).toList();
-    final seleccionado = destinations[selectedIndex];
-    final indiceBottom = bottomDestinations.indexOf(seleccionado);
+        destinations.where((d) => d.inBottomNav).toList();
+    final selected = destinations[selectedIndex];
+    final bottomIndex = bottomDestinations.indexOf(selected);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(seleccionado.label),
+        title: Text(selected.label),
         actions: [
-          for (final destino in destinations)
-            if (!destino.enBottomNav)
+          for (final destination in destinations)
+            if (!destination.inBottomNav)
               IconButton(
-                icon: Icon(destino.icon),
-                tooltip: destino.label,
-                color: destino == seleccionado ? AppColors.primary : null,
+                icon: Icon(destination.icon),
+                tooltip: destination.label,
+                color: destination == selected ? AppColors.primary : null,
                 onPressed: () =>
-                    onDestinationSelected(destinations.indexOf(destino)),
+                    onDestinationSelected(destinations.indexOf(destination)),
               ),
           if (onLogout != null)
             IconButton(
               icon: const Icon(Icons.logout),
-              tooltip: 'Cerrar sesión',
+              tooltip: 'Sign out',
               onPressed: onLogout,
             ),
         ],
       ),
-      drawer: esMovil ? null : _buildDrawer(context),
-      body: contenido,
-      // El destino fuera de los 4 slots (Perfil) se muestra sin bottom nav,
-      // como una vista plena; se vuelve por el AppBar o el drawer.
-      bottomNavigationBar: indiceBottom < 0
+      drawer: isMobile ? null : _buildDrawer(context),
+      body: content,
+      // The destination outside the 4 slots (Profile) is shown without bottom
+      // nav, as a full view; you come back through the AppBar or the drawer.
+      bottomNavigationBar: bottomIndex < 0
           ? null
           : NavigationBar(
-              selectedIndex: indiceBottom,
+              selectedIndex: bottomIndex,
               destinations: [
-                for (final destino in bottomDestinations)
+                for (final destination in bottomDestinations)
                   NavigationDestination(
-                    icon: Icon(destino.icon),
-                    label: destino.label,
+                    icon: Icon(destination.icon),
+                    label: destination.label,
                   ),
               ],
               onDestinationSelected: (i) => onDestinationSelected(
@@ -131,8 +133,8 @@ class AppShell extends StatelessWidget {
   }
 
   Widget _buildSidebar(BuildContext context) {
-    // Material propio: los ListTile pintan su fondo e ink en el Material más
-    // cercano, así que el color no puede vivir en un Container intermedio.
+    // Its own Material: ListTile paints its background and ink on the nearest
+    // Material, so the color cannot live in an intermediate Container.
     return Material(
       color: AppColors.surfaceContainerLow,
       child: Container(
@@ -152,10 +154,10 @@ class AppShell extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppConstants.spacingSm),
-              for (final (i, destino) in destinations.indexed)
+              for (final (i, destination) in destinations.indexed)
                 NavItem(
-                  label: destino.label,
-                  icon: destino.icon,
+                  label: destination.label,
+                  icon: destination.icon,
                   selected: i == selectedIndex,
                   onTap: () => onDestinationSelected(i),
                 ),
@@ -163,7 +165,7 @@ class AppShell extends StatelessWidget {
                 const Spacer(),
                 const Divider(),
                 NavItem(
-                  label: 'Cerrar sesión',
+                  label: 'Sign out',
                   icon: Icons.logout,
                   selected: false,
                   onTap: onLogout!,
@@ -191,10 +193,10 @@ class AppShell extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppConstants.spacingSm),
-            for (final (i, destino) in destinations.indexed)
+            for (final (i, destination) in destinations.indexed)
               NavItem(
-                label: destino.label,
-                icon: destino.icon,
+                label: destination.label,
+                icon: destination.icon,
                 selected: i == selectedIndex,
                 onTap: () {
                   Navigator.pop(context);
@@ -205,7 +207,7 @@ class AppShell extends StatelessWidget {
               const Spacer(),
               const Divider(),
               NavItem(
-                label: 'Cerrar sesión',
+                label: 'Sign out',
                 icon: Icons.logout,
                 selected: false,
                 onTap: () {

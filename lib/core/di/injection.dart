@@ -1,9 +1,9 @@
-// Capa Core: Configuración de la inyección de dependencias con get_it.
-// Acá se registran los repositorios, casos de uso y otros servicios.
+// Core layer: Dependency injection setup with get_it.
+// Repositories, use cases and other services are registered here.
 //
-// Ningún widget construye un repositorio ni un caso de uso: los saca de getIt.
-// Los repositorios se registran contra su contrato de `domain`, no contra la
-// clase concreta, para que la capa Presentation nunca dependa de `data`.
+// No widget builds a repository or a use case: they take them from getIt.
+// Repositories are registered against their `domain` contract, not against the
+// concrete class, so that the Presentation layer never depends on `data`.
 
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -24,17 +24,19 @@ import '../config/supabase_config.dart';
 
 final getIt = GetIt.instance;
 
-/// Requiere que SupabaseConfig.initialize() ya se haya ejecutado.
+/// Requires SupabaseConfig.initialize() to have already run.
 ///
-/// Es idempotente: volver a llamarla no duplica registros. Lo necesitan los
-/// tests, que montan la app más de una vez en el mismo proceso.
+/// It is idempotent: calling it again does not duplicate registrations. The
+/// tests need that, since they mount the app more than once in the same
+/// process.
 void setupDependencies() {
   if (getIt.isRegistered<AuthRepository>()) return;
 
-  // Cliente de Supabase: única puerta de entrada al backend desde la capa Data.
+  // Supabase client: the single entry point to the backend from the Data
+  // layer.
   getIt.registerLazySingleton<SupabaseClient>(() => SupabaseConfig.client);
 
-  // Repositorios, registrados contra el contrato de domain.
+  // Repositories, registered against the domain contract.
   getIt.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(getIt<SupabaseClient>()),
   );
@@ -45,7 +47,7 @@ void setupDependencies() {
     () => RoadmapRepositoryImpl(getIt<SupabaseClient>()),
   );
 
-  // Casos de uso.
+  // Use cases.
   getIt.registerLazySingleton(() => SignUpUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => SignInUseCase(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => SignOutUseCase(getIt<AuthRepository>()));
@@ -55,14 +57,14 @@ void setupDependencies() {
   getIt.registerLazySingleton(
     () => GetRoadmapTreeUseCase(getIt<RoadmapRepository>()),
   );
-  // Sin dependencias: es lógica pura sobre las respuestas del cuestionario.
+  // No dependencies: it is pure logic over the questionnaire answers.
   getIt.registerLazySingleton(() => const RecommendTrackUseCase());
 }
 
-/// Registra dependencias ya construidas, para los tests.
+/// Registers already built dependencies, for the tests.
 ///
-/// Permite montar la app con dobles de prueba sin tocar Supabase.
-void overrideDependency<T extends Object>(T instancia) {
+/// It allows mounting the app with test doubles without touching Supabase.
+void overrideDependency<T extends Object>(T instance) {
   if (getIt.isRegistered<T>()) getIt.unregister<T>();
-  getIt.registerSingleton<T>(instancia);
+  getIt.registerSingleton<T>(instance);
 }
