@@ -1,10 +1,10 @@
-// Atomic Design (Página): Estructura principal que une organismos y maneja
-// la inyección de dependencias y el estado global o de la vista.
+// Atomic Design (Page): Main structure that wires organisms together and
+// handles dependency injection and the global or view state.
 //
-// Después de un ingreso exitoso esta página NO navega: cambia `currentSession`,
-// y los route guards del router deciden a dónde ir según si el onboarding está
-// completo. Un `context.go()` acá competiría con el guard y podría mandar a la
-// usuaria al lugar equivocado.
+// After a successful sign in this page does NOT navigate: it sets
+// `currentSession`, and the router's route guards decide where to go depending
+// on whether onboarding is complete. A `context.go()` here would race the
+// guard and could send the user to the wrong place.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,36 +21,36 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Región reactiva sobre signals. SignalBuilder reemplaza a Watch, que
-    // signals_flutter 7.1 deprecó; la decisión está anotada en la §9 del
-    // handoff de E1 y en CLAUDE.md.
+    // Reactive region over signals. SignalBuilder replaces Watch, which
+    // signals_flutter 7.1 deprecated; the decision is written down in §9 of
+    // the E1 handoff and in CLAUDE.md.
     return SignalBuilder(
       builder: (context) {
         if (authLoading.value) {
           return const AuthLayout(
-            title: 'Bienvenida',
+            title: 'Welcome',
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // El reenvío se ofrece solo si la cuenta existe y le falta el enlace
-        // del correo. En cualquier otro error no tendría sentido.
-        final faltaConfirmar =
+        // The resend is offered only if the account exists and is missing the
+        // email link. For any other error it would make no sense.
+        final needsConfirmation =
             authErrorKind.value == AuthFailureKind.emailNotConfirmed;
 
         return AuthLayout(
-          title: 'Bienvenida',
+          title: 'Welcome',
           child: LoginForm(
             errorMessage: authError.value,
             onEmailChanged: (v) => loginEmail.value = v,
             onPasswordChanged: (v) => loginPassword.value = v,
             onSubmit: signInWithEmail,
-            onResendConfirmation: faltaConfirmar
+            onResendConfirmation: needsConfirmation
                 ? () => resendConfirmationEmail(email: loginEmail.value.trim())
                 : null,
             onGoToSignUp: () {
-              limpiarFormulariosDeAuth();
-              context.go('/registro');
+              clearAuthForms();
+              context.go('/sign-up');
             },
           ),
         );

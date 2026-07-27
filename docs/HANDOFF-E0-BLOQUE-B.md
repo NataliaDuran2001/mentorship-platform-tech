@@ -144,7 +144,7 @@ del que ambos roles heredaban; ver la validación en el #16. `get_advisors`
 
 | Decisión | Valor |
 |---|---|
-| Idioma | UI y comentarios en **español**. Identificadores y código en inglés |
+| Idioma | ~~UI y comentarios en español~~ → **UI, comentarios e identificadores en inglés** desde el 2026-07-27 (issue #35). Los issues y `docs/` siguen en español |
 | Marca | **Sin decidir.** Todo nombre de producto pasa por `AppBranding.name` |
 | Tracks del roadmap | `frontend`, `backend`, `infrastructure` |
 | Router | `go_router` |

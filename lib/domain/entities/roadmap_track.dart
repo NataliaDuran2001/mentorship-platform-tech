@@ -1,32 +1,32 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Los 3 tracks del roadmap. Decisión de producto cerrada: no hay Mobile ni
-// UI/UX, aunque aparezcan en los mockups del prototipo.
+// The 3 roadmap tracks. Closed product decision: there is no Mobile and no
+// UI/UX, even though they show up in the prototype mockups.
 //
-// El `slug` es además la clave primaria de la tabla `tracks` y el valor de
-// `profiles.track_id`, para que el mapeo entre enum y base de datos sea
-// directo y no necesite una tabla de traducción.
+// The `slug` is also the primary key of the `tracks` table and the value of
+// `profiles.track_id`, so that the mapping between enum and database is
+// direct and needs no translation table.
 
 enum RoadmapTrack {
-  /// Interfaces visuales y experiencia de usuario.
+  /// Visual interfaces and user experience.
   frontend('frontend'),
 
-  /// Lógica de servidor, APIs y bases de datos.
+  /// Server logic, APIs and databases.
   backend('backend'),
 
-  /// Automatización, despliegue y operación de sistemas.
+  /// Automation, deployment and systems operation.
   infrastructure('infrastructure');
 
   const RoadmapTrack(this.slug);
 
-  /// Valor estable para persistencia. Nunca cambiar sin migrar los datos.
+  /// Stable value for persistence. Never change it without migrating data.
   final String slug;
 
-  /// Devuelve el track cuyo [slug] coincide, o `null` si no hay ninguno.
+  /// Returns the track whose [slug] matches, or `null` if there is none.
   ///
-  /// Devolver `null` es lo que permite que la opción «Aún no lo sé» del paso 2
-  /// del onboarding (`OnboardingKeys.unknownTrackValue`) se persista como
-  /// respuesta sin representar un track.
+  /// Returning `null` is what allows the "not sure yet" option of onboarding
+  /// step 2 (`OnboardingKeys.unknownTrackValue`) to be persisted as an answer
+  /// without representing a track.
   static RoadmapTrack? fromSlug(String? slug) {
     for (final track in RoadmapTrack.values) {
       if (track.slug == slug) return track;

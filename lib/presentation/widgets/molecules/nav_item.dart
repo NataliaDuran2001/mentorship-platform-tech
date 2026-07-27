@@ -1,7 +1,7 @@
-// Atomic Design (Molécula): Ítem de navegación para sidebar y drawer. Aplica
-// el spec de listas del design system: tinte violeta al 5% y texto primary
-// (ambos vía listTileTheme) más la barra activa de 2px en el borde izquierdo,
-// que no es tematizable y por eso vive acá.
+// Atomic Design (Molecule): Navigation item for sidebar and drawer. Applies
+// the design system's list spec: violet tint at 5% and primary text (both via
+// listTileTheme) plus the 2px active bar on the left edge, which isn't
+// themeable and that's why it lives here.
 
 import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';

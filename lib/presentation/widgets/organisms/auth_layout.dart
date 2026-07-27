@@ -1,6 +1,6 @@
-// Atomic Design (Organismo): Sección funcional reutilizable.
-// Encuadre común de las pantallas de autenticación: título, ancho legible y
-// scroll. Lo comparten login y registro para que no se vean distintas.
+// Atomic Design (Organism): Reusable functional section.
+// Shared frame for the authentication screens: title, readable width and
+// scroll. Login and sign up share it so they do not look different.
 
 import 'package:flutter/material.dart';
 
@@ -15,7 +15,7 @@ class AuthLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // El fondo y los estilos de texto vienen del tema (AppTheme).
+      // The background and the text styles come from the theme (AppTheme).
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.defaultPadding * 2),
@@ -28,7 +28,7 @@ class AuthLayout extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Nivel headlineLg de la escala del design system.
+                    // headlineLg level of the design system scale.
                     Text(
                       title,
                       style: Theme.of(context).textTheme.headlineLarge,

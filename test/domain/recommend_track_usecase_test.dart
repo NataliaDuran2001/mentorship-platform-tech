@@ -1,5 +1,5 @@
-// Pruebas unitarias de la única lógica de negocio real del Módulo 1 (issue #8,
-// AC3). No montan Flutter: la capa domain es Dart puro.
+// Unit tests of the only real business logic of Module 1 (issue #8, AC3).
+// They do not mount Flutter: the domain layer is pure Dart.
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,47 +7,49 @@ import 'package:aspire_app/domain/entities/onboarding_answer.dart';
 import 'package:aspire_app/domain/entities/roadmap_track.dart';
 import 'package:aspire_app/domain/usecases/recommend_track_usecase.dart';
 
-/// Respuestas del cuestionario guía, numeradas desde 1 como en el issue #12.
-List<OnboardingAnswer> _quiz(List<String> valores) => [
-      for (var i = 0; i < valores.length; i++)
+/// Answers of the guided quiz, numbered from 1 as in issue #12.
+List<OnboardingAnswer> _quiz(List<String> values) => [
+      for (var i = 0; i < values.length; i++)
         OnboardingAnswer(
           stepKey: OnboardingKeys.quizQuestion(i + 1),
-          value: valores[i],
+          value: values[i],
         ),
     ];
 
 void main() {
   const usecase = RecommendTrackUseCase();
 
-  group('cada track es recomendable', () {
+  group('every track can be recommended', () {
     for (final track in RoadmapTrack.values) {
-      test('mayoría de votos a ${track.slug} recomienda ${track.slug}', () {
-        // 2 votos al track bajo prueba y 1 a otro distinto: mayoría clara.
-        final otro = RoadmapTrack.values.firstWhere((t) => t != track);
-        final result = usecase(_quiz([track.slug, track.slug, otro.slug]));
+      test('a majority of votes for ${track.slug} recommends ${track.slug}',
+          () {
+        // 2 votes for the track under test and 1 for a different one: a clear
+        // majority.
+        final other = RoadmapTrack.values.firstWhere((t) => t != track);
+        final result = usecase(_quiz([track.slug, track.slug, other.slug]));
 
         expect(result.track, track);
         expect(result.wasTie, isFalse);
         expect(result.hasRecommendation, isTrue);
         expect(result.scores[track], 2);
-        expect(result.scores[otro], 1);
+        expect(result.scores[other], 1);
       });
     }
   });
 
-  test('sin respuestas no hay recomendación', () {
+  test('with no answers there is no recommendation', () {
     final result = usecase(const <OnboardingAnswer>[]);
 
     expect(result.hasRecommendation, isFalse);
     expect(result.track, isNull);
     expect(result.wasTie, isFalse);
-    // Los tres tracks presentes en cero: la UI puede pintar el desglose igual.
+    // The three tracks present at zero: the UI can paint the breakdown anyway.
     expect(result.scores.length, RoadmapTrack.values.length);
     expect(result.scores.values.every((v) => v == 0), isTrue);
   });
 
-  test('respuestas que no mapean a un track no cuentan como votos', () {
-    // Nivel, meta y «aún no lo sé»: ninguna es un track.
+  test('answers that do not map to a track do not count as votes', () {
+    // Level, goal and "I'm not sure yet": none of them is a track.
     final result = usecase(const [
       OnboardingAnswer(
         stepKey: OnboardingKeys.experienceLevel,
@@ -64,7 +66,7 @@ void main() {
     expect(result.scores.values.every((v) => v == 0), isTrue);
   });
 
-  test('empate entre los tres: gana frontend y queda marcado como empate', () {
+  test('a three-way tie: frontend wins and it is flagged as a tie', () {
     final result = usecase(_quiz([
       RoadmapTrack.backend.slug,
       RoadmapTrack.infrastructure.slug,
@@ -75,7 +77,7 @@ void main() {
     expect(result.track, RoadmapTrack.frontend);
   });
 
-  test('empate sin frontend: gana backend por orden de declaración', () {
+  test('a tie without frontend: backend wins by declaration order', () {
     final result = usecase(_quiz([
       RoadmapTrack.infrastructure.slug,
       RoadmapTrack.backend.slug,
@@ -85,7 +87,7 @@ void main() {
     expect(result.track, RoadmapTrack.backend);
   });
 
-  test('el desempate es determinístico: el orden de llegada no lo altera', () {
+  test('the tie-break is deterministic: arrival order does not change it', () {
     final a = usecase(_quiz([
       RoadmapTrack.infrastructure.slug,
       RoadmapTrack.backend.slug,
@@ -98,15 +100,15 @@ void main() {
     expect(a.track, b.track);
   });
 
-  test('una sola respuesta alcanza y no es empate', () {
+  test('a single answer is enough and is not a tie', () {
     final result = usecase(_quiz([RoadmapTrack.infrastructure.slug]));
 
     expect(result.track, RoadmapTrack.infrastructure);
     expect(result.wasTie, isFalse);
   });
 
-  test('se puede pasar la lista completa del onboarding sin filtrar', () {
-    // Es el caso de la reanudación (issue #14): loadAnswers() devuelve todo.
+  test('the full onboarding list can be passed in unfiltered', () {
+    // It is the resuming case (issue #14): loadAnswers() returns everything.
     final result = usecase([
       const OnboardingAnswer(
         stepKey: OnboardingKeys.experienceLevel,

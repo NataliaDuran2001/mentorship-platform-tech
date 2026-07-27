@@ -1,23 +1,23 @@
-// Atomic Design (Átomo): Componente irreductible.
-// Detecta el hover del puntero y lo entrega a un builder. No pinta nada.
+// Atomic Design (Atom): Irreducible component.
+// Detects pointer hover and hands it to a builder. It paints nothing.
 //
-// Por qué existe: el prototipo del onboarding usa `group-hover` de Tailwind —
-// pasar el mouse por la card cambia también el fondo del recuadro del ícono
-// que tiene adentro. En Flutter eso necesita que alguien conozca el hover y lo
-// propague hacia abajo por parámetro.
+// Why it exists: the onboarding prototype uses Tailwind's `group-hover` —
+// hovering the card also changes the background of the icon box inside it. In
+// Flutter that needs someone to know about the hover and pass it down by
+// parameter.
 //
-// Es el único widget con estado de todo el onboarding, y a propósito: el hover
-// es estado efímero de presentación, no estado de la aplicación. Los signals
-// de lib/presentation/state/ son para lo segundo. Meter el hover en un signal
-// global lo volvería compartido entre todas las cards de la pantalla, que es
-// justo lo contrario de lo que se necesita.
+// It's the only stateful widget in the whole onboarding, and on purpose: hover
+// is ephemeral presentation state, not application state. The signals in
+// lib/presentation/state/ are for the latter. Putting hover in a global signal
+// would make it shared across every card on the screen, which is exactly the
+// opposite of what's needed.
 
 import 'package:flutter/material.dart';
 
 class HoverBuilder extends StatefulWidget {
   const HoverBuilder({super.key, required this.builder});
 
-  /// Recibe `true` mientras el puntero está encima.
+  /// Gets `true` while the pointer is over it.
   final Widget Function(BuildContext context, bool isHovered) builder;
 
   @override

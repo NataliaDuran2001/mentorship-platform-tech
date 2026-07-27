@@ -1,15 +1,14 @@
-// Atomic Design (Organismo): Sección funcional reutilizable.
-// El marco común de todos los pasos del onboarding: barra de progreso,
-// contador, título, subtítulo, contenido y pie de acciones, más la columna
-// decorativa de escritorio.
+// Atomic Design (Organism): Reusable functional section.
+// The shared frame of every onboarding step: progress bar, counter, title,
+// subtitle, content and action footer, plus the decorative desktop column.
 //
-// No está en la lista de organismos del issue #11, y existe porque la
-// alternativa era que los cuatro pasos —cinco con el cuestionario guía del
-// #12— repitieran el mismo encabezado y pie. Cada copia es una oportunidad de
-// que un paso se vea distinto.
+// It is not in the organism list of issue #11, and it exists because the
+// alternative was having the four steps —five with the guided quiz of #12—
+// repeat the same header and footer. Every copy is a chance for one step to
+// look different.
 //
-// No lee estado: recibe el número de paso, el total y las visibilidades. Quien
-// las calcula es OnboardingPage.
+// It does not read state: it takes the step number, the total and the
+// visibility flags. OnboardingPage is the one that computes them.
 
 import 'package:flutter/material.dart';
 
@@ -32,15 +31,15 @@ class OnboardingStepLayout extends StatelessWidget {
     this.onContinue,
     this.showBack = true,
     this.showSkip = true,
-    this.continueLabel = 'Continuar',
+    this.continueLabel = 'Continue',
     this.errorMessage,
   });
 
   final int currentStep;
   final int totalSteps;
 
-  /// Encabezado del paso. `null` o vacío cuando el contenido trae el suyo, como
-  /// el resumen con su ícono de confirmación.
+  /// Step heading. `null` or empty when the content brings its own, like the
+  /// summary with its confirmation icon.
   final String? title;
 
   final String? subtitle;
@@ -53,20 +52,20 @@ class OnboardingStepLayout extends StatelessWidget {
   final bool showSkip;
   final String continueLabel;
 
-  /// Ya traducido al español.
+  /// Already user-facing text.
   final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final esEscritorio =
+    final isDesktop =
         MediaQuery.sizeOf(context).width > AppConstants.breakpointTablet;
 
-    final contenido = Column(
+    final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppProgressBar(
           value: currentStep / totalSteps,
-          semanticsLabel: 'Paso $currentStep de $totalSteps',
+          semanticsLabel: 'Step $currentStep of $totalSteps',
         ),
         const SizedBox(height: AppConstants.spacingMd),
         StepCounterLabel(currentStep: currentStep, totalSteps: totalSteps),
@@ -117,24 +116,25 @@ class OnboardingStepLayout extends StatelessWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: esEscritorio
+      child: isDesktop
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 2/5 del ancho para la columna decorativa, como el prototipo.
-                const Expanded(flex: 2, child: _PanelDecorativo()),
+                // 2/5 of the width for the decorative column, like the
+                // prototype.
+                const Expanded(flex: 2, child: _DecorativePanel()),
                 Expanded(
                   flex: 3,
                   child: Padding(
                     padding: const EdgeInsets.all(AppConstants.spacingXl),
-                    child: SingleChildScrollView(child: contenido),
+                    child: SingleChildScrollView(child: content),
                   ),
                 ),
               ],
             )
           : Padding(
               padding: const EdgeInsets.all(AppConstants.spacingLg),
-              child: SingleChildScrollView(child: contenido),
+              child: SingleChildScrollView(child: content),
             ),
     );
 
@@ -156,13 +156,14 @@ class OnboardingStepLayout extends StatelessWidget {
   }
 }
 
-/// Columna izquierda de escritorio.
+/// Left desktop column.
 ///
-/// El prototipo pone acá una ilustración; el repositorio todavía no tiene ese
-/// asset, así que se resuelve con los tokens del design system en vez de
-/// referenciar un archivo que no existe. Reemplazable sin tocar nada más.
-class _PanelDecorativo extends StatelessWidget {
-  const _PanelDecorativo();
+/// The prototype puts an illustration here; the repository does not have that
+/// asset yet, so it is solved with the design system tokens instead of
+/// referencing a file that does not exist. Replaceable without touching
+/// anything else.
+class _DecorativePanel extends StatelessWidget {
+  const _DecorativePanel();
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +188,7 @@ class _PanelDecorativo extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingLg),
             Text(
-              'Tu futuro empieza acá',
+              'Your future starts here',
               style: Theme.of(context)
                   .textTheme
                   .headlineMedium
@@ -195,8 +196,8 @@ class _PanelDecorativo extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingSm),
             Text(
-              'Te acompañamos en cada paso de tu carrera tecnológica, con '
-              'claridad y empatía.',
+              "We're with you at every step of your tech career, with clarity "
+              'and empathy.',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium

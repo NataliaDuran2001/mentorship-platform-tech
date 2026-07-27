@@ -24,7 +24,7 @@ fvm flutter test --plain-name 'Counter increments smoke test'   # single test by
 
 ## Architecture
 
-Two orthogonal structures are layered on top of each other. Both are load-bearing — new code is expected to slot into the correct cell of the grid, and every existing file carries a Spanish header comment stating which layer it belongs to. Keep that convention.
+Two orthogonal structures are layered on top of each other. Both are load-bearing — new code is expected to slot into the correct cell of the grid, and every existing file opens with a header comment stating which layer it belongs to. Keep that convention.
 
 **Clean architecture** across [lib/](lib/), with the dependency rule pointing inward (`presentation` → `domain` ← `data`):
 
@@ -63,7 +63,7 @@ No hardcoded colors or spacing in widgets. Use [AppColors](lib/presentation/util
 
 ## Conventions
 
-- Code comments and user-facing UI strings are in **Spanish**. Match this.
+- Code comments, identifiers and user-facing UI strings are in **English**. Match this. (Issues and the documents under [docs/](docs/) stay in **Spanish** — that split is deliberate, see issue #35.)
 - Every new file under `lib/` opens with a comment naming its layer, mirroring the existing files.
 - Imports between layers are relative (`../../domain/...`), not `package:aspire_app/...`.
 

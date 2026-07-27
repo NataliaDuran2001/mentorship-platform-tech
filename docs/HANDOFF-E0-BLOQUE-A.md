@@ -79,7 +79,7 @@ Prototipo Stitch (7 pantallas HTML + PNG + el DESIGN.md), fuera del repo:
 
 | Decisión | Valor |
 |---|---|
-| Idioma | UI y comentarios en **español**. Identificadores y código en inglés |
+| Idioma | ~~UI y comentarios en español~~ → **UI, comentarios e identificadores en inglés** desde el 2026-07-27 (issue #35). Los issues y `docs/` siguen en español |
 | Marca | **Sin decidir.** Todo nombre de producto pasa por `AppBranding.name` |
 | Tracks del roadmap | `frontend`, `backend`, `infrastructure` |
 | `AppColors.primary` | `#674BB5`. El `#A78BFA` que hay hoy es `primary-container`, está mal |

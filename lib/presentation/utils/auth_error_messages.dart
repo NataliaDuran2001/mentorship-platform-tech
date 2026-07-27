@@ -1,44 +1,44 @@
-// Capa Presentation (Utils): Traducción de los fallos de autenticación a
-// mensajes en español.
+// Presentation layer (Utils): Translation of authentication failures into
+// messages for the user.
 //
-// Es el único lugar donde un AuthFailureKind se convierte en texto visible.
-// La capa Data ya tradujo la excepción cruda de Supabase a un caso del
-// dominio; acá se le pone palabras. Ningún widget arma estos mensajes a mano.
+// It is the only place where an AuthFailureKind turns into visible text. The
+// Data layer already translated the raw Supabase exception into a domain case;
+// here it gets words. No widget builds these messages by hand.
 
 import '../../domain/failures/auth_failure.dart';
 
-/// Mensaje para la usuaria. Nunca incluye el detalle técnico del backend.
-String mensajeDeAuthFailure(AuthFailure fallo) {
-  switch (fallo.kind) {
+/// Message for the user. It never includes the backend's technical detail.
+String authFailureMessage(AuthFailure failure) {
+  switch (failure.kind) {
     case AuthFailureKind.invalidCredentials:
-      return 'El correo o la contraseña no son correctos.';
+      return "That email or password isn't right.";
     case AuthFailureKind.emailNotConfirmed:
-      return 'Tu cuenta todavía no está confirmada. Revisá tu correo y '
-          'seguí el enlace que te enviamos.';
+      return "Your account isn't confirmed yet. Check your email and "
+          'follow the link we sent you.';
     case AuthFailureKind.emailAlreadyRegistered:
-      return 'Ya existe una cuenta con ese correo. Probá iniciar sesión.';
+      return "There's already an account with that email. Try signing in.";
     case AuthFailureKind.weakPassword:
-      return 'La contraseña es demasiado débil. Usá al menos 6 caracteres.';
+      return 'That password is too weak. Use at least 6 characters.';
     case AuthFailureKind.invalidEmail:
-      return 'Ese correo no parece válido. Revisalo y probá de nuevo.';
+      return "That email doesn't look valid. Check it and try again.";
     case AuthFailureKind.tooManyRequests:
-      return 'Demasiados intentos seguidos. Esperá unos minutos y volvé a '
-          'probar.';
+      return 'Too many tries in a row. Wait a few minutes and give it '
+          'another go.';
     case AuthFailureKind.network:
-      return 'No pudimos conectarnos. Revisá tu conexión e intentá otra vez.';
+      return "We couldn't connect. Check your connection and try again.";
     case AuthFailureKind.notImplemented:
-      return 'Esa forma de ingresar todavía no está disponible.';
+      return "That way of signing in isn't available yet.";
     case AuthFailureKind.unknown:
-      return 'Algo no funcionó. Intentá de nuevo en un momento.';
+      return 'Something went wrong. Try again in a moment.';
   }
 }
 
-/// Mensaje para cualquier error, traducido o no.
+/// Message for any error, translated or not.
 ///
-/// Existe porque un `catch` de la UI puede recibir algo que no sea
-/// AuthFailure —un bug nuestro, por ejemplo— y ni siquiera en ese caso puede
-/// mostrarse el texto crudo.
-String mensajeDeError(Object error) {
-  if (error is AuthFailure) return mensajeDeAuthFailure(error);
-  return mensajeDeAuthFailure(const AuthFailure(AuthFailureKind.unknown));
+/// It exists because a `catch` in the UI can receive something that is not an
+/// AuthFailure —a bug of ours, for instance— and not even then can the raw
+/// text be shown.
+String errorMessage(Object error) {
+  if (error is AuthFailure) return authFailureMessage(error);
+  return authFailureMessage(const AuthFailure(AuthFailureKind.unknown));
 }

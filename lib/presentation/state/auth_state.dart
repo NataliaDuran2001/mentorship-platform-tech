@@ -1,13 +1,13 @@
-// Capa Presentation (State): Estado de autenticación con signals.
+// Presentation layer (State): Authentication state with signals.
 //
-// Este archivo solo declara señales; quien las llena es auth_actions.dart. La
-// separación es a propósito: así el estado se puede leer y resetear desde un
-// test sin arrastrar getIt ni Supabase.
+// This file only declares signals; the one that fills them is
+// auth_actions.dart. The separation is on purpose: this way the state can be
+// read and reset from a test without dragging in getIt or Supabase.
 //
-// `isAuthenticated` es un `computed` derivado de la sesión real, no un booleano
-// que la UI pone en `true` a mano como en el andamio original: era la deuda 3
-// de la §3 del handoff. Ahora es imposible que la app se crea autenticada sin
-// tener sesión.
+// `isAuthenticated` is a `computed` derived from the real session, not a
+// boolean the UI sets to `true` by hand like in the original scaffold: that was
+// debt 3 of §3 of the handoff. Now it is impossible for the app to believe it
+// is authenticated without having a session.
 
 import 'package:signals_flutter/signals_flutter.dart';
 
@@ -15,49 +15,50 @@ import '../../domain/entities/auth_session.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/failures/auth_failure.dart';
 
-/// Sesión vigente, o `null` si no hay. La escriben el arranque y el stream de
-/// cambios de sesión del repositorio.
+/// Current session, or `null` if there is none. It is written by the bootstrap
+/// and by the repository's session change stream.
 final currentSession = signal<AuthSession?>(null);
 
-/// Perfil de la usuaria autenticada. `null` sin sesión o si todavía no se leyó.
+/// Profile of the authenticated user. `null` without a session or if it has
+/// not been read yet.
 final currentProfile = signal<UserProfile?>(null);
 
-/// Hay sesión. Derivado, no escribible.
+/// There is a session. Derived, not writable.
 final isAuthenticated = computed(() => currentSession.value != null);
 
-/// El onboarding está terminado. Exige track además de la marca de tiempo, así
-/// que ningún camino lleva al dashboard con `track_id` nulo.
+/// The onboarding is finished. It requires a track on top of the timestamp, so
+/// no path leads to the dashboard with a null `track_id`.
 final hasCompletedOnboarding =
     computed(() => currentProfile.value?.hasCompletedOnboarding ?? false);
 
-/// Hay una operación de autenticación en curso.
+/// An authentication operation is in progress.
 final authLoading = signal<bool>(false);
 
-/// Mensaje de error en español, ya traducido. `null` si no hay error.
+/// Error message, already translated. `null` if there is no error.
 final authError = signal<String?>(null);
 
-/// Tipo del último fallo, para las decisiones de la UI que dependen de *cuál*
-/// error fue y no de su texto. Hoy la única: ofrecer el reenvío del correo solo
-/// cuando la cuenta existe y falta confirmarla.
+/// Kind of the last failure, for the UI decisions that depend on *which* error
+/// it was and not on its text. Today the only one: offering to resend the email
+/// only when the account exists and still needs confirming.
 final authErrorKind = signal<AuthFailureKind?>(null);
 
-/// Correo que quedó esperando confirmación después de un registro exitoso.
+/// Email left waiting for confirmation after a successful sign-up.
 ///
-/// Con `mailer_autoconfirm: false` el registro no devuelve sesión, así que este
-/// es el estado «revisá tu correo»: la pantalla de registro lo muestra y ofrece
-/// reenviar el correo.
+/// With `mailer_autoconfirm: false` the sign-up returns no session, so this is
+/// the "check your email" state: the sign-up screen shows it and offers to
+/// resend the email.
 final pendingConfirmationEmail = signal<String?>(null);
 
-/// Confirmación de que el correo se reenvió, para dar feedback visible.
+/// Confirmation that the email was resent, to give visible feedback.
 final confirmationEmailResent = signal<bool>(false);
 
 // ---------------------------------------------------------------------------
-// Campos de los formularios
+// Form fields
 //
-// Viven en señales y no en TextEditingController porque los widgets del
-// proyecto son StatelessWidget: un controller necesitaría un State que lo
-// libere. La contrapartida es que la contraseña queda en memoria global, así
-// que se limpia en cuanto se usa (ver limpiarFormulariosDeAuth).
+// They live in signals and not in a TextEditingController because the widgets
+// of the project are StatelessWidget: a controller would need a State to
+// dispose of it. The trade-off is that the password stays in global memory, so
+// it is cleared as soon as it is used (see clearAuthForms).
 // ---------------------------------------------------------------------------
 
 final loginEmail = signal<String>('');
@@ -66,9 +67,9 @@ final signUpName = signal<String>('');
 final signUpEmail = signal<String>('');
 final signUpPassword = signal<String>('');
 
-/// Vacía los campos y los mensajes. Se llama al entrar y al salir de las
-/// pantallas de autenticación, y después de cada envío exitoso.
-void limpiarFormulariosDeAuth() {
+/// Empties the fields and the messages. It is called when entering and leaving
+/// the authentication screens, and after every successful submit.
+void clearAuthForms() {
   loginEmail.value = '';
   loginPassword.value = '';
   signUpName.value = '';

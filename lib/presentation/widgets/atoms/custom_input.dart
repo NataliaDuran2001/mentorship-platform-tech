@@ -1,11 +1,11 @@
-// Atomic Design (Átomo): Campo de texto genérico y reutilizable. La
-// decoración (fondo, bordes, color del ícono) viene del tema; acá solo se
-// agrega el glow de foco de DESIGN.md — 2px del primary al 20% de opacidad —
-// porque un InputBorder no puede pintar sombras.
+// Atomic Design (Atom): Generic, reusable text field. The decoration
+// (background, borders, icon color) comes from the theme; here we only add the
+// focus glow from DESIGN.md — 2px of primary at 20% opacity — because an
+// InputBorder can't paint shadows.
 //
-// No tiene TextEditingController: el valor sale por [onChanged] y lo guarda
-// quien lo usa, normalmente un signal. Un controller necesitaría un State que
-// lo libere, y los widgets de este proyecto son StatelessWidget.
+// It has no TextEditingController: the value comes out through [onChanged] and
+// whoever uses it holds on to it, usually a signal. A controller would need a
+// State to dispose of it, and the widgets in this project are StatelessWidget.
 
 import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
@@ -16,20 +16,21 @@ class CustomInput extends StatelessWidget {
   final IconData? prefixIcon;
   final bool obscureText;
 
-  /// Cada pulsación. Es la única salida del átomo.
+  /// Every keystroke. It's the atom's only output.
   final ValueChanged<String>? onChanged;
 
-  /// Enter o «listo» del teclado. Sirve para enviar el formulario sin mouse.
+  /// Enter or the keyboard's "done". Lets you submit the form without a mouse.
   final ValueChanged<String>? onSubmitted;
 
-  /// Mensaje de validación bajo el campo. Ya en español: el átomo no traduce.
+  /// Validation message under the field. Already localized: the atom doesn't
+  /// translate.
   final String? errorText;
 
   final bool enabled;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
 
-  /// Pistas para el autocompletado del navegador y del gestor de contraseñas.
+  /// Hints for the browser's and the password manager's autofill.
   final Iterable<String>? autofillHints;
 
   const CustomInput({
@@ -48,8 +49,9 @@ class CustomInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Focus.of registra la dependencia inherited y reconstruye el Builder al
-    // entrar o salir el foco: el glow reacciona sin estado propio ni setState.
+    // Focus.of registers the inherited dependency and rebuilds the Builder
+    // when focus enters or leaves: the glow reacts with no state of its own
+    // and no setState.
     return Focus(
       child: Builder(
         builder: (context) {

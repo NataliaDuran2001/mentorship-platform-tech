@@ -1,12 +1,12 @@
-// Capa Presentation (State): Acciones de autenticación.
+// Presentation layer (State): Authentication actions.
 //
-// Es el único lugar de la capa Presentation que toca getIt. Los widgets llaman
-// a estas funciones; no resuelven casos de uso ni construyen repositorios.
+// It is the only place in the Presentation layer that touches getIt. Widgets
+// call these functions; they do not resolve use cases nor build repositories.
 //
-// Está separado de auth_state.dart por dos razones: el archivo de señales queda
-// sin dependencias y testeable solo, y la lógica de sesión —arranque, stream de
-// cambios, logout— necesita un hogar que no sea una página, porque más de una
-// pantalla la usa.
+// It is kept apart from auth_state.dart for two reasons: the signals file stays
+// dependency-free and testable on its own, and the session logic —bootstrap,
+// change stream, logout— needs a home that is not a page, because more than one
+// screen uses it.
 
 import 'dart:async';
 
@@ -24,177 +24,177 @@ import 'onboarding_actions.dart';
 import 'onboarding_state.dart';
 import 'roadmap_state.dart';
 
-StreamSubscription<AuthSession?>? _suscripcionSesion;
+StreamSubscription<AuthSession?>? _sessionSubscription;
 
-/// Deja el estado de autenticación listo antes de que se monte la UI.
+/// Leaves the authentication state ready before the UI is mounted.
 ///
-/// Lee la sesión que el SDK ya restauró del almacenamiento —de ahí que
-/// recargar la página no eche a nadie— y, si hay, trae el perfil. Se hace acá y
-/// no dentro de los route guards para que el guard nunca tenga que decidir con
-/// el perfil a medio cargar: cuando la app arranca, o hay sesión y perfil, o no
-/// hay sesión.
+/// It reads the session the SDK already restored from storage —which is why
+/// reloading the page does not kick anyone out— and, if there is one, fetches
+/// the profile. It happens here and not inside the route guards so that the
+/// guard never has to decide with the profile half loaded: when the app starts,
+/// either there is a session and a profile, or there is no session.
 Future<void> bootstrapAuth() async {
-  final repositorio = getIt<AuthRepository>();
+  final repository = getIt<AuthRepository>();
 
-  currentSession.value = repositorio.currentSession;
+  currentSession.value = repository.currentSession;
   if (currentSession.value != null) {
     await refreshProfile();
   }
 
-  _suscripcionSesion?.cancel();
-  _suscripcionSesion = repositorio.sessionChanges.listen((sesion) async {
-    final habiaSesion = currentSession.value != null;
-    currentSession.value = sesion;
+  _sessionSubscription?.cancel();
+  _sessionSubscription = repository.sessionChanges.listen((session) async {
+    final hadSession = currentSession.value != null;
+    currentSession.value = session;
 
-    if (sesion == null) {
+    if (session == null) {
       currentProfile.value = null;
       return;
     }
-    // Al iniciar sesión trae el perfil; en un refresco de token ya lo tiene.
-    if (!habiaSesion || currentProfile.value == null) {
+    // On sign-in it fetches the profile; on a token refresh it already has it.
+    if (!hadSession || currentProfile.value == null) {
       await refreshProfile();
     }
   });
 }
 
-/// Vuelve a leer el perfil de la usuaria autenticada.
+/// Reads the authenticated user's profile again.
 ///
-/// Se llama después de entrar y cada vez que el onboarding cambia el perfil,
-/// para que los route guards decidan con datos frescos.
+/// It is called after signing in and every time the onboarding changes the
+/// profile, so the route guards decide with fresh data.
 Future<void> refreshProfile() async {
   try {
-    final perfil = await getIt<OnboardingRepository>().loadProfile();
-    currentProfile.value = perfil;
+    final profile = await getIt<OnboardingRepository>().loadProfile();
+    currentProfile.value = profile;
 
-    // Onboarding a medio hacer: se reconstruye el estado parcial antes de que la
-    // pantalla se monte, para aterrizar en el primer paso sin responder con lo
-    // anterior ya marcado (issue #14). Acá y no en la página porque el route
-    // guard decide a dónde ir antes de que exista ningún widget.
-    if (perfil != null && !perfil.hasCompletedOnboarding) {
+    // Half-finished onboarding: the partial state is rebuilt before the screen
+    // is mounted, so we land on the first unanswered step instead of the
+    // previous one already marked (issue #14). Here and not in the page because
+    // the route guard decides where to go before any widget exists.
+    if (profile != null && !profile.hasCompletedOnboarding) {
       await restoreOnboarding();
     }
   } catch (e) {
-    // No se traduce a authError: el perfil se lee de fondo y un fallo acá no
-    // debe pintar un error en la pantalla de login. El guard verá el perfil en
-    // null y mandará al onboarding, que lo reintenta.
+    // It is not translated into authError: the profile is read in the
+    // background and a failure here must not paint an error on the login
+    // screen. The guard will see a null profile and send the user to the
+    // onboarding, which retries it.
     currentProfile.value = null;
   }
 }
 
-/// Inicia sesión con correo y contraseña.
+/// Signs in with email and password.
 ///
-/// Devuelve `true` si quedó sesión abierta. Deja el mensaje de error, ya en
-/// español, en [authError].
+/// Returns `true` if a session was opened. It leaves the error message, already
+/// translated, in [authError].
 Future<bool> signInWithEmail() async {
   final email = loginEmail.value.trim();
   final password = loginPassword.value;
 
   if (email.isEmpty || password.isEmpty) {
-    authError.value = 'Completá tu correo y tu contraseña.';
+    authError.value = 'Fill in your email and your password.';
     return false;
   }
 
   authLoading.value = true;
-  _limpiarError();
+  _clearError();
 
   try {
-    final resultado = await getIt<SignInUseCase>()(
+    final result = await getIt<SignInUseCase>()(
       email: email,
       password: password,
     );
-    currentSession.value = resultado.session;
-    if (resultado.session != null) await refreshProfile();
+    currentSession.value = result.session;
+    if (result.session != null) await refreshProfile();
 
-    // La contraseña no se queda en memoria más de lo necesario.
+    // The password does not stay in memory longer than needed.
     loginPassword.value = '';
-    return resultado.isSignedIn;
+    return result.isSignedIn;
   } catch (e) {
-    _registrarError(e);
+    _recordError(e);
     return false;
   } finally {
     authLoading.value = false;
   }
 }
 
-/// Registra una cuenta nueva.
+/// Registers a new account.
 ///
-/// Con la confirmación por correo activa el caso normal es que NO haya sesión:
-/// se deja el correo en [pendingConfirmationEmail] y la pantalla muestra
-/// «revisá tu correo». Devuelve `true` si el registro salió bien, con o sin
-/// sesión.
+/// With email confirmation on, the normal case is that there is NO session: the
+/// email is left in [pendingConfirmationEmail] and the screen shows "check your
+/// email". Returns `true` if the sign-up went well, with or without a session.
 Future<bool> signUpWithEmail() async {
   final email = signUpEmail.value.trim();
   final password = signUpPassword.value;
-  final nombre = signUpName.value.trim();
+  final name = signUpName.value.trim();
 
   if (email.isEmpty || password.isEmpty) {
-    authError.value = 'Completá tu correo y tu contraseña.';
+    authError.value = 'Fill in your email and your password.';
     return false;
   }
 
   authLoading.value = true;
-  _limpiarError();
+  _clearError();
 
   try {
-    final resultado = await getIt<SignUpUseCase>()(
+    final result = await getIt<SignUpUseCase>()(
       email: email,
       password: password,
-      displayName: nombre.isEmpty ? null : nombre,
+      displayName: name.isEmpty ? null : name,
     );
 
-    if (resultado.requiresEmailConfirmation) {
+    if (result.requiresEmailConfirmation) {
       pendingConfirmationEmail.value = email;
     } else {
-      currentSession.value = resultado.session;
+      currentSession.value = result.session;
       await refreshProfile();
     }
 
     signUpPassword.value = '';
     return true;
   } catch (e) {
-    _registrarError(e);
+    _recordError(e);
     return false;
   } finally {
     authLoading.value = false;
   }
 }
 
-/// Reenvía el correo de confirmación al [email] indicado, o al que quedó
-/// pendiente del último registro.
+/// Resends the confirmation email to the given [email], or to the one left
+/// pending by the last sign-up.
 Future<void> resendConfirmationEmail({String? email}) async {
-  final destino = email ?? pendingConfirmationEmail.value;
-  if (destino == null || destino.isEmpty) return;
+  final target = email ?? pendingConfirmationEmail.value;
+  if (target == null || target.isEmpty) return;
 
   authLoading.value = true;
-  _limpiarError();
+  _clearError();
   confirmationEmailResent.value = false;
 
   try {
-    await getIt<AuthRepository>().resendConfirmationEmail(email: destino);
+    await getIt<AuthRepository>().resendConfirmationEmail(email: target);
     confirmationEmailResent.value = true;
   } catch (e) {
-    _registrarError(e);
+    _recordError(e);
   } finally {
     authLoading.value = false;
   }
 }
 
-/// Cierra la sesión y limpia todo el estado derivado.
+/// Signs out and clears all derived state.
 Future<void> signOut() async {
   authLoading.value = true;
   try {
     await getIt<SignOutUseCase>()();
   } catch (e) {
-    _registrarError(e);
+    _recordError(e);
   } finally {
-    // Se limpia incluso si el backend falló: dejar la app «con sesión» después
-    // de que la usuaria pidió salir es peor que un logout solo local.
+    // It is cleared even if the backend failed: leaving the app "with a
+    // session" after the user asked to leave is worse than a local-only logout.
     currentSession.value = null;
     currentProfile.value = null;
     pendingConfirmationEmail.value = null;
-    limpiarFormulariosDeAuth();
-    // El onboarding de la usuaria que se va no puede quedar cargado para la que
-    // entre después.
+    clearAuthForms();
+    // The onboarding of the user who leaves cannot stay loaded for the one who
+    // comes in next.
     cancelOnboardingTimers();
     resetOnboarding();
     resetRoadmap();
@@ -202,23 +202,23 @@ Future<void> signOut() async {
   }
 }
 
-/// Guarda el mensaje traducido y el tipo del fallo.
+/// Stores the translated message and the kind of the failure.
 ///
-/// El tipo lo necesita la UI para decidir *qué* ofrecer, no *qué decir*: hoy,
-/// mostrar el reenvío del correo solo cuando la cuenta existe y falta
-/// confirmarla.
-void _limpiarError() {
+/// The UI needs the kind to decide *what* to offer, not *what to say*: today,
+/// showing the email resend only when the account exists and still needs
+/// confirming.
+void _clearError() {
   authError.value = null;
   authErrorKind.value = null;
 }
 
-void _registrarError(Object e) {
-  authError.value = mensajeDeError(e);
+void _recordError(Object e) {
+  authError.value = errorMessage(e);
   authErrorKind.value = e is AuthFailure ? e.kind : AuthFailureKind.unknown;
 }
 
-/// Corta la escucha del stream de sesión. Para los tests.
+/// Stops listening to the session stream. For the tests.
 Future<void> disposeAuthListener() async {
-  await _suscripcionSesion?.cancel();
-  _suscripcionSesion = null;
+  await _sessionSubscription?.cancel();
+  _sessionSubscription = null;
 }

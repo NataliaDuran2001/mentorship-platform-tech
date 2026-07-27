@@ -1,6 +1,6 @@
-// Capa Core (Config): Identidad de marca. Único lugar donde vive el nombre
-// del producto: la marca aún no está decidida (mockups: "Obsidian Mentor";
-// paquete: aspire_app), así que ningún otro archivo debe hardcodearla.
+// Core layer (Config): Brand identity. The only place where the product name
+// lives: the brand is not decided yet (mockups: "Obsidian Mentor"; package:
+// aspire_app), so no other file should hardcode it.
 
 class AppBranding {
   static const String name = 'Mentorship App';

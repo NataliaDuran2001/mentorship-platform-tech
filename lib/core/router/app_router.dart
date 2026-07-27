@@ -1,6 +1,6 @@
-// Capa Core (Router): definición de rutas con go_router, route guards de
-// sesión y wiring del shell responsivo. Login, registro y onboarding viven
-// fuera del ShellRoute, sin nav visible.
+// Core layer (Router): route definitions with go_router, session route guards
+// and wiring of the responsive shell. Login, sign up and onboarding live
+// outside the ShellRoute, with no visible nav.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -12,158 +12,160 @@ import '../../presentation/state/auth_state.dart';
 import '../../presentation/widgets/organisms/app_shell.dart';
 import '../../presentation/widgets/pages/chat_page.dart';
 import '../../presentation/widgets/pages/dashboard_page.dart';
-import '../../presentation/widgets/pages/entrevistas_page.dart';
+import '../../presentation/widgets/pages/interviews_page.dart';
+import '../../presentation/widgets/pages/logic_page.dart';
 import '../../presentation/widgets/pages/login_page.dart';
-import '../../presentation/widgets/pages/logica_page.dart';
 import '../../presentation/widgets/pages/onboarding_page.dart';
-import '../../presentation/widgets/pages/perfil_page.dart';
+import '../../presentation/widgets/pages/profile_page.dart';
 import '../../presentation/widgets/pages/roadmap_page.dart';
 import '../../presentation/widgets/pages/sign_up_page.dart';
 
-/// Destinos del shell y sus rutas, en el mismo orden. Perfil no ocupa slot
-/// del bottom nav: en ≤768 se llega por el ícono del AppBar (§9 del handoff).
+/// Shell destinations and their routes, in the same order. Profile does not
+/// take a bottom nav slot: on ≤768 it is reached through the AppBar icon (§9
+/// of the handoff).
 ///
-/// «Mi ruta» va primero porque es el destino al que llega la usuaria al terminar
-/// el onboarding: es lo que cierra el CA 1.3.
-const _destinos = <AppDestination>[
-  AppDestination(label: 'Mi ruta', icon: Icons.route_outlined),
+/// "My path" goes first because it is the destination the user lands on when
+/// finishing the onboarding: it is what closes AC 1.3.
+const _destinations = <AppDestination>[
+  AppDestination(label: 'My path', icon: Icons.route_outlined),
   AppDestination(label: 'Dashboard', icon: Icons.space_dashboard_outlined),
   AppDestination(label: 'Chat', icon: Icons.chat_bubble_outline),
-  AppDestination(label: 'Lógica', icon: Icons.psychology_outlined),
-  AppDestination(label: 'Entrevistas', icon: Icons.record_voice_over_outlined),
+  AppDestination(label: 'Logic', icon: Icons.psychology_outlined),
+  AppDestination(label: 'Interviews', icon: Icons.record_voice_over_outlined),
   AppDestination(
-    label: 'Perfil',
+    label: 'Profile',
     icon: Icons.person_outline,
-    enBottomNav: false,
+    inBottomNav: false,
   ),
 ];
 
-const _rutas = <String>[
-  '/ruta',
+const _routes = <String>[
+  '/path',
   '/dashboard',
   '/chat',
-  '/logica',
-  '/entrevistas',
-  '/perfil',
+  '/logic',
+  '/interviews',
+  '/profile',
 ];
 
-/// Rutas accesibles sin sesión.
-const _rutasPublicas = <String>{'/login', '/registro'};
+/// Routes reachable without a session.
+const _publicRoutes = <String>{'/login', '/sign-up'};
 
-/// La única ruta permitida con sesión y onboarding incompleto.
-const _rutaOnboarding = '/onboarding';
+/// The only route allowed with a session and an incomplete onboarding.
+const _onboardingRoute = '/onboarding';
 
 class AppRouter {
   AppRouter._();
 
-  /// Vuelve a evaluar los guards cuando cambia la sesión o el perfil.
+  /// Re-evaluates the guards when the session or the profile changes.
   ///
-  /// go_router necesita un Listenable y los signals no lo son: este puente
-  /// convierte un `effect` en notificaciones. Es lo que hace que entrar,
-  /// terminar el onboarding o cerrar sesión redirijan sin que ninguna pantalla
-  /// llame a `context.go()` a mano.
-  static final _SignalsRefreshListenable _refresco =
+  /// go_router needs a Listenable and signals are not one: this bridge turns
+  /// an `effect` into notifications. It is what makes signing in, finishing
+  /// the onboarding or signing out redirect without any screen calling
+  /// `context.go()` by hand.
+  static final _SignalsRefreshListenable _refresh =
       _SignalsRefreshListenable();
 
   static final GoRouter router = GoRouter(
     initialLocation: '/login',
-    refreshListenable: _refresco,
+    refreshListenable: _refresh,
     redirect: _guard,
     routes: [
-      // Raíz: alias de la ruta de aprendizaje, para que recargar en '/' no dé
-      // 404 y para aterrizar donde está el contenido del Módulo 1.
-      GoRoute(path: '/', redirect: (_, __) => '/ruta'),
+      // Root: alias of the learning path route, so that reloading on '/' does
+      // not give a 404 and so it lands where the Module 1 content is.
+      GoRoute(path: '/', redirect: (_, __) => '/path'),
 
-      // Fuera del shell: sin nav visible.
+      // Outside the shell: no visible nav.
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
-      GoRoute(path: '/registro', builder: (_, __) => const SignUpPage()),
+      GoRoute(path: '/sign-up', builder: (_, __) => const SignUpPage()),
       GoRoute(
-        path: _rutaOnboarding,
+        path: _onboardingRoute,
         builder: (_, __) => const OnboardingPage(),
       ),
 
       ShellRoute(
         builder: (context, state, child) {
-          final indice = _rutas.indexOf(state.uri.path);
+          final index = _routes.indexOf(state.uri.path);
           return AppShell(
             title: AppBranding.name,
-            destinations: _destinos,
-            // Si la ruta no está en la lista (no debería pasar dentro del
-            // shell), se cae al dashboard para no romper el nav.
-            selectedIndex: indice < 0 ? 0 : indice,
-            onDestinationSelected: (i) => context.go(_rutas[i]),
+            destinations: _destinations,
+            // If the route is not in the list (it should not happen inside
+            // the shell), it falls back to the dashboard so as not to break
+            // the nav.
+            selectedIndex: index < 0 ? 0 : index,
+            onDestinationSelected: (i) => context.go(_routes[i]),
             onLogout: signOut,
             child: child,
           );
         },
         routes: [
-          GoRoute(path: '/ruta', builder: (_, __) => const RoadmapPage()),
+          GoRoute(path: '/path', builder: (_, __) => const RoadmapPage()),
           GoRoute(
             path: '/dashboard',
             builder: (_, __) => const DashboardPage(),
           ),
           GoRoute(path: '/chat', builder: (_, __) => const ChatPage()),
-          GoRoute(path: '/logica', builder: (_, __) => const LogicaPage()),
+          GoRoute(path: '/logic', builder: (_, __) => const LogicPage()),
           GoRoute(
-            path: '/entrevistas',
-            builder: (_, __) => const EntrevistasPage(),
+            path: '/interviews',
+            builder: (_, __) => const InterviewsPage(),
           ),
-          GoRoute(path: '/perfil', builder: (_, __) => const PerfilPage()),
+          GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
         ],
       ),
     ],
   );
 
-  /// Los tres casos del issue #9:
+  /// The three cases of issue #9:
   ///
-  /// 1. Sin sesión → `/login`.
-  /// 2. Con sesión y onboarding incompleto → `/onboarding`.
-  /// 3. Con sesión y onboarding completo → `/ruta`.
+  /// 1. No session → `/login`.
+  /// 2. Session with an incomplete onboarding → `/onboarding`.
+  /// 3. Session with a complete onboarding → `/path`.
   ///
-  /// Vale también para el acceso directo por URL: el guard corre en cada
-  /// navegación, incluida la primera, así que escribir `/dashboard` en la barra
-  /// del navegador sin sesión termina en el login.
+  /// It also holds for direct URL access: the guard runs on every navigation,
+  /// including the first one, so typing `/dashboard` in the browser bar
+  /// without a session ends up at the login.
   ///
-  /// «Onboarding completo» se pregunta a `hasCompletedOnboarding`, que exige
-  /// `track` además de la marca de tiempo. Es lo que garantiza que ningún camino
-  /// llegue al dashboard con `track_id` nulo (política del #14).
+  /// "Complete onboarding" is asked to `hasCompletedOnboarding`, which
+  /// requires `track` on top of the timestamp. That is what guarantees that no
+  /// path reaches the dashboard with a null `track_id` (policy of #14).
   static String? _guard(BuildContext context, GoRouterState state) {
-    final destino = state.matchedLocation;
-    final esPublica = _rutasPublicas.contains(destino);
+    final destination = state.matchedLocation;
+    final isPublic = _publicRoutes.contains(destination);
 
     if (!isAuthenticated.value) {
-      return esPublica ? null : '/login';
+      return isPublic ? null : '/login';
     }
 
     if (!hasCompletedOnboarding.value) {
-      return destino == _rutaOnboarding ? null : _rutaOnboarding;
+      return destination == _onboardingRoute ? null : _onboardingRoute;
     }
 
-    // Con el onboarding terminado, login, registro y onboarding ya no aplican.
-    // Se aterriza en la ruta de aprendizaje y no en el dashboard: es el CA 1.3
-    // —«al definir la ruta se despliega el árbol de tópicos»—.
-    if (esPublica || destino == _rutaOnboarding) return '/ruta';
+    // With the onboarding finished, login, sign up and onboarding no longer
+    // apply. It lands on the learning path route and not on the dashboard: it
+    // is AC 1.3 —"when the path is defined the topic tree is displayed"—.
+    if (isPublic || destination == _onboardingRoute) return '/path';
     return null;
   }
 }
 
-/// Puente entre los signals de autenticación y el `refreshListenable` de
-/// go_router.
+/// Bridge between the authentication signals and go_router's
+/// `refreshListenable`.
 class _SignalsRefreshListenable extends ChangeNotifier {
   _SignalsRefreshListenable() {
-    _cancelar = effect(() {
-      // Leerlos dentro del effect es lo que los suscribe.
+    _cancel = effect(() {
+      // Reading them inside the effect is what subscribes to them.
       currentSession.value;
       currentProfile.value;
       notifyListeners();
     });
   }
 
-  late final void Function() _cancelar;
+  late final void Function() _cancel;
 
   @override
   void dispose() {
-    _cancelar();
+    _cancel();
     super.dispose();
   }
 }

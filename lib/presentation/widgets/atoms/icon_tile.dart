@@ -1,10 +1,10 @@
-// Atomic Design (Átomo): Componente irreductible.
-// Recuadro de 48px con un ícono, el que acompaña a cada opción del onboarding.
+// Atomic Design (Atom): Irreducible component.
+// 48px box with an icon, the one that goes with each onboarding option.
 //
-// No detecta el hover por su cuenta: lo recibe en [isHighlighted]. En el
-// prototipo el fondo del recuadro cambia cuando se pasa el mouse por la card
-// entera (`group-hover`), no cuando se pasa por el recuadro. Quien conoce ese
-// hover es la molécula que lo contiene.
+// It doesn't detect hover on its own: it gets it in [isHighlighted]. In the
+// prototype the box background changes when you hover the whole card
+// (`group-hover`), not when you hover the box. The one that knows about that
+// hover is the molecule containing it.
 
 import 'package:flutter/material.dart';
 
@@ -20,7 +20,8 @@ class IconTile extends StatelessWidget {
 
   final IconData icon;
 
-  /// Resalta el recuadro: fondo `primaryContainer` en vez de `surfaceContainer`.
+  /// Highlights the box: `primaryContainer` background instead of
+  /// `surfaceContainer`.
   final bool isHighlighted;
 
   @override

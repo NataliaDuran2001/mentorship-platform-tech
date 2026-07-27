@@ -1,39 +1,40 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Una respuesta suelta del onboarding. Se guarda al momento de seleccionarla,
-// no al final, para que el flujo sea reanudable (issue #14).
+// A single onboarding answer. It is saved the moment it is selected, not at
+// the end, so that the flow is resumable (issue #14).
 
-/// Claves estables de los pasos del onboarding.
+/// Stable keys of the onboarding steps.
 ///
-/// Son la clave de upsert de `onboarding_answers` junto con la usuaria: volver
-/// atrás y cambiar una respuesta actualiza la fila, no agrega otra.
+/// Together with the user they are the upsert key of `onboarding_answers`:
+/// going back and changing an answer updates the row instead of adding one.
 abstract final class OnboardingKeys {
-  /// Paso 1: nivel de experiencia.
+  /// Step 1: experience level.
   static const String experienceLevel = 'experience_level';
 
-  /// Paso 2: track elegido directamente.
+  /// Step 2: track chosen directly.
   static const String track = 'track';
 
-  /// Paso 3: meta de aprendizaje.
+  /// Step 3: learning goal.
   static const String goal = 'goal';
 
-  /// Valor del paso 2 cuando la usuaria elige «Aún no lo sé» y se deriva al
-  /// cuestionario guía. No corresponde a ningún `RoadmapTrack`, y por eso
-  /// `RoadmapTrack.fromSlug` devuelve `null` para él.
+  /// Value of step 2 when the user picks the "not sure yet" option and is
+  /// routed to the guided quiz. It does not correspond to any
+  /// `RoadmapTrack`, which is why `RoadmapTrack.fromSlug` returns `null`
+  /// for it.
   static const String unknownTrackValue = 'unknown';
 
-  /// Valor de un paso que la usuaria **omitió** a propósito.
+  /// Value of a step the user **skipped** on purpose.
   ///
-  /// Se guarda para que la reanudación pueda distinguir «lo salteé» de «no
-  /// llegué»: sin este rastro, volver al onboarding devolvería a la usuaria a un
-  /// paso que ya decidió no responder.
+  /// It is stored so that resuming can tell "I skipped it" from "I never got
+  /// there": without this trace, coming back to the onboarding would send the
+  /// user to a step she already decided not to answer.
   static const String skippedValue = 'skipped';
 
-  /// Prefijo de las preguntas del cuestionario guía (issue #12), que son
-  /// varias y numeradas: `quiz_1`, `quiz_2`, …
+  /// Prefix of the guided quiz questions (issue #12), which are several and
+  /// numbered: `quiz_1`, `quiz_2`, …
   static const String quizPrefix = 'quiz_';
 
-  /// Clave de la pregunta [number] del cuestionario guía, empezando en 1.
+  /// Key of question [number] of the guided quiz, starting at 1.
   static String quizQuestion(int number) => '$quizPrefix$number';
 }
 
@@ -44,13 +45,14 @@ class OnboardingAnswer {
     this.answeredAt,
   });
 
-  /// Cuál paso o pregunta se respondió. Ver [OnboardingKeys].
+  /// Which step or question was answered. See [OnboardingKeys].
   final String stepKey;
 
-  /// Slug de la opción elegida. Se guarda como texto para que el mismo par
-  /// (paso, valor) sirva a los pasos directos y a las preguntas del guía.
+  /// Slug of the chosen option. Stored as text so that the same (step, value)
+  /// pair serves both the direct steps and the guided quiz questions.
   final String value;
 
-  /// Cuándo se respondió. `null` mientras la respuesta no viene de la base.
+  /// When it was answered. `null` while the answer does not come from the
+  /// database.
   final DateTime? answeredAt;
 }

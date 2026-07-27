@@ -1,10 +1,10 @@
-// Atomic Design (Página): Estructura principal que une organismos y maneja
-// la inyección de dependencias y el estado global o de la vista.
+// Atomic Design (Page): Main structure that wires organisms together and
+// handles dependency injection and the global or view state.
 //
-// La ruta de aprendizaje: el árbol de tópicos secuenciales del track elegido.
-// Es lo que cierra el CA 1.3 de la Historia 1.1 —«al definir la ruta se despliega
-// el árbol de tópicos secuenciales»—, y por eso es el destino al que llega la
-// usuaria al terminar el onboarding.
+// The learning path: the tree of sequential topics of the chosen track. It is
+// what closes AC 1.3 of Story 1.1 —"once the path is defined, the tree of
+// sequential topics is shown"—, and that is why it is where the user lands
+// after finishing the onboarding.
 
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -25,18 +25,18 @@ class RoadmapPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SignalBuilder(
       builder: (context) {
-        // Carga perezosa la primera vez que se pinta. No se llama sin más en el
-        // builder: eso dispararía una carga en cada reconstrucción.
+        // Lazy load the first time it is painted. It is not called plainly in
+        // the builder: that would fire a load on every rebuild.
         if (!roadmapLoaded.value &&
             !roadmapLoading.value &&
             roadmapError.value == null) {
-          // Fuera del ciclo de build actual, para no cambiar señales mientras se
-          // está construyendo.
+          // Outside of the current build cycle, so signals do not change while
+          // it is being built.
           WidgetsBinding.instance.addPostFrameCallback((_) => loadRoadmap());
         }
 
-        final nombreDelTrack =
-            nombreDeTrack(currentProfile.value?.track) ?? 'tu especialidad';
+        final currentTrackName =
+            trackName(currentProfile.value?.track) ?? 'your specialty';
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -45,7 +45,7 @@ class RoadmapPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Encabezado(trackName: nombreDelTrack),
+              _Header(trackName: currentTrackName),
               const SizedBox(height: AppConstants.spacingLg),
               if (roadmapLoading.value)
                 const Center(
@@ -60,7 +60,7 @@ class RoadmapPage extends StatelessWidget {
                   onRetry: retryRoadmap,
                 )
               else if (roadmapIsEmpty.value)
-                RoadmapEmptyState(trackName: nombreDelTrack)
+                RoadmapEmptyState(trackName: currentTrackName)
               else
                 RoadmapTree(roots: roadmapTree.value),
             ],
@@ -71,9 +71,9 @@ class RoadmapPage extends StatelessWidget {
   }
 }
 
-/// Título, track y porcentaje de avance.
-class _Encabezado extends StatelessWidget {
-  const _Encabezado({required this.trackName});
+/// Title, track and progress percentage.
+class _Header extends StatelessWidget {
+  const _Header({required this.trackName});
 
   final String trackName;
 
@@ -81,29 +81,29 @@ class _Encabezado extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final total = roadmapLeaves.value.length;
-    final completados = roadmapCompletedCount.value;
-    final porcentaje = (roadmapProgress.value * 100).round();
+    final completed = roadmapCompletedCount.value;
+    final percentage = (roadmapProgress.value * 100).round();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Tu ruta'.toUpperCase(),
+          'Your path'.toUpperCase(),
           style: textTheme.labelMedium?.copyWith(color: AppColors.primary),
         ),
         const SizedBox(height: AppConstants.spacingXs),
         Text(trackName, style: textTheme.headlineMedium),
         const SizedBox(height: AppConstants.spacingMd),
-        // Sin tópicos no se muestra un 0% que parecería un fracaso: no hay
-        // contra qué medir todavía.
+        // With no topics it does not show a 0% that would look like a failure:
+        // there is nothing to measure against yet.
         if (total > 0) ...[
           AppProgressBar(
             value: roadmapProgress.value,
-            semanticsLabel: 'Avance de tu ruta',
+            semanticsLabel: 'Progress of your path',
           ),
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            '$porcentaje% completado · $completados de $total tópicos',
+            '$percentage% complete · $completed of $total topics',
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),

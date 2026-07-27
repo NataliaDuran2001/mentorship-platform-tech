@@ -1,11 +1,11 @@
-// Atomic Design (Átomo): Componente irreductible.
-// El círculo de selección de las metas del paso 3. Solo pinta: no responde al
-// tap ni sabe a qué grupo pertenece.
+// Atomic Design (Atom): Irreducible component.
+// The selection circle for the step 3 goals. It only paints: it doesn't react
+// to taps and doesn't know which group it belongs to.
 //
-// No usa el Radio de Material porque este design system lo especifica distinto
-// (24px, borde de 2px, punto interior de 12px que aparece con fade) y porque el
-// Radio de Material exige un `groupValue` que acoplaría el átomo al conjunto.
-// La fila completa clickeable la arma GoalRadioRow.
+// It doesn't use Material's Radio because this design system specs it
+// differently (24px, 2px border, 12px inner dot that fades in) and because
+// Material's Radio requires a `groupValue` that would couple the atom to the
+// group. GoalRadioRow builds the full clickable row.
 
 import 'package:flutter/material.dart';
 
@@ -31,8 +31,9 @@ class AppRadio extends StatelessWidget {
           ),
         ),
         child: Center(
-          // El punto no se monta y desmonta: siempre está y cambia de opacidad,
-          // que es lo que da el fade del prototipo (`transition-opacity`).
+          // The dot isn't mounted and unmounted: it's always there and changes
+          // opacity, which is what gives the prototype's fade
+          // (`transition-opacity`).
           child: AnimatedOpacity(
             duration: AppConstants.durationFast,
             opacity: isSelected ? 1 : 0,

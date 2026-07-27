@@ -1,9 +1,9 @@
-// Pruebas de la rama del cuestionario guía (issue #12).
+// Tests of the guided quiz branch (issue #12).
 //
-// El AC3 es el que más importa: la regla de decisión tiene que salir de
-// RecommendTrackUseCase y no de un `if` en la UI. Se verifica registrando qué
-// recibe el caso de uso y comprobando que su salida es la que se muestra,
-// incluso cuando esa salida contradice la mayoría aparente.
+// AC3 is the one that matters most: the decision rule has to come out of
+// RecommendTrackUseCase and not from an `if` in the UI. It is verified by
+// recording what the use case receives and checking that its output is what
+// gets displayed, even when that output contradicts the apparent majority.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,17 +25,17 @@ import 'package:aspire_app/presentation/utils/onboarding_labels.dart';
 import 'package:aspire_app/presentation/utils/onboarding_quiz.dart';
 import 'package:aspire_app/presentation/widgets/pages/onboarding_page.dart';
 
-/// Registra cada respuesta guardada, para verificar la persistencia del AC5.
+/// Records every saved answer, to verify the persistence of AC5.
 class SpyOnboardingRepository implements OnboardingRepository {
-  final List<OnboardingAnswer> guardadas = [];
+  final List<OnboardingAnswer> saved = [];
 
   @override
   Future<void> saveAnswer(OnboardingAnswer answer) async {
-    guardadas.add(answer);
+    saved.add(answer);
   }
 
   @override
-  Future<List<OnboardingAnswer>> loadAnswers() async => guardadas;
+  Future<List<OnboardingAnswer>> loadAnswers() async => saved;
 
   @override
   Future<UserProfile?> loadProfile() async => null;
@@ -55,24 +55,24 @@ class SpyOnboardingRepository implements OnboardingRepository {
   }
 }
 
-/// Caso de uso falso: devuelve lo que se le diga y anota qué recibió.
+/// Fake use case: it returns whatever it is told and notes what it received.
 ///
-/// Sirve para probar que la UI **no** decide: si el widget tuviera su propia
-/// regla, el resultado no coincidiría con lo que este doble devuelve.
+/// It serves to prove that the UI does **not** decide: if the widget had its
+/// own rule, the result would not match what this double returns.
 class FakeRecommendTrackUseCase implements RecommendTrackUseCase {
-  FakeRecommendTrackUseCase(this.resultado);
+  FakeRecommendTrackUseCase(this.result);
 
-  TrackRecommendation resultado;
-  List<OnboardingAnswer>? recibidas;
+  TrackRecommendation result;
+  List<OnboardingAnswer>? received;
 
   @override
   TrackRecommendation call(List<OnboardingAnswer> answers) {
-    recibidas = answers;
-    return resultado;
+    received = answers;
+    return result;
   }
 }
 
-Future<void> _montar(WidgetTester tester) async {
+Future<void> _mount(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1200, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -81,28 +81,28 @@ Future<void> _montar(WidgetTester tester) async {
   await tester.pumpWidget(const MaterialApp(home: OnboardingPage()));
 }
 
-Future<void> _esperar(WidgetTester tester) =>
+Future<void> _settle(WidgetTester tester) =>
     tester.pumpAndSettle(const Duration(milliseconds: 600));
 
-/// Responde las 3 preguntas votando siempre al mismo track.
+/// Answers the 3 questions always voting for the same track.
 ///
-/// Busca la opción por su afinidad y no por un texto fijo: solo la primera
-/// pregunta usa los nombres de los tracks como etiquetas.
-Future<void> _responderTodo(WidgetTester tester, RoadmapTrack track) async {
-  for (final pregunta in preguntasDelCuestionario) {
-    final opcion = pregunta.options.firstWhere((o) => o.affinity == track);
-    await tester.tap(find.text(opcion.label));
-    await _esperar(tester);
+/// It looks the option up by its affinity and not by a fixed text: only the
+/// first question uses the track names as labels.
+Future<void> _answerAll(WidgetTester tester, RoadmapTrack track) async {
+  for (final question in quizQuestions) {
+    final option = question.options.firstWhere((o) => o.affinity == track);
+    await tester.tap(find.text(option.label));
+    await _settle(tester);
   }
 }
 
 void main() {
   late SpyOnboardingRepository repo;
-  late FakeRecommendTrackUseCase recomendador;
+  late FakeRecommendTrackUseCase recommender;
 
   setUp(() {
     repo = SpyOnboardingRepository();
-    recomendador = FakeRecommendTrackUseCase(
+    recommender = FakeRecommendTrackUseCase(
       const TrackRecommendation(
         track: RoadmapTrack.backend,
         scores: {
@@ -116,138 +116,137 @@ void main() {
 
     overrideDependency<OnboardingRepository>(repo);
     overrideDependency(SubmitOnboardingUseCase(repo));
-    overrideDependency<RecommendTrackUseCase>(recomendador);
+    overrideDependency<RecommendTrackUseCase>(recommender);
 
     resetOnboarding();
     cancelOnboardingTimers();
     currentProfile.value = null;
 
-    // Entra a la rama guiada: es lo que hace «Aún no lo sé» en el paso 2.
+    // Enter the guided branch: it is what "I'm not sure yet" does on step 2.
     usesGuidedQuiz.value = true;
     currentStepIndex.value = 2;
   });
 
   tearDown(cancelOnboardingTimers);
 
-  testWidgets('es alcanzable desde el paso 2 y el contador dice «de 5»',
+  testWidgets('it is reachable from step 2 and the counter says "of 5"',
       (tester) async {
     resetOnboarding();
     currentStepIndex.value = 1;
-    await _montar(tester);
+    await _mount(tester);
 
-    await tester.tap(find.text(opcionNoLoSe.label));
-    await _esperar(tester);
+    await tester.tap(find.text(notSureOption.label));
+    await _settle(tester);
 
     expect(currentStep.value, OnboardingStepId.quiz);
-    expect(find.text('PASO 3 DE 5'), findsOneWidget);
+    expect(find.text('STEP 3 OF 5'), findsOneWidget);
     expect(
-      find.text('¿Qué tipo de problemas te entusiasma más resolver?'),
+      find.text('What kind of problems do you enjoy solving the most?'),
       findsOneWidget,
     );
   });
 
-  testWidgets('ofrece los 3 tracks decididos, sin Mobile ni UI/UX',
+  testWidgets('it offers the 3 decided tracks, with no Mobile and no UI/UX',
       (tester) async {
-    await _montar(tester);
+    await _mount(tester);
 
     expect(find.text('Front-end'), findsOneWidget);
     expect(find.text('Back-end'), findsOneWidget);
-    expect(find.text('Infraestructura'), findsOneWidget);
+    expect(find.text('Infrastructure'), findsOneWidget);
     expect(find.text('Mobile'), findsNothing);
     expect(find.text('UI / UX Design'), findsNothing);
   });
 
-  testWidgets('recorre las preguntas y muestra el número de cada una',
+  testWidgets('it walks through the questions and shows the number of each one',
       (tester) async {
-    await _montar(tester);
+    await _mount(tester);
 
-    expect(find.textContaining('Pregunta 1 de 3'), findsOneWidget);
+    expect(find.textContaining('Question 1 of 3'), findsOneWidget);
 
     await tester.tap(find.text('Front-end'));
-    await _esperar(tester);
+    await _settle(tester);
 
-    expect(find.textContaining('Pregunta 2 de 3'), findsOneWidget);
-    // Sigue siendo el paso 3 de 5: el cuestionario es un paso, no tres.
-    expect(find.text('PASO 3 DE 5'), findsOneWidget);
+    expect(find.textContaining('Question 2 of 3'), findsOneWidget);
+    // It is still step 3 of 5: the quiz is one step, not three.
+    expect(find.text('STEP 3 OF 5'), findsOneWidget);
   });
 
-  testWidgets('la recomendación sale del caso de uso, no del widget',
+  testWidgets('the recommendation comes from the use case, not from the widget',
       (tester) async {
-    await _montar(tester);
+    await _mount(tester);
 
-    // Vota 3 veces a Front-end, pero el caso de uso devuelve Back-end.
-    await _responderTodo(tester, RoadmapTrack.frontend);
+    // It votes 3 times for Front-end, but the use case returns Back-end.
+    await _answerAll(tester, RoadmapTrack.frontend);
 
     expect(quizShowingResult.value, isTrue);
-    // Lo que se muestra es lo que dijo el caso de uso, no la mayoría aparente.
-    expect(find.text('Encontramos tu ruta'), findsOneWidget);
+    // What is shown is what the use case said, not the apparent majority.
+    expect(find.text('We found your path'), findsOneWidget);
     expect(find.text('Back-end'), findsWidgets);
 
-    // Y recibió las 3 respuestas con sus claves quiz_N.
-    expect(recomendador.recibidas, hasLength(3));
+    // And it received the 3 answers with their quiz_N keys.
+    expect(recommender.received, hasLength(3));
     expect(
-      recomendador.recibidas!.map((a) => a.stepKey),
+      recommender.received!.map((a) => a.stepKey),
       containsAll(<String>['quiz_1', 'quiz_2', 'quiz_3']),
     );
     expect(
-      recomendador.recibidas!.every((a) => a.value == 'frontend'),
+      recommender.received!.every((a) => a.value == 'frontend'),
       isTrue,
     );
   });
 
-  testWidgets('cada respuesta queda persistida con su clave quiz_N',
-      (tester) async {
-    await _montar(tester);
-    await _responderTodo(tester, RoadmapTrack.infrastructure);
+  testWidgets('every answer is persisted with its quiz_N key', (tester) async {
+    await _mount(tester);
+    await _answerAll(tester, RoadmapTrack.infrastructure);
 
-    final claves = repo.guardadas.map((a) => a.stepKey).toList();
-    expect(claves, ['quiz_1', 'quiz_2', 'quiz_3']);
+    final keys = repo.saved.map((a) => a.stepKey).toList();
+    expect(keys, ['quiz_1', 'quiz_2', 'quiz_3']);
     expect(
-      repo.guardadas.every((a) => a.value == 'infrastructure'),
+      repo.saved.every((a) => a.value == 'infrastructure'),
       isTrue,
     );
   });
 
-  testWidgets('el resultado exige confirmación: el track no se asigna solo',
-      (tester) async {
-    await _montar(tester);
-    await _responderTodo(tester, RoadmapTrack.frontend);
+  testWidgets('the result requires confirmation: the track is not assigned on '
+      'its own', (tester) async {
+    await _mount(tester);
+    await _answerAll(tester, RoadmapTrack.frontend);
 
-    // Con el resultado a la vista todavía no hay track asignado.
+    // With the result on screen there is still no track assigned.
     expect(selectedTrack.value, isNull);
 
-    await tester.tap(find.text('Confirmar esta ruta'));
+    await tester.tap(find.text('Confirm this path'));
     await tester.pumpAndSettle();
 
     expect(selectedTrack.value, RoadmapTrack.backend);
-    // Y el flujo sigue en el paso de la meta, con el contador todavía en 5.
+    // And the flow carries on to the goal step, with the counter still at 5.
     expect(currentStep.value, OnboardingStepId.goal);
     expect(totalSteps.value, 5);
-    expect(find.text('¿Cuál es tu meta principal?'), findsOneWidget);
-    expect(find.text('PASO 4 DE 5'), findsOneWidget);
+    expect(find.text('What is your main goal?'), findsOneWidget);
+    expect(find.text('STEP 4 OF 5'), findsOneWidget);
   });
 
-  testWidgets('se puede corregir la recomendación a mano', (tester) async {
-    await _montar(tester);
-    await _responderTodo(tester, RoadmapTrack.frontend);
+  testWidgets('the recommendation can be corrected by hand', (tester) async {
+    await _mount(tester);
+    await _answerAll(tester, RoadmapTrack.frontend);
 
-    // El recomendado es Back-end; se elige Infraestructura en su lugar.
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Infraestructura'));
+    // The recommended one is Back-end; Infrastructure is chosen instead.
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Infrastructure'));
     await tester.pumpAndSettle();
 
     expect(selectedTrack.value, RoadmapTrack.infrastructure);
     expect(currentStep.value, OnboardingStepId.goal);
-    // La corrección también se persiste, con la clave del paso del track.
+    // The correction is persisted too, with the key of the track step.
     expect(
-      repo.guardadas.last.stepKey,
+      repo.saved.last.stepKey,
       'track',
     );
-    expect(repo.guardadas.last.value, 'infrastructure');
+    expect(repo.saved.last.value, 'infrastructure');
   });
 
-  testWidgets('un empate se avisa en vez de presentarse como concluyente',
+  testWidgets('a tie is reported instead of being presented as conclusive',
       (tester) async {
-    recomendador.resultado = const TrackRecommendation(
+    recommender.result = const TrackRecommendation(
       track: RoadmapTrack.frontend,
       scores: {
         RoadmapTrack.frontend: 1,
@@ -257,38 +256,41 @@ void main() {
       wasTie: true,
     );
 
-    await _montar(tester);
-    await _responderTodo(tester, RoadmapTrack.frontend);
+    await _mount(tester);
+    await _answerAll(tester, RoadmapTrack.frontend);
 
-    expect(find.textContaining('Estuvo parejo con otra ruta'), findsOneWidget);
+    expect(
+      find.textContaining('It was close with another path'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('se puede volver a responder el cuestionario', (tester) async {
-    await _montar(tester);
-    await _responderTodo(tester, RoadmapTrack.frontend);
+  testWidgets('the quiz can be taken again', (tester) async {
+    await _mount(tester);
+    await _answerAll(tester, RoadmapTrack.frontend);
 
-    await tester.tap(find.text('Volver a responder el cuestionario'));
+    await tester.tap(find.text('Take the quiz again'));
     await tester.pumpAndSettle();
 
     expect(quizShowingResult.value, isFalse);
     expect(quizAnswers.value, isEmpty);
-    expect(find.textContaining('Pregunta 1 de 3'), findsOneWidget);
+    expect(find.textContaining('Question 1 of 3'), findsOneWidget);
   });
 
-  testWidgets('«Anterior» vuelve pregunta por pregunta y luego sale del '
-      'cuestionario', (tester) async {
-    await _montar(tester);
+  testWidgets('"Back" goes question by question and then leaves the quiz',
+      (tester) async {
+    await _mount(tester);
 
     await tester.tap(find.text('Front-end'));
-    await _esperar(tester);
-    expect(find.textContaining('Pregunta 2 de 3'), findsOneWidget);
+    await _settle(tester);
+    expect(find.textContaining('Question 2 of 3'), findsOneWidget);
 
-    await tester.tap(find.text('Regresar'));
+    await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Pregunta 1 de 3'), findsOneWidget);
+    expect(find.textContaining('Question 1 of 3'), findsOneWidget);
 
-    // Desde la primera, «Regresar» sale de la rama guiada.
-    await tester.tap(find.text('Regresar'));
+    // From the first one, "Back" leaves the guided branch.
+    await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
 
     expect(currentStep.value, OnboardingStepId.track);
@@ -296,22 +298,22 @@ void main() {
     expect(totalSteps.value, 4);
   });
 
-  testWidgets('«Continuar» está deshabilitado hasta responder la pregunta',
+  testWidgets('"Continue" is disabled until the question is answered',
       (tester) async {
-    await _montar(tester);
+    await _mount(tester);
 
-    final boton = find.widgetWithText(ElevatedButton, 'Continuar');
-    expect(tester.widget<ElevatedButton>(boton).onPressed, isNull);
+    final button = find.widgetWithText(ElevatedButton, 'Continue');
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
 
     await tester.tap(find.text('Back-end'));
     await tester.pump();
 
-    expect(tester.widget<ElevatedButton>(boton).onPressed, isNotNull);
-    await _esperar(tester);
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
+    await _settle(tester);
   });
 
-  testWidgets('«Omitir» no existe en el cuestionario', (tester) async {
-    await _montar(tester);
-    expect(find.text('Omitir'), findsNothing);
+  testWidgets('"Skip" does not exist in the quiz', (tester) async {
+    await _mount(tester);
+    expect(find.text('Skip'), findsNothing);
   });
 }

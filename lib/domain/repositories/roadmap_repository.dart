@@ -1,20 +1,20 @@
-// Capa Domain: Contrato (interfaz) del repositorio de roadmaps.
-// Define QUÉ se puede hacer, no CÓMO. La implementación vive en `data`.
+// Domain layer: Contract (interface) of the roadmap repository.
+// It defines WHAT can be done, not HOW. The implementation lives in `data`.
 
 import '../entities/roadmap_track.dart';
 import '../entities/topic_node.dart';
 import '../entities/track.dart';
 
 abstract class RoadmapRepository {
-  /// Los 3 tracks con su contenido editorial, tal como están sembrados en la
-  /// tabla `tracks`.
+  /// The 3 tracks with their editorial content, as seeded in the `tracks`
+  /// table.
   Future<List<Track>> listTracks();
 
-  /// Tópicos de un track en **lista plana**, con `isCompleted` ya resuelto
-  /// contra el progreso de la usuaria.
+  /// Topics of a track as a **flat list**, with `isCompleted` already
+  /// resolved against the user's progress.
   ///
-  /// Devuelve la lista plana y no el árbol armado a propósito: la jerarquía y
-  /// la secuencialidad son reglas de negocio, así que las deriva
-  /// `GetRoadmapTreeUseCase` y no la capa Data ni un widget.
+  /// It returns the flat list and not the built tree on purpose: the
+  /// hierarchy and the sequencing are business rules, so they are derived by
+  /// `GetRoadmapTreeUseCase` and not by the Data layer or a widget.
   Future<List<TopicNode>> listTopics(RoadmapTrack track);
 }

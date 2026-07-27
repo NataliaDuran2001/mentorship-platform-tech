@@ -1,6 +1,6 @@
-// Pruebas unitarias del armado del árbol y de la secuencialidad (issue #8).
-// La regla que verifican es la que sostiene el CA 1.3: la ruta es
-// determinística, con un solo tópico accionable a la vez.
+// Unit tests of the tree building and of sequencing (issue #8). The rule they
+// verify is the one that holds up AC 1.3: the path is deterministic, with a
+// single actionable topic at a time.
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,7 +10,7 @@ import 'package:aspire_app/domain/entities/track.dart';
 import 'package:aspire_app/domain/repositories/roadmap_repository.dart';
 import 'package:aspire_app/domain/usecases/get_roadmap_tree_usecase.dart';
 
-/// Repositorio en memoria: alcanza para probar la regla sin tocar Supabase.
+/// In-memory repository: enough to test the rule without touching Supabase.
 class _FakeRoadmapRepository implements RoadmapRepository {
   _FakeRoadmapRepository(this.topics);
 
@@ -24,7 +24,7 @@ class _FakeRoadmapRepository implements RoadmapRepository {
       topics.where((t) => t.trackId == track).toList();
 }
 
-TopicNode _nodo(
+TopicNode _node(
   String id, {
   String? parentId,
   int sortOrder = 0,
@@ -44,13 +44,13 @@ TopicNode _nodo(
 void main() {
   const usecase = GetRoadmapTreeUseCase(_NoRepo());
 
-  group('armado del árbol', () {
-    test('anida por parentId y ordena hermanos por sortOrder', () {
+  group('tree building', () {
+    test('nests by parentId and sorts siblings by sortOrder', () {
       final tree = usecase.buildTree([
-        _nodo('b', sortOrder: 2),
-        _nodo('a', sortOrder: 1),
-        _nodo('a2', parentId: 'a', sortOrder: 2),
-        _nodo('a1', parentId: 'a', sortOrder: 1),
+        _node('b', sortOrder: 2),
+        _node('a', sortOrder: 1),
+        _node('a2', parentId: 'a', sortOrder: 2),
+        _node('a1', parentId: 'a', sortOrder: 1),
       ]);
 
       expect(tree.map((n) => n.id), ['a', 'b']);
@@ -58,36 +58,36 @@ void main() {
       expect(tree.last.isLeaf, isTrue);
     });
 
-    test('un parentId inexistente se trata como raíz, no se descarta', () {
+    test('a nonexistent parentId is treated as a root, not discarded', () {
       final tree = usecase.buildTree([
-        _nodo('a', sortOrder: 1),
-        _nodo('huerfano', parentId: 'no-existe', sortOrder: 2),
+        _node('a', sortOrder: 1),
+        _node('orphan', parentId: 'does-not-exist', sortOrder: 2),
       ]);
 
-      expect(tree.map((n) => n.id), ['a', 'huerfano']);
+      expect(tree.map((n) => n.id), ['a', 'orphan']);
     });
 
-    test('lista vacía devuelve árbol vacío', () {
+    test('an empty list gives an empty tree', () {
       expect(usecase.buildTree(const []), isEmpty);
     });
 
-    test('flattened recorre el nodo y toda su descendencia', () {
+    test('flattened walks the node and all of its descendants', () {
       final tree = usecase.buildTree([
-        _nodo('a', sortOrder: 1),
-        _nodo('a1', parentId: 'a', sortOrder: 1),
-        _nodo('a1x', parentId: 'a1', sortOrder: 1),
+        _node('a', sortOrder: 1),
+        _node('a1', parentId: 'a', sortOrder: 1),
+        _node('a1x', parentId: 'a1', sortOrder: 1),
       ]);
 
       expect(tree.first.flattened.map((n) => n.id), ['a', 'a1', 'a1x']);
     });
   });
 
-  group('secuencialidad', () {
-    test('solo el primer tópico sin completar queda disponible', () {
+  group('sequencing', () {
+    test('only the first uncompleted topic is available', () {
       final tree = usecase.buildTree([
-        _nodo('t1', sortOrder: 1, isCompleted: true),
-        _nodo('t2', sortOrder: 2),
-        _nodo('t3', sortOrder: 3),
+        _node('t1', sortOrder: 1, isCompleted: true),
+        _node('t2', sortOrder: 2),
+        _node('t3', sortOrder: 3),
       ]);
 
       expect(tree.map((n) => n.status), [
@@ -97,56 +97,56 @@ void main() {
       ]);
     });
 
-    test('sin nada completado el primero es el disponible', () {
+    test('with nothing completed the first one is the available one', () {
       final tree = usecase.buildTree([
-        _nodo('t1', sortOrder: 1),
-        _nodo('t2', sortOrder: 2),
+        _node('t1', sortOrder: 1),
+        _node('t2', sortOrder: 2),
       ]);
 
       expect(tree.first.status, TopicStatus.available);
       expect(tree.last.status, TopicStatus.locked);
     });
 
-    test('el orden que manda es sortOrder, no el de la lista', () {
+    test('the order that rules is sortOrder, not the list order', () {
       final tree = usecase.buildTree([
-        _nodo('segundo', sortOrder: 2),
-        _nodo('primero', sortOrder: 1),
+        _node('second', sortOrder: 2),
+        _node('first', sortOrder: 1),
       ]);
 
-      expect(tree.first.id, 'primero');
+      expect(tree.first.id, 'first');
       expect(tree.first.status, TopicStatus.available);
     });
 
-    test('hay exactamente un tópico disponible en todo el árbol', () {
+    test('there is exactly one available topic in the whole tree', () {
       final tree = usecase.buildTree([
-        _nodo('a', sortOrder: 1),
-        _nodo('a1', parentId: 'a', sortOrder: 1, isCompleted: true),
-        _nodo('a2', parentId: 'a', sortOrder: 2),
-        _nodo('b', sortOrder: 2),
-        _nodo('b1', parentId: 'b', sortOrder: 1),
+        _node('a', sortOrder: 1),
+        _node('a1', parentId: 'a', sortOrder: 1, isCompleted: true),
+        _node('a2', parentId: 'a', sortOrder: 2),
+        _node('b', sortOrder: 2),
+        _node('b1', parentId: 'b', sortOrder: 1),
       ]);
 
-      final hojas = tree
+      final leaves = tree
           .expand((n) => n.flattened)
           .where((n) => n.isLeaf)
           .toList();
-      final disponibles =
-          hojas.where((n) => n.status == TopicStatus.available).toList();
+      final available =
+          leaves.where((n) => n.status == TopicStatus.available).toList();
 
-      expect(disponibles.map((n) => n.id), ['a2']);
+      expect(available.map((n) => n.id), ['a2']);
     });
 
-    test('un nodo con hijos hereda el estado de su descendencia', () {
+    test('a node with children inherits the status of its descendants', () {
       final tree = usecase.buildTree([
-        _nodo('a', sortOrder: 1),
-        _nodo('a1', parentId: 'a', sortOrder: 1, isCompleted: true),
-        _nodo('b', sortOrder: 2),
-        _nodo('b1', parentId: 'b', sortOrder: 1),
-        _nodo('c', sortOrder: 3),
-        _nodo('c1', parentId: 'c', sortOrder: 1),
+        _node('a', sortOrder: 1),
+        _node('a1', parentId: 'a', sortOrder: 1, isCompleted: true),
+        _node('b', sortOrder: 2),
+        _node('b1', parentId: 'b', sortOrder: 1),
+        _node('c', sortOrder: 3),
+        _node('c1', parentId: 'c', sortOrder: 1),
       ]);
 
-      // 'a' completo, 'b' contiene el disponible, 'c' queda bloqueado.
+      // 'a' complete, 'b' holds the available one, 'c' stays locked.
       expect(tree.map((n) => n.status), [
         TopicStatus.completed,
         TopicStatus.available,
@@ -155,10 +155,11 @@ void main() {
     });
   });
 
-  test('call filtra por track y devuelve el árbol del track pedido', () async {
+  test('call filters by track and returns the tree of the requested track',
+      () async {
     final repo = _FakeRoadmapRepository([
-      _nodo('fe1', sortOrder: 1),
-      _nodo('be1', sortOrder: 1, track: RoadmapTrack.backend),
+      _node('fe1', sortOrder: 1),
+      _node('be1', sortOrder: 1, track: RoadmapTrack.backend),
     ]);
 
     final tree = await GetRoadmapTreeUseCase(repo)(RoadmapTrack.backend);
@@ -168,7 +169,7 @@ void main() {
   });
 }
 
-/// Repositorio inutilizable, para las pruebas que solo ejercitan `buildTree`.
+/// Unusable repository, for the tests that only exercise `buildTree`.
 class _NoRepo implements RoadmapRepository {
   const _NoRepo();
 

@@ -1,12 +1,13 @@
-// Atomic Design (Página): Estructura principal que une organismos y maneja
-// la inyección de dependencias y el estado global o de la vista.
+// Atomic Design (Page): Main structure that wires organisms together and
+// handles dependency injection and the global or view state.
 //
-// Flujo de onboarding del Módulo 1. Vive fuera del shell —sin nav visible—,
-// como manda el issue #5.
+// Module 1 onboarding flow. It lives outside the shell —with no visible nav—,
+// as issue #5 requires.
 //
-// Es el único nivel que lee el estado del onboarding y llama a sus acciones. Al
-// terminar no navega a mano: `submitOnboarding()` deja el perfil completo en
-// `currentProfile` y el route guard mueve al dashboard.
+// It is the only level that reads the onboarding state and calls its actions.
+// When it ends it does not navigate by hand: `submitOnboarding()` leaves the
+// completed profile in `currentProfile` and the route guard moves to the
+// dashboard.
 
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
@@ -31,41 +32,42 @@ class OnboardingPage extends StatelessWidget {
           );
         }
 
-        final paso = currentStep.value;
-        final esResumen = paso == OnboardingStepId.summary;
-        final esCuestionario = paso == OnboardingStepId.quiz;
+        final step = currentStep.value;
+        final isSummary = step == OnboardingStepId.summary;
+        final isQuiz = step == OnboardingStepId.quiz;
 
-        // El cuestionario es un solo paso del contador pero tiene navegación
-        // interna: el pie maneja sus preguntas en vez del recorrido general.
-        final atras = esCuestionario ? goToPreviousQuizQuestion : goToPreviousStep;
-        final adelante = esCuestionario
+        // The quiz is a single step of the counter but it has its own internal
+        // navigation: the footer drives its questions instead of the overall
+        // flow.
+        final back = isQuiz ? goToPreviousQuizQuestion : goToPreviousStep;
+        final forward = isQuiz
             ? (quizShowingResult.value ? confirmRecommendedTrack : advanceQuiz)
-            : (esResumen ? submitOnboarding : goToNextStep);
+            : (isSummary ? submitOnboarding : goToNextStep);
 
         return OnboardingStepLayout(
           currentStep: currentStepNumber.value,
           totalSteps: totalSteps.value,
-          title: _tituloDe(paso),
-          subtitle: _subtituloDe(paso),
+          title: _titleOf(step),
+          subtitle: _subtitleOf(step),
           errorMessage: onboardingError.value,
           showBack: canGoBack.value,
-          // «Omitir» solo en los pasos omitibles: en el paso 2 desaparece,
-          // porque sin track no hay roadmap (CA 1.3).
+          // "Skip" only on the skippable steps: on step 2 it disappears,
+          // because without a track there is no roadmap (AC 1.3).
           showSkip: canSkipCurrentStep.value,
-          continueLabel: _etiquetaDeContinuar(paso),
-          onBack: canGoBack.value ? atras : null,
+          continueLabel: _continueLabelOf(step),
+          onBack: canGoBack.value ? back : null,
           onSkip: canSkipCurrentStep.value ? skipCurrentStep : null,
-          // En el paso del track «Continuar» queda deshabilitado hasta que haya
-          // una selección; en el resumen guarda y sale.
-          onContinue: canAdvance.value ? adelante : null,
-          child: _contenidoDe(paso),
+          // On the track step "Continue" stays disabled until there is a
+          // selection; on the summary it saves and leaves.
+          onContinue: canAdvance.value ? forward : null,
+          child: _contentOf(step),
         );
       },
     );
   }
 
-  Widget _contenidoDe(OnboardingStepId paso) {
-    switch (paso) {
+  Widget _contentOf(OnboardingStepId step) {
+    switch (step) {
       case OnboardingStepId.level:
         return OnboardingStepRole(
           selected: selectedLevel.value,
@@ -79,20 +81,20 @@ class OnboardingPage extends StatelessWidget {
           onDontKnow: () => selectTrack(null),
         );
       case OnboardingStepId.quiz:
-        final recomendacion = quizRecommendation.value;
-        if (quizShowingResult.value && recomendacion != null) {
+        final recommendation = quizRecommendation.value;
+        if (quizShowingResult.value && recommendation != null) {
           return GuidedQuizResult(
-            recommendation: recomendacion,
+            recommendation: recommendation,
             onConfirm: confirmRecommendedTrack,
             onOverride: overrideRecommendedTrack,
             onRedo: redoQuiz,
           );
         }
 
-        final pregunta = currentQuizQuestion.value;
+        final question = currentQuizQuestion.value;
         return GuidedQuizStep(
-          question: pregunta,
-          selected: quizAnswers.value[pregunta.number],
+          question: question,
+          selected: quizAnswers.value[question.number],
           onSelected: answerQuizQuestion,
         );
       case OnboardingStepId.goal:
@@ -109,52 +111,52 @@ class OnboardingPage extends StatelessWidget {
     }
   }
 
-  /// El botón principal cambia de nombre según lo que hace.
-  String _etiquetaDeContinuar(OnboardingStepId paso) {
-    if (paso == OnboardingStepId.summary) return 'Entrar al Dashboard';
-    if (paso == OnboardingStepId.quiz && quizShowingResult.value) {
-      return 'Confirmar esta ruta';
+  /// The main button changes its name depending on what it does.
+  String _continueLabelOf(OnboardingStepId step) {
+    if (step == OnboardingStepId.summary) return 'Go to Dashboard';
+    if (step == OnboardingStepId.quiz && quizShowingResult.value) {
+      return 'Confirm this path';
     }
-    return 'Continuar';
+    return 'Continue';
   }
 
-  String _tituloDe(OnboardingStepId paso) {
-    switch (paso) {
+  String _titleOf(OnboardingStepId step) {
+    switch (step) {
       case OnboardingStepId.level:
-        return '¡Hola! ¿Cómo te identificás hoy?';
+        return 'Hi! How would you describe yourself today?';
       case OnboardingStepId.track:
-        return '¿Cuál es tu especialidad?';
+        return 'What is your specialty?';
       case OnboardingStepId.quiz:
         return quizShowingResult.value
-            ? 'Encontramos tu ruta'
+            ? 'We found your path'
             : currentQuizQuestion.value.prompt;
       case OnboardingStepId.goal:
-        return '¿Cuál es tu meta principal?';
+        return 'What is your main goal?';
       case OnboardingStepId.summary:
-        // El resumen trae su propio encabezado con el ícono de confirmación.
+        // The summary brings its own header with the confirmation icon.
         return '';
     }
   }
 
-  String? _subtituloDe(OnboardingStepId paso) {
-    switch (paso) {
+  String? _subtitleOf(OnboardingStepId step) {
+    switch (step) {
       case OnboardingStepId.level:
-        return 'Queremos personalizar tu experiencia según tu nivel actual.';
+        return 'We want to tailor your experience to your current level.';
       case OnboardingStepId.track:
-        return 'Elegí el área donde te sentís más cómoda o donde querés crecer. '
-            'Si todavía no lo sabés, te ayudamos.';
+        return 'Choose the area where you feel most at home, or where you '
+            'want to grow. If you are not sure yet, we will help you.';
       case OnboardingStepId.quiz:
         if (quizShowingResult.value) {
-          return 'Podés aceptarla o elegir otra: la decisión final es tuya.';
+          return 'You can take it or pick another one: the final call is '
+              'yours.';
         }
-        final pregunta = currentQuizQuestion.value;
-        return 'Pregunta ${pregunta.number} de '
-            '${preguntasDelCuestionario.length}. ${pregunta.subtitle}';
+        final question = currentQuizQuestion.value;
+        return 'Question ${question.number} of '
+            '${quizQuestions.length}. ${question.subtitle}';
       case OnboardingStepId.goal:
-        return 'Contanos qué esperás lograr en los próximos 6 meses.';
+        return 'Tell us what you want to achieve in the next 6 months.';
       case OnboardingStepId.summary:
         return null;
     }
   }
 }
-

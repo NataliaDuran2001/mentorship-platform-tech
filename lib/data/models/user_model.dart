@@ -1,10 +1,10 @@
-// Capa Data: Modelo que parsea la información desde/hacia la base de datos y
-// se mapea a la entidad UserProfile de la capa Domain.
+// Data layer: Model that parses the information from/to the database and maps
+// to the UserProfile entity of the Domain layer.
 //
-// Las claves son los nombres de columna de `public.profiles`, tal como los
-// creó la migración del issue #7. Los valores de `experience_level`,
-// `track_id` y `learning_goal` son los slugs de los enums de `domain`, así que
-// el mapeo es directo y no necesita tabla de traducción.
+// The keys are the column names of `public.profiles`, exactly as the migration
+// of issue #7 created them. The values of `experience_level`, `track_id` and
+// `learning_goal` are the slugs of the `domain` enums, so the mapping is
+// direct and does not need a translation table.
 
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
@@ -22,9 +22,9 @@ class UserModel {
     this.onboardingCompletedAt,
   });
 
-  /// Columnas que se piden en un `select`. Explícitas y no `*` para que
-  /// agregar una columna a la tabla no cambie en silencio lo que viaja al
-  /// cliente.
+  /// Columns requested in a `select`. Explicit and not `*` so that adding a
+  /// column to the table does not silently change what travels to the
+  /// client.
   static const String columns =
       'id, email, display_name, experience_level, track_id, learning_goal, '
       'onboarding_completed_at';
@@ -40,14 +40,14 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
-      // El trigger copia el correo de auth.users, así que en la práctica nunca
-      // es null; el fallback evita que una fila vieja rompa la lectura.
+      // The trigger copies the email from auth.users, so in practice it is
+      // never null; the fallback keeps an old row from breaking the read.
       email: json['email'] as String? ?? '',
       displayName: json['display_name'] as String?,
       experienceLevel: json['experience_level'] as String?,
       trackId: json['track_id'] as String?,
       learningGoal: json['learning_goal'] as String?,
-      onboardingCompletedAt: _parseFecha(json['onboarding_completed_at']),
+      onboardingCompletedAt: _parseDate(json['onboarding_completed_at']),
     );
   }
 
@@ -68,9 +68,8 @@ class UserModel {
       id: id,
       email: email,
       displayName: displayName,
-      // Un slug desconocido se lee como null en vez de romper: una fila
-      // escrita por una versión más nueva de la app no debe dejar a la usuaria
-      // sin poder entrar.
+      // An unknown slug is read as null instead of breaking: a row written by
+      // a newer version of the app must not leave the user unable to get in.
       experienceLevel: ExperienceLevel.fromSlug(experienceLevel),
       track: RoadmapTrack.fromSlug(trackId),
       learningGoal: LearningGoal.fromSlug(learningGoal),
@@ -90,9 +89,9 @@ class UserModel {
     };
   }
 
-  static DateTime? _parseFecha(Object? valor) {
-    if (valor is String) return DateTime.tryParse(valor);
-    if (valor is DateTime) return valor;
+  static DateTime? _parseDate(Object? value) {
+    if (value is String) return DateTime.tryParse(value);
+    if (value is DateTime) return value;
     return null;
   }
 }

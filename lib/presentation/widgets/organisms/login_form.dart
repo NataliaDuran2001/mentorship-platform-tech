@@ -1,12 +1,12 @@
-// Atomic Design (Organismo): Conjunto de moléculas y átomos que forman
-// una sección funcional completa e independiente dentro de una página.
+// Atomic Design (Organism): Set of molecules and atoms that form a complete,
+// self-contained functional section inside a page.
 //
-// Formulario de ingreso con correo y contraseña. No lee signals ni resuelve
-// dependencias: recibe los callbacks y el mensaje de error ya traducido. Quien
-// conecta con getIt es LoginPage.
+// Sign in form with email and password. It does not read signals nor resolve
+// dependencies: it takes the callbacks and the already user-facing error
+// message. LoginPage is the one that wires it to getIt.
 //
-// El botón de Google sigue en la pantalla pero deshabilitado: el MVP autentica
-// con email/password y Google es el issue #15.
+// The Google button is still on the screen but disabled: the MVP authenticates
+// with email/password and Google is issue #15.
 
 import 'package:flutter/material.dart';
 
@@ -33,11 +33,11 @@ class LoginForm extends StatelessWidget {
   final VoidCallback onSubmit;
   final VoidCallback onGoToSignUp;
 
-  /// Ya en español. `null` si no hay error.
+  /// Already user-facing text. `null` when there is no error.
   final String? errorMessage;
 
-  /// Se ofrece solo cuando el fallo fue «cuenta sin confirmar»: la usuaria
-  /// existe y su contraseña era correcta, solo le falta el enlace del correo.
+  /// Offered only when the failure was "unconfirmed account": the user exists
+  /// and her password was right, she is only missing the link in the email.
   final VoidCallback? onResendConfirmation;
 
   @override
@@ -52,13 +52,13 @@ class LoginForm extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: TextButton(
                 onPressed: onResendConfirmation,
-                child: const Text('Reenviar el correo de confirmación'),
+                child: const Text('Resend confirmation email'),
               ),
             ),
           const SizedBox(height: AppConstants.defaultPadding),
         ],
         CustomInput(
-          hintText: 'Correo electrónico',
+          hintText: 'Email',
           prefixIcon: Icons.email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -67,26 +67,26 @@ class LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding),
         CustomInput(
-          hintText: 'Contraseña',
+          hintText: 'Password',
           prefixIcon: Icons.lock,
           obscureText: true,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.password],
           onChanged: onPasswordChanged,
-          // Enter envía: en web se espera poder entrar sin tocar el botón.
+          // Enter submits: on web you expect to get in without the button.
           onSubmitted: (_) => onSubmit(),
         ),
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        CustomButton(text: 'Ingresar', onPressed: onSubmit),
+        CustomButton(text: 'Sign in', onPressed: onSubmit),
         const SizedBox(height: AppConstants.defaultPadding),
-        // Wrap y no Row: en pantallas angostas la pregunta y el enlace no
-        // caben en una línea y un Row desbordaría.
+        // Wrap and not Row: on narrow screens the question and the link do not
+        // fit in one line and a Row would overflow.
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              '¿Todavía no tenés cuenta?',
+              "Don't have an account yet?",
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -94,7 +94,7 @@ class LoginForm extends StatelessWidget {
             ),
             TextButton(
               onPressed: onGoToSignUp,
-              child: const Text('Registrate'),
+              child: const Text('Sign up'),
             ),
           ],
         ),
@@ -107,7 +107,7 @@ class LoginForm extends StatelessWidget {
                 horizontal: AppConstants.defaultPadding,
               ),
               child: Text(
-                'O',
+                'OR',
                 style: TextStyle(color: AppColors.onSurfaceVariant),
               ),
             ),
@@ -116,8 +116,8 @@ class LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
         const GoogleLoginButton(
-          disabledHint: 'Disponible más adelante. Por ahora ingresá con tu '
-              'correo y contraseña.',
+          disabledHint: 'Coming a bit later. For now, sign in with your email '
+              'and password.',
         ),
       ],
     );

@@ -1,32 +1,32 @@
-// Atomic Design (Molécula): Combinación de átomos (ícono y botón genérico)
-// construidos para un propósito un poco más específico pero aún reutilizable.
+// Atomic Design (Molecule): Combination of atoms (icon and generic button)
+// built for a slightly more specific purpose but still reusable.
 //
-// El MVP autentica con email/password: Google OAuth es el issue #15
-// (`fase:post-mvp`). El botón NO se borra —la pantalla del prototipo es
-// Google-first y volverá a serlo—, pero queda deshabilitado con `onPressed` en
-// `null`. Deshabilitado y sin cablear es lo correcto; cablearlo a un stub que
-// falla sería peor que no ofrecerlo.
+// The MVP authenticates with email/password: Google OAuth is issue #15
+// (`fase:post-mvp`). The button is NOT deleted —the prototype screen is
+// Google-first and will be again—, but it stays disabled with `onPressed` set
+// to `null`. Disabled and unwired is the right call; wiring it to a stub that
+// fails would be worse than not offering it.
 
 import 'package:flutter/material.dart';
 import '../atoms/custom_button.dart';
 import '../../utils/app_colors.dart';
 
 class GoogleLoginButton extends StatelessWidget {
-  /// `null` deja el botón visible pero deshabilitado, que es el estado del MVP.
+  /// `null` leaves the button visible but disabled, which is the MVP state.
   final VoidCallback? onPressed;
 
-  /// Texto de ayuda que explica por qué está deshabilitado.
+  /// Helper text explaining why it's disabled.
   final String? disabledHint;
 
   const GoogleLoginButton({super.key, this.onPressed, this.disabledHint});
 
   @override
   Widget build(BuildContext context) {
-    final boton = CustomButton(
-      text: 'Iniciar con Google',
+    final button = CustomButton(
+      text: 'Continue with Google',
       onPressed: onPressed,
       isPrimary: false,
-      // Usando el color secundario según el diseño
+      // Using the secondary color as per the design
       icon: const Icon(
         Icons.g_mobiledata,
         size: 28,
@@ -34,8 +34,8 @@ class GoogleLoginButton extends StatelessWidget {
       ),
     );
 
-    if (onPressed != null || disabledHint == null) return boton;
+    if (onPressed != null || disabledHint == null) return button;
 
-    return Tooltip(message: disabledHint!, child: boton);
+    return Tooltip(message: disabledHint!, child: button);
   }
 }

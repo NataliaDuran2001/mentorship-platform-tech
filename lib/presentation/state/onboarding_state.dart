@@ -1,13 +1,14 @@
-// Capa Presentation (State): Estado del onboarding con signals.
+// Presentation layer (State): Onboarding state with signals.
 //
-// Solo declara señales y derivados; quien las cambia es onboarding_actions.dart.
+// It only declares signals and derived values; the one that changes them is
+// onboarding_actions.dart.
 //
-// La idea central es que el flujo tiene **dos ramas** y por lo tanto un total de
-// pasos variable: 4 si la usuaria elige su track directamente, 5 si elige «Aún
-// no lo sé» y pasa por el cuestionario guía. En vez de repartir esa cuenta por
-// la UI, se declara la lista de pasos activos y todo lo demás se deriva de ella:
-// el contador, la barra de progreso y qué paso mostrar. De ahí venía la
-// discrepancia entre los dos mockups del prototipo.
+// The core idea is that the flow has **two branches** and therefore a variable
+// step total: 4 if the user picks their track directly, 5 if they pick "I'm not
+// sure yet" and go through the guided quiz. Instead of spreading that count
+// around the UI, the list of active steps is declared and everything else is
+// derived from it: the counter, the progress bar and which step to show. That
+// is where the mismatch between the two prototype mockups came from.
 
 import 'package:signals_flutter/signals_flutter.dart';
 
@@ -17,13 +18,14 @@ import '../../domain/entities/roadmap_track.dart';
 import '../../domain/entities/track_recommendation.dart';
 import '../utils/onboarding_quiz.dart';
 
-/// Los pasos posibles. `quiz` solo participa en la rama guiada.
+/// The possible steps. `quiz` only takes part in the guided branch.
 enum OnboardingStepId { level, track, quiz, goal, summary }
 
-/// La usuaria eligió «Aún no lo sé» en el paso 2 y va por el cuestionario guía.
+/// The user picked "I'm not sure yet" on step 2 and goes through the guided
+/// quiz.
 final usesGuidedQuiz = signal<bool>(false);
 
-/// Índice dentro de [activeSteps], empezando en 0.
+/// Index within [activeSteps], starting at 0.
 final currentStepIndex = signal<int>(0);
 
 final selectedLevel = signal<ExperienceLevel?>(null);
@@ -31,55 +33,54 @@ final selectedTrack = signal<RoadmapTrack?>(null);
 final selectedGoal = signal<LearningGoal?>(null);
 
 // ---------------------------------------------------------------------------
-// Cuestionario guía (issue #12)
+// Guided quiz (issue #12)
 //
-// El cuestionario es **un** paso del contador, no uno por pregunta: el
-// prototipo muestra «Paso 02/05» para toda la guía. Por eso su navegación
-// interna vive acá, aparte de currentStepIndex.
+// The quiz is **one** step of the counter, not one per question: the prototype
+// shows "Step 02/05" for the whole guide. That is why its internal navigation
+// lives here, apart from currentStepIndex.
 // ---------------------------------------------------------------------------
 
-/// Respuestas del cuestionario: número de pregunta → track al que votó.
+/// Quiz answers: question number → track it voted for.
 final quizAnswers = signal<Map<int, RoadmapTrack>>(<int, RoadmapTrack>{});
 
-/// Pregunta que se está mostrando, empezando en 0.
+/// Question being shown, starting at 0.
 final quizQuestionIndex = signal<int>(0);
 
-/// Ya se respondieron todas y se está mostrando el resultado.
+/// All of them are answered already and the result is being shown.
 final quizShowingResult = signal<bool>(false);
 
-/// Salida de RecommendTrackUseCase. `null` mientras no se calculó.
+/// Output of RecommendTrackUseCase. `null` while it has not been computed.
 final quizRecommendation = signal<TrackRecommendation?>(null);
 
-/// Pregunta actual del cuestionario.
+/// Current question of the quiz.
 final currentQuizQuestion = computed<QuizQuestion>(() {
-  final indice =
-      quizQuestionIndex.value.clamp(0, preguntasDelCuestionario.length - 1);
-  return preguntasDelCuestionario[indice];
+  final index = quizQuestionIndex.value.clamp(0, quizQuestions.length - 1);
+  return quizQuestions[index];
 });
 
-/// La pregunta actual ya está respondida.
+/// The current question is already answered.
 final currentQuizAnswered = computed(
   () => quizAnswers.value.containsKey(currentQuizQuestion.value.number),
 );
 
-/// Claves de `onboarding_answers` que ya tienen una fila para esta usuaria,
-/// respondidas u omitidas.
+/// Keys of `onboarding_answers` that already have a row for this user, either
+/// answered or skipped.
 ///
-/// Existe para que la reanudación distinga «lo omití» de «no llegué»: una
-/// selección en `null` no alcanza, porque omitir también deja la selección en
-/// `null`.
+/// It exists so the resume flow can tell "I skipped it" from "I never got
+/// there": a `null` selection is not enough, because skipping also leaves the
+/// selection at `null`.
 final storedStepKeys = signal<Set<String>>(<String>{});
 
-/// Guardando el resultado final.
+/// Saving the final result.
 final onboardingSaving = signal<bool>(false);
 
-/// Mensaje de error en español, ya traducido.
+/// Error message, already translated.
 final onboardingError = signal<String?>(null);
 
-/// Los pasos que realmente se recorren, en orden.
+/// The steps that are actually walked through, in order.
 ///
-/// Es la única definición del recorrido: el contador, la barra y el enrutado
-/// interno se derivan de acá, así que no pueden discrepar entre sí.
+/// It is the only definition of the journey: the counter, the bar and the
+/// internal routing are derived from here, so they cannot disagree.
 final activeSteps = computed<List<OnboardingStepId>>(() {
   return usesGuidedQuiz.value
       ? const [
@@ -97,35 +98,35 @@ final activeSteps = computed<List<OnboardingStepId>>(() {
         ];
 });
 
-/// 4 en la rama directa, 5 en la guiada. Incluye el resumen, igual que el
-/// «Paso 1 de 4» del prototipo.
+/// 4 on the direct branch, 5 on the guided one. It includes the summary, just
+/// like the prototype's "Step 1 of 4".
 final totalSteps = computed(() => activeSteps.value.length);
 
-/// Paso actual. Recorta el índice por si la lista se acortó al volver de la
-/// rama guiada a la directa.
+/// Current step. It clamps the index in case the list got shorter when coming
+/// back from the guided branch to the direct one.
 final currentStep = computed<OnboardingStepId>(() {
-  final pasos = activeSteps.value;
-  final indice = currentStepIndex.value.clamp(0, pasos.length - 1);
-  return pasos[indice];
+  final steps = activeSteps.value;
+  final index = currentStepIndex.value.clamp(0, steps.length - 1);
+  return steps[index];
 });
 
-/// Número visible del paso, empezando en 1.
+/// Visible step number, starting at 1.
 final currentStepNumber = computed(
   () => currentStepIndex.value.clamp(0, totalSteps.value - 1) + 1,
 );
 
-/// Fracción para la barra de progreso, sobre el total real de pasos.
+/// Fraction for the progress bar, over the real total of steps.
 final onboardingProgress =
     computed(() => currentStepNumber.value / totalSteps.value);
 
-/// Se puede volver atrás.
+/// Going back is possible.
 final canGoBack = computed(() => currentStepIndex.value > 0);
 
-/// Se puede omitir el paso actual.
+/// The current step can be skipped.
 ///
-/// Solo el nivel y la meta. El track **no** es omitible: sin track no hay
-/// roadmap que desplegar y se violaría el CA 1.3. El cuestionario guía tampoco,
-/// porque existe justamente para conseguir ese track.
+/// Only the level and the goal. The track is **not** skippable: without a track
+/// there is no roadmap to unfold and AC 1.3 would be violated. Neither is the
+/// guided quiz, because it exists precisely to get that track.
 final canSkipCurrentStep = computed(() {
   switch (currentStep.value) {
     case OnboardingStepId.level:
@@ -138,12 +139,12 @@ final canSkipCurrentStep = computed(() {
   }
 });
 
-/// El paso actual tiene una respuesta que permita avanzar.
+/// The current step has an answer that allows moving forward.
 ///
-/// En el paso del track exige una selección real: es lo que deshabilita
-/// «Continuar» hasta que haya track. En el cuestionario exige que la pregunta
-/// visible esté respondida, y en la pantalla de resultado, que haya una
-/// recomendación que confirmar.
+/// On the track step it requires a real selection: that is what keeps
+/// "Continue" disabled until there is a track. On the quiz it requires the
+/// visible question to be answered, and on the result screen, that there is a
+/// recommendation to confirm.
 final canAdvance = computed(() {
   switch (currentStep.value) {
     case OnboardingStepId.level:
@@ -159,7 +160,8 @@ final canAdvance = computed(() {
   }
 });
 
-/// Deja el flujo como recién empezado. Se llama al salir del onboarding.
+/// Leaves the flow as if it had just started. It is called when leaving the
+/// onboarding.
 void resetOnboarding() {
   usesGuidedQuiz.value = false;
   currentStepIndex.value = 0;

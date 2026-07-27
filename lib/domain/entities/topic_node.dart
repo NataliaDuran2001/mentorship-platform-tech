@@ -1,22 +1,23 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Nodo del árbol de tópicos de un roadmap. La jerarquía se arma por
-// [TopicNode.parentId] y el orden entre hermanos por [TopicNode.sortOrder].
+// Node of a roadmap's topic tree. The hierarchy is built from
+// [TopicNode.parentId] and the order among siblings from
+// [TopicNode.sortOrder].
 
 import 'roadmap_track.dart';
 
-/// Estado secuencial de un tópico.
+/// Sequential status of a topic.
 ///
-/// Es lo que hace que la ruta sea determinística en vez de un menú libre: solo
-/// hay un tópico [available] a la vez y los [locked] no responden al tap.
+/// It is what makes the path deterministic instead of a free menu: there is
+/// only one [available] topic at a time and [locked] ones do not react to tap.
 enum TopicStatus {
-  /// Ya completado por la usuaria.
+  /// Already completed by the user.
   completed,
 
-  /// El siguiente sin completar. Es el único accionable.
+  /// The next uncompleted one. It is the only actionable one.
   available,
 
-  /// Todavía no alcanzable: hay tópicos anteriores sin completar.
+  /// Not reachable yet: there are earlier uncompleted topics.
   locked,
 }
 
@@ -36,31 +37,32 @@ class TopicNode {
   final String id;
   final RoadmapTrack trackId;
 
-  /// Nodo padre, o `null` si es un tópico de primer nivel.
+  /// Parent node, or `null` if it is a top-level topic.
   final String? parentId;
 
   final String title;
   final String? description;
 
-  /// Orden entre hermanos. No es único en todo el árbol, solo dentro del padre.
+  /// Order among siblings. It is not unique across the whole tree, only
+  /// within the parent.
   final int sortOrder;
 
-  /// Hecho crudo que viene de `user_progress`: la usuaria completó el tópico.
+  /// Raw fact coming from `user_progress`: the user completed the topic.
   final bool isCompleted;
 
-  /// Hijos ya ordenados por [sortOrder]. Vacío en los nodos hoja y también
-  /// mientras el árbol no se ha armado (la capa Data entrega una lista plana).
+  /// Children already sorted by [sortOrder]. Empty in leaf nodes and also
+  /// while the tree has not been built (the Data layer delivers a flat list).
   final List<TopicNode> children;
 
-  /// Estado derivado por `GetRoadmapTreeUseCase` al armar el árbol.
+  /// Status derived by `GetRoadmapTreeUseCase` when building the tree.
   ///
-  /// El valor por defecto es [TopicStatus.locked] a propósito: un nodo que
-  /// nadie evaluó no debe verse accionable.
+  /// The default value is [TopicStatus.locked] on purpose: a node nobody
+  /// evaluated must not look actionable.
   final TopicStatus status;
 
   bool get isLeaf => children.isEmpty;
 
-  /// Este nodo y toda su descendencia, en orden de recorrido.
+  /// This node and all its descendants, in traversal order.
   Iterable<TopicNode> get flattened =>
       [this, for (final child in children) ...child.flattened];
 

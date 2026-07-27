@@ -1,4 +1,4 @@
-// Capa Presentation (State): Acciones del roadmap.
+// Presentation layer (State): Roadmap actions.
 
 import '../../core/di/injection.dart';
 import '../../domain/usecases/get_roadmap_tree_usecase.dart';
@@ -6,10 +6,11 @@ import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
 import 'roadmap_state.dart';
 
-/// Carga el árbol de tópicos del track de la usuaria.
+/// Loads the topic tree of the user's track.
 ///
-/// El track sale del perfil: si no hay, no hay nada que cargar y los route
-/// guards ya se encargaron de que eso no pase con el onboarding completo.
+/// The track comes from the profile: if there is none, there is nothing to load
+/// and the route guards already made sure that does not happen with the
+/// onboarding completed.
 Future<void> loadRoadmap() async {
   final track = currentProfile.value?.track;
   if (track == null) {
@@ -22,18 +23,18 @@ Future<void> loadRoadmap() async {
   roadmapError.value = null;
 
   try {
-    // El caso de uso arma la jerarquía y deriva el estado secuencial; acá no se
-    // ordena ni se decide qué está desbloqueado.
+    // The use case builds the hierarchy and derives the sequential state; here
+    // nothing is sorted nor is it decided what is unlocked.
     roadmapTree.value = await getIt<GetRoadmapTreeUseCase>()(track);
     roadmapLoaded.value = true;
   } catch (e) {
-    roadmapError.value = mensajeDeError(e);
+    roadmapError.value = errorMessage(e);
   } finally {
     roadmapLoading.value = false;
   }
 }
 
-/// Reintenta la carga después de un error.
+/// Retries the load after an error.
 Future<void> retryRoadmap() {
   roadmapError.value = null;
   return loadRoadmap();

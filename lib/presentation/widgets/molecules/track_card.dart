@@ -1,10 +1,11 @@
-// Atomic Design (Molécula): Combina átomos para formar un bloque funcional.
-// Variante vertical y centrada de la opción, para la grilla de tracks del paso
-// 2 y para el cuestionario guía del issue #12.
+// Atomic Design (Molecule): Combines atoms into a functional block.
+// Vertical, centered variant of the option, for the step 2 track grid and for
+// the guided questionnaire in issue #12.
 //
-// Es una molécula aparte y no un parámetro de OptionCardTile porque el layout
-// cambia de eje: un `Row` y un `Column` no son la misma composición con otro
-// flag. Los estados visuales sí los comparten, vía selectableCardDecoration.
+// It's a separate molecule and not a parameter of OptionCardTile because the
+// layout changes axis: a `Row` and a `Column` aren't the same composition with
+// a different flag. They do share the visual states, via
+// selectableCardDecoration.
 
 import 'package:flutter/material.dart';
 
@@ -27,7 +28,7 @@ class TrackCard extends StatelessWidget {
   final IconData icon;
   final String title;
 
-  /// La grilla del paso 2 la omite; el cuestionario guía la muestra.
+  /// The step 2 grid omits it; the guided questionnaire shows it.
   final String? description;
 
   final bool isSelected;

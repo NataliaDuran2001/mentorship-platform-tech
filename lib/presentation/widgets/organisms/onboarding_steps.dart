@@ -1,13 +1,13 @@
-// Atomic Design (Organismo): Secciones funcionales de los pasos del onboarding.
+// Atomic Design (Organism): Functional sections of the onboarding steps.
 //
-// Los cuatro pasos de la rama directa. Ninguno lee signals ni resuelve
-// dependencias: reciben la selección actual y avisan por callback. Es lo que
-// permite probarlos sueltos y que el issue #12 reutilice las mismas moléculas
-// para el cuestionario guía.
+// The four steps of the direct branch. None of them reads signals nor resolves
+// dependencies: they take the current selection and report back through a
+// callback. That is what lets them be tested on their own and what lets issue
+// #12 reuse the same molecules for the guided quiz.
 //
-// Van los cuatro en un archivo porque son variaciones del mismo patrón —una
-// lista de opciones— y separarlos daría cuatro archivos de veinte líneas que
-// siempre se leen juntos.
+// All four live in one file because they are variations of the same pattern —a
+// list of options— and splitting them would give four twenty-line files that
+// are always read together.
 
 import 'package:flutter/material.dart';
 
@@ -21,7 +21,7 @@ import '../molecules/goal_radio_row.dart';
 import '../molecules/option_card_tile.dart';
 import '../molecules/track_card.dart';
 
-/// Paso 1: nivel de experiencia. Omitible.
+/// Step 1: experience level. Skippable.
 class OnboardingStepRole extends StatelessWidget {
   const OnboardingStepRole({
     super.key,
@@ -37,15 +37,15 @@ class OnboardingStepRole extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final entrada in etiquetasDeNivel.entries)
+        for (final entry in levelLabels.entries)
           Padding(
             padding: const EdgeInsets.only(bottom: AppConstants.spacingSm),
             child: OptionCardTile(
-              icon: entrada.value.icon,
-              title: entrada.value.label,
-              description: entrada.value.description,
-              isSelected: selected == entrada.key,
-              onTap: () => onSelected(entrada.key),
+              icon: entry.value.icon,
+              title: entry.value.label,
+              description: entry.value.description,
+              isSelected: selected == entry.key,
+              onTap: () => onSelected(entry.key),
             ),
           ),
       ],
@@ -53,10 +53,11 @@ class OnboardingStepRole extends StatelessWidget {
   }
 }
 
-/// Paso 2: especialidad. **No** es omitible: sin track no hay roadmap (CA 1.3).
+/// Step 2: specialty. **Not** skippable: without a track there is no roadmap
+/// (AC 1.3).
 ///
-/// Ofrece los 3 tracks decididos más «Aún no lo sé», que no está en ningún
-/// mockup y es la opción que deriva al cuestionario guía del issue #12.
+/// It offers the 3 decided tracks plus "I'm not sure yet", which is not in any
+/// mockup and is the option that leads to the guided quiz of issue #12.
 class OnboardingStepStack extends StatelessWidget {
   const OnboardingStepStack({
     super.key,
@@ -68,7 +69,7 @@ class OnboardingStepStack extends StatelessWidget {
 
   final RoadmapTrack? selected;
 
-  /// La usuaria ya eligió «Aún no lo sé»: se marca esa tarjeta.
+  /// The user already picked "I'm not sure yet": that card is marked.
   final bool usesGuidedQuiz;
 
   final ValueChanged<RoadmapTrack> onSelected;
@@ -76,48 +77,48 @@ class OnboardingStepStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final angosto =
+    final isNarrow =
         MediaQuery.sizeOf(context).width <= AppConstants.breakpointMobile;
-    final columnas = angosto ? 1 : 2;
+    final columns = isNarrow ? 1 : 2;
 
-    final tarjetas = <Widget>[
-      for (final entrada in etiquetasDeTrack.entries)
+    final cards = <Widget>[
+      for (final entry in trackLabels.entries)
         TrackCard(
-          icon: entrada.value.icon,
-          title: entrada.value.label,
-          description: entrada.value.description,
-          isSelected: selected == entrada.key,
-          onTap: () => onSelected(entrada.key),
+          icon: entry.value.icon,
+          title: entry.value.label,
+          description: entry.value.description,
+          isSelected: selected == entry.key,
+          onTap: () => onSelected(entry.key),
         ),
       TrackCard(
-        icon: opcionNoLoSe.icon,
-        title: opcionNoLoSe.label,
-        description: opcionNoLoSe.description,
+        icon: notSureOption.icon,
+        title: notSureOption.label,
+        description: notSureOption.description,
         isSelected: usesGuidedQuiz,
         onTap: onDontKnow,
       ),
     ];
 
-    // Filas de altura intrínseca en vez de un GridView: las descripciones de
-    // los tracks tienen largos distintos y un `childAspectRatio` fijo las
-    // recortaba. Así cada fila mide lo que necesita su tarjeta más alta, y las
-    // dos de la fila quedan parejas.
+    // Rows of intrinsic height instead of a GridView: the track descriptions
+    // have different lengths and a fixed `childAspectRatio` was clipping them.
+    // This way each row is as tall as its tallest card, and the two cards in
+    // the row match.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var inicio = 0; inicio < tarjetas.length; inicio += columnas)
+        for (var start = 0; start < cards.length; start += columns)
           Padding(
             padding: const EdgeInsets.only(bottom: AppConstants.spacingSm),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (var columna = 0; columna < columnas; columna++) ...[
-                    if (columna > 0)
+                  for (var column = 0; column < columns; column++) ...[
+                    if (column > 0)
                       const SizedBox(width: AppConstants.spacingSm),
                     Expanded(
-                      child: inicio + columna < tarjetas.length
-                          ? tarjetas[inicio + columna]
+                      child: start + column < cards.length
+                          ? cards[start + column]
                           : const SizedBox.shrink(),
                     ),
                   ],
@@ -130,7 +131,7 @@ class OnboardingStepStack extends StatelessWidget {
   }
 }
 
-/// Paso 3: meta principal. Omitible.
+/// Step 3: main goal. Skippable.
 class OnboardingStepGoal extends StatelessWidget {
   const OnboardingStepGoal({
     super.key,
@@ -146,13 +147,13 @@ class OnboardingStepGoal extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final entrada in etiquetasDeMeta.entries)
+        for (final entry in goalLabels.entries)
           Padding(
             padding: const EdgeInsets.only(bottom: AppConstants.spacingSm),
             child: GoalRadioRow(
-              label: entrada.value.label,
-              isSelected: selected == entrada.key,
-              onTap: () => onSelected(entrada.key),
+              label: entry.value.label,
+              isSelected: selected == entry.key,
+              onTap: () => onSelected(entry.key),
             ),
           ),
       ],
@@ -160,10 +161,10 @@ class OnboardingStepGoal extends StatelessWidget {
   }
 }
 
-/// Paso 4: resumen. Muestra Nivel y Foco, como el prototipo.
+/// Step 4: summary. Shows Level and Focus, like the prototype.
 ///
-/// Los pasos omitidos se muestran como «Sin definir» en vez de esconderse: la
-/// usuaria tiene que poder ver qué dejó en blanco.
+/// Skipped steps show up as "Not set" instead of hiding: the user has to be
+/// able to see what she left blank.
 class OnboardingSummary extends StatelessWidget {
   const OnboardingSummary({
     super.key,
@@ -200,13 +201,13 @@ class OnboardingSummary extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.spacingLg),
         Text(
-          '¡Todo listo!',
+          "You're all set!",
           style: textTheme.headlineMedium,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppConstants.spacingSm),
         Text(
-          'Configuramos tu perfil. Ya podés entrar a tu ruta de aprendizaje.',
+          'Your profile is ready. You can jump into your learning path now.',
           style: textTheme.bodyMedium?.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -227,15 +228,15 @@ class OnboardingSummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Resumen de tu perfil'.toUpperCase(),
+                'Your profile summary'.toUpperCase(),
                 style: textTheme.labelMedium?.copyWith(
                   color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: AppConstants.spacingMd),
-              _Fila(etiqueta: 'Nivel', valor: nombreDeNivel(level)),
-              _Fila(etiqueta: 'Foco', valor: nombreDeTrack(track)),
-              _Fila(etiqueta: 'Meta', valor: nombreDeMeta(goal)),
+              _SummaryRow(label: 'Level', value: levelName(level)),
+              _SummaryRow(label: 'Focus', value: trackName(track)),
+              _SummaryRow(label: 'Goal', value: goalName(goal)),
             ],
           ),
         ),
@@ -244,11 +245,11 @@ class OnboardingSummary extends StatelessWidget {
   }
 }
 
-class _Fila extends StatelessWidget {
-  const _Fila({required this.etiqueta, required this.valor});
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({required this.label, required this.value});
 
-  final String etiqueta;
-  final String? valor;
+  final String label;
+  final String? value;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +263,7 @@ class _Fila extends StatelessWidget {
           SizedBox(
             width: AppConstants.iconTileSize + AppConstants.spacingMd,
             child: Text(
-              '$etiqueta:',
+              '$label:',
               style: textTheme.bodyMedium?.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
@@ -270,10 +271,10 @@ class _Fila extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              valor ?? 'Sin definir',
+              value ?? 'Not set',
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: valor == null
+                color: value == null
                     ? AppColors.onSurfaceVariant
                     : AppColors.onSurface,
               ),

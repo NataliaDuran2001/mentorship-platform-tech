@@ -1,13 +1,13 @@
-// Atomic Design (Organismo): Sección funcional reutilizable.
-// El cuestionario guía: una pregunta con sus opciones, y la pantalla de
-// resultado con la recomendación.
+// Atomic Design (Organism): Reusable functional section.
+// The guided quiz: one question with its options, and the result screen with
+// the recommendation.
 //
-// Reutiliza TrackCard del issue #10, igual que el paso 2 del flujo directo, así
-// que las dos ramas se ven como la misma aplicación.
+// It reuses TrackCard from issue #10, same as step 2 of the direct flow, so
+// that both branches look like the same application.
 //
-// **No contiene la regla de decisión.** Recibe la recomendación ya calculada por
-// `RecommendTrackUseCase` y solo la muestra. Si acá hubiera un `if` sobre las
-// respuestas, ese sería exactamente el error que el AC3 del issue #12 busca.
+// **It does not hold the decision rule.** It takes the recommendation already
+// computed by `RecommendTrackUseCase` and only displays it. An `if` over the
+// answers in here would be exactly the mistake that AC3 of issue #12 looks for.
 
 import 'package:flutter/material.dart';
 
@@ -19,7 +19,7 @@ import '../../utils/onboarding_labels.dart';
 import '../../utils/onboarding_quiz.dart';
 import '../molecules/track_card.dart';
 
-/// Una pregunta del cuestionario con sus tres opciones.
+/// One quiz question with its three options.
 class GuidedQuizStep extends StatelessWidget {
   const GuidedQuizStep({
     super.key,
@@ -30,37 +30,37 @@ class GuidedQuizStep extends StatelessWidget {
 
   final QuizQuestion question;
 
-  /// Track votado en esta pregunta, si ya se respondió.
+  /// Track voted in this question, if it was already answered.
   final RoadmapTrack? selected;
 
   final ValueChanged<RoadmapTrack> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    final angosto =
+    final isNarrow =
         MediaQuery.sizeOf(context).width <= AppConstants.breakpointMobile;
-    final columnas = angosto ? 1 : question.options.length;
+    final columns = isNarrow ? 1 : question.options.length;
 
-    // Misma técnica que el paso 2: filas de altura intrínseca en vez de un
-    // GridView, porque las descripciones tienen largos distintos.
+    // Same technique as step 2: rows of intrinsic height instead of a
+    // GridView, because the descriptions have different lengths.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var inicio = 0;
-            inicio < question.options.length;
-            inicio += columnas)
+        for (var start = 0;
+            start < question.options.length;
+            start += columns)
           Padding(
             padding: const EdgeInsets.only(bottom: AppConstants.spacingSm),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (var columna = 0; columna < columnas; columna++) ...[
-                    if (columna > 0)
+                  for (var column = 0; column < columns; column++) ...[
+                    if (column > 0)
                       const SizedBox(width: AppConstants.spacingSm),
                     Expanded(
-                      child: inicio + columna < question.options.length
-                          ? _opcion(question.options[inicio + columna])
+                      child: start + column < question.options.length
+                          ? _option(question.options[start + column])
                           : const SizedBox.shrink(),
                     ),
                   ],
@@ -72,22 +72,22 @@ class GuidedQuizStep extends StatelessWidget {
     );
   }
 
-  Widget _opcion(QuizOption opcion) {
+  Widget _option(QuizOption option) {
     return TrackCard(
-      icon: opcion.icon,
-      title: opcion.label,
-      description: opcion.description,
-      isSelected: selected == opcion.affinity,
-      onTap: () => onSelected(opcion.affinity),
+      icon: option.icon,
+      title: option.label,
+      description: option.description,
+      isSelected: selected == option.affinity,
+      onTap: () => onSelected(option.affinity),
     );
   }
 }
 
-/// Pantalla de resultado: la recomendación, su justificación y la confirmación.
+/// Result screen: the recommendation, why it came up and the confirmation.
 ///
-/// La confirmación es explícita a propósito: la recomendación es una sugerencia,
-/// no una asignación. Y si el resultado salió de un empate, se dice, en vez de
-/// presentarlo como concluyente.
+/// The confirmation is explicit on purpose: the recommendation is a
+/// suggestion, not an assignment. And if the result came out of a tie, that is
+/// said, instead of presenting it as conclusive.
 class GuidedQuizResult extends StatelessWidget {
   const GuidedQuizResult({
     super.key,
@@ -108,13 +108,13 @@ class GuidedQuizResult extends StatelessWidget {
     final track = recommendation.track;
 
     if (track == null) {
-      // Sin respuestas utilizables no hay nada que recomendar. Puede pasar si se
-      // reanuda un cuestionario vacío.
+      // With no usable answers there is nothing to recommend. It can happen if
+      // an empty quiz is resumed.
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Todavía no tenemos suficientes respuestas para sugerirte una ruta.',
+            "We don't have enough answers yet to suggest a path for you.",
             style: textTheme.bodyLarge,
           ),
           const SizedBox(height: AppConstants.spacingMd),
@@ -122,37 +122,37 @@ class GuidedQuizResult extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onRedo,
-              child: const Text('Responder el cuestionario'),
+              child: const Text('Take the quiz'),
             ),
           ),
         ],
       );
     }
 
-    final etiqueta = etiquetasDeTrack[track]!;
+    final label = trackLabels[track]!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Te sugerimos esta ruta',
+          'We suggest this path',
           style: textTheme.labelMedium?.copyWith(color: AppColors.primary),
         ),
         const SizedBox(height: AppConstants.spacingSm),
-        // La tarjeta va marcada como seleccionada, pero el track todavía NO se
-        // asignó: se asigna al confirmar.
+        // The card is marked as selected, but the track is NOT assigned yet:
+        // it gets assigned on confirm.
         TrackCard(
-          icon: etiqueta.icon,
-          title: etiqueta.label,
-          description: justificacionDeRecomendacion[track],
+          icon: label.icon,
+          title: label.label,
+          description: recommendationRationale[track],
           isSelected: true,
           onTap: onConfirm,
         ),
         if (recommendation.wasTie) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            'Estuvo parejo con otra ruta, así que revisá la sugerencia antes de '
-            'confirmarla.',
+            'It was close with another path, so take a look at the suggestion '
+            'before you confirm it.',
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -160,23 +160,23 @@ class GuidedQuizResult extends StatelessWidget {
         ],
         const SizedBox(height: AppConstants.spacingLg),
         Text(
-          '¿Preferís otra?',
+          'Prefer another one?',
           style: textTheme.bodyMedium?.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: AppConstants.spacingSm),
-        // Corrección manual: la usuaria puede ignorar la sugerencia.
+        // Manual override: you can ignore the suggestion.
         Wrap(
           spacing: AppConstants.spacingSm,
           runSpacing: AppConstants.spacingSm,
           children: [
-            for (final otro in RoadmapTrack.values)
-              if (otro != track)
+            for (final other in RoadmapTrack.values)
+              if (other != track)
                 OutlinedButton.icon(
-                  onPressed: () => onOverride(otro),
-                  icon: Icon(etiquetasDeTrack[otro]!.icon),
-                  label: Text(etiquetasDeTrack[otro]!.label),
+                  onPressed: () => onOverride(other),
+                  icon: Icon(trackLabels[other]!.icon),
+                  label: Text(trackLabels[other]!.label),
                 ),
           ],
         ),
@@ -185,7 +185,7 @@ class GuidedQuizResult extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: TextButton(
             onPressed: onRedo,
-            child: const Text('Volver a responder el cuestionario'),
+            child: const Text('Take the quiz again'),
           ),
         ),
       ],

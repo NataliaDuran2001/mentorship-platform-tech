@@ -1,15 +1,15 @@
-// Capa Data: Implementación concreta del contrato OnboardingRepository contra
-// las tablas `profiles` y `onboarding_answers` (issue #7).
+// Data layer: Concrete implementation of the OnboardingRepository contract
+// against the `profiles` and `onboarding_answers` tables (issue #7).
 //
-// Toma el SupabaseClient de getIt. Todas las consultas van implícitamente
-// filtradas por RLS a las filas de la usuaria autenticada: el `eq('user_id',
-// …)` explícito está igual, porque una consulta que depende solo de la política
-// para no traer datos ajenos es frágil de leer.
+// It takes the SupabaseClient from getIt. Every query is implicitly filtered
+// by RLS to the rows of the authenticated user: the explicit `eq('user_id',
+// …)` is there anyway, because a query that relies only on the policy to
+// avoid bringing other people's data is fragile to read.
 //
-// Se implementa completa acá y no repartida entre #9, #11 y #14 porque es una
-// sola clase: los route guards del #9 necesitan `loadProfile()`, y dejar los
-// otros tres métodos lanzando obligaría a volver a esta clase dos veces más.
-// Decisión anotada en la §9 del handoff.
+// It is implemented in full here and not split across #9, #11 and #14 because
+// it is a single class: the route guards of #9 need `loadProfile()`, and
+// leaving the other three methods throwing would force a second and third
+// return to this class. Decision recorded in §9 of the handoff.
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
@@ -27,37 +27,37 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
 
   final sb.SupabaseClient _client;
 
-  static const String _tablaPerfiles = 'profiles';
-  static const String _tablaRespuestas = 'onboarding_answers';
+  static const String _profilesTable = 'profiles';
+  static const String _answersTable = 'onboarding_answers';
 
   @override
   Future<UserProfile?> loadProfile() async {
-    final id = _idUsuaria;
+    final id = _userId;
     if (id == null) return null;
 
-    return _traducir(() async {
-      final fila = await _client
-          .from(_tablaPerfiles)
+    return _translate(() async {
+      final row = await _client
+          .from(_profilesTable)
           .select(UserModel.columns)
           .eq('id', id)
           .maybeSingle();
 
-      // null si el trigger no alcanzó a crear el perfil todavía. Quien llama
-      // decide si reintenta; no se inventa un perfil vacío.
-      if (fila == null) return null;
-      return UserModel.fromJson(fila).toEntity();
+      // null if the trigger has not created the profile yet. The caller
+      // decides whether to retry; no empty profile is invented.
+      if (row == null) return null;
+      return UserModel.fromJson(row).toEntity();
     });
   }
 
   @override
   Future<void> saveAnswer(OnboardingAnswer answer) async {
-    final id = _idExigido;
+    final id = _requiredUserId;
 
-    await _traducir(() async {
-      // Upsert por (user_id, step_key), que es la constraint única de la tabla:
-      // cambiar una respuesta al volver atrás actualiza la fila en vez de
-      // agregar otra. Es lo que hace reanudable el flujo (#14).
-      await _client.from(_tablaRespuestas).upsert(
+    await _translate(() async {
+      // Upsert by (user_id, step_key), which is the unique constraint of the
+      // table: changing an answer when going back updates the row instead of
+      // adding another one. That is what makes the flow resumable (#14).
+      await _client.from(_answersTable).upsert(
         <String, dynamic>{
           'user_id': id,
           'step_key': answer.stepKey,
@@ -71,22 +71,22 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
 
   @override
   Future<List<OnboardingAnswer>> loadAnswers() async {
-    final id = _idUsuaria;
+    final id = _userId;
     if (id == null) return const <OnboardingAnswer>[];
 
-    return _traducir(() async {
-      final filas = await _client
-          .from(_tablaRespuestas)
+    return _translate(() async {
+      final rows = await _client
+          .from(_answersTable)
           .select('step_key, value, answered_at')
           .eq('user_id', id);
 
-      return filas
+      return rows
           .map(
-            (fila) => OnboardingAnswer(
-              stepKey: fila['step_key'] as String,
-              value: fila['value'] as String,
+            (row) => OnboardingAnswer(
+              stepKey: row['step_key'] as String,
+              value: row['value'] as String,
               answeredAt: DateTime.tryParse(
-                fila['answered_at'] as String? ?? '',
+                row['answered_at'] as String? ?? '',
               ),
             ),
           )
@@ -100,11 +100,11 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
   }) async {
-    final id = _idExigido;
+    final id = _requiredUserId;
 
-    return _traducir(() async {
-      final fila = await _client
-          .from(_tablaPerfiles)
+    return _translate(() async {
+      final row = await _client
+          .from(_profilesTable)
           .update(<String, dynamic>{
             'experience_level': experienceLevel?.slug,
             'track_id': track.slug,
@@ -115,34 +115,35 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
           .select(UserModel.columns)
           .single();
 
-      return UserModel.fromJson(fila).toEntity();
+      return UserModel.fromJson(row).toEntity();
     });
   }
 
   // ---------------------------------------------------------------------------
 
-  String? get _idUsuaria => _client.auth.currentUser?.id;
+  String? get _userId => _client.auth.currentUser?.id;
 
-  /// Igual que [_idUsuaria] pero falla si no hay sesión, para las escrituras.
+  /// Same as [_userId] but fails when there is no session, for the writes.
   ///
-  /// Sin sesión la política RLS rechazaría la fila igual, pero con un error de
-  /// Postgres que no dice nada útil. Mejor fallar acá y con un caso conocido.
-  String get _idExigido {
-    final id = _idUsuaria;
+  /// Without a session the RLS policy would reject the row anyway, but with a
+  /// Postgres error that says nothing useful. Better to fail here and with a
+  /// known case.
+  String get _requiredUserId {
+    final id = _userId;
     if (id == null) {
       throw const AuthFailure(
         AuthFailureKind.invalidCredentials,
-        technicalDetail: 'No hay sesión activa al escribir el onboarding',
+        technicalDetail: 'No active session while writing the onboarding',
       );
     }
     return id;
   }
 
-  /// Traduce los errores del backend a AuthFailure, igual que
-  /// AuthRepositoryImpl: presentation no importa supabase_flutter.
-  Future<T> _traducir<T>(Future<T> Function() accion) async {
+  /// Translates the backend errors into AuthFailure, just like
+  /// AuthRepositoryImpl: presentation does not import supabase_flutter.
+  Future<T> _translate<T>(Future<T> Function() action) async {
     try {
-      return await accion();
+      return await action();
     } on AuthFailure {
       rethrow;
     } on sb.PostgrestException catch (e) {
@@ -150,16 +151,16 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     } on sb.AuthException catch (e) {
       throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.message);
     } catch (e) {
-      final texto = e.toString().toLowerCase();
-      final deRed = texto.contains('socketexception') ||
-          texto.contains('clientexception') ||
-          texto.contains('failed host lookup') ||
-          texto.contains('connection') ||
-          texto.contains('timeout') ||
-          texto.contains('xmlhttprequest');
+      final text = e.toString().toLowerCase();
+      final isNetwork = text.contains('socketexception') ||
+          text.contains('clientexception') ||
+          text.contains('failed host lookup') ||
+          text.contains('connection') ||
+          text.contains('timeout') ||
+          text.contains('xmlhttprequest');
 
       throw AuthFailure(
-        deRed ? AuthFailureKind.network : AuthFailureKind.unknown,
+        isNetwork ? AuthFailureKind.network : AuthFailureKind.unknown,
         technicalDetail: e.toString(),
       );
     }

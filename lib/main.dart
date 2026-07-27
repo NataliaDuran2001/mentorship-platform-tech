@@ -10,24 +10,25 @@ import 'presentation/utils/app_colors.dart';
 import 'presentation/utils/constants.dart';
 
 Future<void> main() async {
-  // Necesario porque inicializamos plugins antes de runApp
+  // Needed because we initialize plugins before runApp
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Arrancamos Supabase antes de registrar dependencias que dependen del
-    // cliente.
+    // We boot Supabase before registering dependencies that rely on the
+    // client.
     await SupabaseConfig.initialize();
 
-    // Inicializamos la inyección de dependencias de get_it.
+    // We initialize the get_it dependency injection.
     setupDependencies();
 
-    // Restaura la sesión persistida y trae el perfil antes de montar la UI, de
-    // modo que los route guards nunca decidan con el perfil a medio cargar.
+    // Restores the persisted session and fetches the profile before mounting
+    // the UI, so that the route guards never decide with a half-loaded
+    // profile.
     await bootstrapAuth();
   } catch (e) {
-    // Sin este catch, cualquier fallo del backend dejaba una pantalla blanca
-    // indefinida y sin diagnóstico: era la deuda 2 de la §3 del handoff.
-    runApp(ArranqueFallido(detalle: e.toString()));
+    // Without this catch, any backend failure left an indefinite white screen
+    // with no diagnosis: it was debt 2 of §3 of the handoff.
+    runApp(StartupFailed(detail: e.toString()));
     return;
   }
 
@@ -42,22 +43,22 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: AppBranding.name,
       debugShowCheckedModeBanner: false,
-      // El tema completo vive en AppTheme; acá no se define ningún estilo.
+      // The full theme lives in AppTheme; no style is defined here.
       theme: AppTheme.light,
       routerConfig: AppRouter.router,
     );
   }
 }
 
-/// Pantalla de último recurso cuando la app no puede arrancar.
+/// Last resort screen for when the app cannot start.
 ///
-/// Muestra un mensaje en español y deja el detalle técnico a la vista: acá no
-/// hay una usuaria a la que proteger del error crudo, hay alguien mirando una
-/// app que no arrancó y que necesita saber por qué.
-class ArranqueFallido extends StatelessWidget {
-  const ArranqueFallido({super.key, required this.detalle});
+/// It shows a plain message and leaves the technical detail in sight: there is
+/// no user to protect from the raw error here, there is someone looking at an
+/// app that did not start and who needs to know why.
+class StartupFailed extends StatelessWidget {
+  const StartupFailed({super.key, required this.detail});
 
-  final String detalle;
+  final String detail;
 
   @override
   Widget build(BuildContext context) {
@@ -79,19 +80,19 @@ class ArranqueFallido extends StatelessWidget {
                 ),
                 const SizedBox(height: AppConstants.spacingMd),
                 Text(
-                  'No pudimos iniciar la aplicación',
+                  'We could not start the app',
                   style: Theme.of(context).textTheme.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppConstants.spacingSm),
                 Text(
-                  'Revisá tu conexión y volvé a abrirla. Si el problema sigue, '
-                  'el servicio puede estar caído.',
+                  'Check your connection and open it again. If the problem '
+                  'persists, the service may be down.',
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppConstants.spacingLg),
-                SelectableText(detalle, style: AppTheme.code),
+                SelectableText(detail, style: AppTheme.code),
               ],
             ),
           ),

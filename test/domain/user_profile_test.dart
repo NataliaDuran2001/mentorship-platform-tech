@@ -1,6 +1,6 @@
-// Pruebas unitarias de la regla que sostiene los route guards del issue #9:
-// un perfil sin track no cuenta como onboarding completo, por más que tenga
-// la marca de tiempo.
+// Unit tests of the rule that holds up the route guards of issue #9: a
+// profile without a track does not count as a complete onboarding, no matter
+// that it has the timestamp.
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,41 +12,41 @@ import 'package:aspire_app/domain/entities/user_profile.dart';
 void main() {
   const base = UserProfile(id: 'u1', email: 'ana@example.com');
 
-  test('un perfil recién creado no tiene el onboarding completo', () {
+  test('a freshly created profile does not have the onboarding complete', () {
     expect(base.hasCompletedOnboarding, isFalse);
     expect(base.track, isNull);
     expect(base.onboardingCompletedAt, isNull);
   });
 
-  test('con marca de tiempo pero sin track sigue incompleto', () {
-    final perfil = base.copyWith(onboardingCompletedAt: DateTime(2026, 7, 26));
+  test('with a timestamp but no track it is still incomplete', () {
+    final profile = base.copyWith(onboardingCompletedAt: DateTime(2026, 7, 26));
 
-    expect(perfil.hasCompletedOnboarding, isFalse);
+    expect(profile.hasCompletedOnboarding, isFalse);
   });
 
-  test('con track pero sin marca de tiempo sigue incompleto', () {
-    final perfil = base.copyWith(track: RoadmapTrack.backend);
+  test('with a track but no timestamp it is still incomplete', () {
+    final profile = base.copyWith(track: RoadmapTrack.backend);
 
-    expect(perfil.hasCompletedOnboarding, isFalse);
+    expect(profile.hasCompletedOnboarding, isFalse);
   });
 
-  test('con track y marca de tiempo está completo', () {
-    final perfil = base.copyWith(
+  test('with a track and a timestamp it is complete', () {
+    final profile = base.copyWith(
       experienceLevel: ExperienceLevel.juniorDeveloper,
       track: RoadmapTrack.frontend,
       learningGoal: LearningGoal.interviewSkills,
       onboardingCompletedAt: DateTime(2026, 7, 26),
     );
 
-    expect(perfil.hasCompletedOnboarding, isTrue);
+    expect(profile.hasCompletedOnboarding, isTrue);
   });
 
-  test('copyWith conserva identidad y lo no especificado', () {
-    final perfil = base.copyWith(displayName: 'Ana');
+  test('copyWith keeps the identity and whatever is not specified', () {
+    final profile = base.copyWith(displayName: 'Ana');
 
-    expect(perfil.id, base.id);
-    expect(perfil.email, base.email);
-    expect(perfil.displayName, 'Ana');
-    expect(perfil.track, isNull);
+    expect(profile.id, base.id);
+    expect(profile.email, base.email);
+    expect(profile.displayName, 'Ana');
+    expect(profile.track, isNull);
   });
 }

@@ -1,9 +1,9 @@
-// Capa Domain: Caso de uso que encapsula una regla de negocio de la app.
+// Domain layer: Use case encapsulating one business rule of the app.
 //
-// Traduce las respuestas del cuestionario guía a un track recomendado. Es la
-// única lógica de negocio real del Módulo 1, y por eso vive acá y no en un
-// widget: el issue #12 exige explícitamente que la decisión no se tome en la
-// UI.
+// It translates the guided quiz answers into a recommended track. It is the
+// only real business logic of Module 1, and that is why it lives here and not
+// in a widget: issue #12 explicitly requires the decision not to be made in
+// the UI.
 
 import '../entities/onboarding_answer.dart';
 import '../entities/roadmap_track.dart';
@@ -12,22 +12,22 @@ import '../entities/track_recommendation.dart';
 class RecommendTrackUseCase {
   const RecommendTrackUseCase();
 
-  /// Cuenta un voto por cada respuesta cuyo valor corresponda a un track y
-  /// devuelve el más votado.
+  /// Counts one vote for every answer whose value maps to a track and returns
+  /// the most voted one.
   ///
-  /// Acepta la lista completa de respuestas del onboarding, no solo las del
-  /// cuestionario: las que no mapean a un track (`student`, `first_job`,
-  /// `unknown`) simplemente no votan. Eso permite pasarle tal cual lo que
-  /// devuelve `OnboardingRepository.loadAnswers()` al reanudar (issue #14) sin
-  /// filtrar nada antes.
+  /// It accepts the full list of onboarding answers, not just the quiz ones:
+  /// those that do not map to a track (`student`, `first_job`, `unknown`)
+  /// simply do not vote. That makes it possible to pass it whatever
+  /// `OnboardingRepository.loadAnswers()` returns when resuming (issue #14)
+  /// without filtering anything first.
   ///
-  /// Empates: gana el orden de declaración de [RoadmapTrack] —frontend,
-  /// backend, infrastructure— y el resultado viene marcado con `wasTie: true`.
-  /// El criterio es arbitrario a propósito; lo que importa es que sea
-  /// **determinístico** y que el empate se pueda mostrar, porque el issue #12
-  /// obliga a que la usuaria confirme la recomendación y pueda corregirla a
-  /// mano. Frontend queda primero por ser la puerta de entrada más común para
-  /// quien recién empieza, que es el perfil dominante del producto.
+  /// Ties: the declaration order of [RoadmapTrack] wins —frontend, backend,
+  /// infrastructure— and the result comes marked with `wasTie: true`. The
+  /// criterion is arbitrary on purpose; what matters is that it is
+  /// **deterministic** and that the tie can be shown, because issue #12
+  /// requires the user to confirm the recommendation and be able to correct
+  /// it by hand. Frontend comes first for being the most common entry point
+  /// for someone just starting out, which is the product's dominant profile.
   TrackRecommendation call(List<OnboardingAnswer> answers) {
     final scores = <RoadmapTrack, int>{
       for (final track in RoadmapTrack.values) track: 0,

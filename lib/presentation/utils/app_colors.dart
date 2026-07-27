@@ -1,12 +1,13 @@
-// Capa Presentation (Utils): Paleta de colores del design system Luminous
-// Clarity. Fuente de verdad: el frontmatter YAML de DESIGN.md, con sus nombres
-// en camelCase. Los hex de la prosa de ese documento NO son autoritativos: de
-// ahí salieron los valores desviados que esta versión corrige.
+// Presentation layer (Utils): Color palette of the Luminous Clarity design
+// system. Source of truth: the YAML frontmatter of DESIGN.md, with its
+// camelCase names. The hex values in that document's prose are NOT
+// authoritative: they are where the drifted values this version fixes came
+// from.
 
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Superficies
+  // Surfaces
   static const Color surface = Color(0xFFF7F9FB);
   static const Color surfaceDim = Color(0xFFD8DADC);
   static const Color surfaceBright = Color(0xFFF7F9FB);
@@ -24,7 +25,7 @@ class AppColors {
   static const Color outlineVariant = Color(0xFFCAC4D4);
   static const Color surfaceTint = Color(0xFF674BB5);
 
-  // Primario
+  // Primary
   static const Color primary = Color(0xFF674BB5);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color primaryContainer = Color(0xFFA78BFA);
@@ -35,7 +36,7 @@ class AppColors {
   static const Color onPrimaryFixed = Color(0xFF21005E);
   static const Color onPrimaryFixedVariant = Color(0xFF4F319C);
 
-  // Secundario
+  // Secondary
   static const Color secondary = Color(0xFF712AE2);
   static const Color onSecondary = Color(0xFFFFFFFF);
   static const Color secondaryContainer = Color(0xFF8A4CFC);
@@ -45,7 +46,7 @@ class AppColors {
   static const Color onSecondaryFixed = Color(0xFF25005A);
   static const Color onSecondaryFixedVariant = Color(0xFF5A00C6);
 
-  // Terciario
+  // Tertiary
   static const Color tertiary = Color(0xFF6A5F00);
   static const Color onTertiary = Color(0xFFFFFFFF);
   static const Color tertiaryContainer = Color(0xFFAF9E00);
@@ -61,7 +62,7 @@ class AppColors {
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onErrorContainer = Color(0xFF93000A);
 
-  // Fondo (en este design system coincide con surface/onSurface)
+  // Background (in this design system it matches surface/onSurface)
   static const Color background = Color(0xFFF7F9FB);
   static const Color onBackground = Color(0xFF191C1E);
 }

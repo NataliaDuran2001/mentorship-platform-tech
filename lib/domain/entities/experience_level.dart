@@ -1,31 +1,31 @@
-// Capa Domain: Entidad pura de negocio (Dart puro, sin Flutter ni JSON).
+// Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// Los 3 niveles de experiencia del Módulo 1. Son exactamente los del
-// prototipo `descubre_tu_ruta_onboarding` y no admiten valores extra.
+// The 3 experience levels of Module 1. They are exactly the ones from the
+// `descubre_tu_ruta_onboarding` prototype and admit no extra values.
 //
-// El `slug` es el valor estable que viaja a la base de datos: la capa Data
-// lo persiste tal cual en `profiles.experience_level`. Las etiquetas en
-// español viven en la capa Presentation, no acá.
+// The `slug` is the stable value that travels to the database: the Data
+// layer persists it as-is in `profiles.experience_level`. The visible
+// labels live in the Presentation layer, not here.
 
 enum ExperienceLevel {
-  /// Estudiante / autodidacta: aprendiendo las bases, busca su primer empleo.
+  /// Student / self-taught: learning the basics, looking for a first job.
   student('student'),
 
-  /// Junior developer: menos de 2 años de experiencia profesional.
+  /// Junior developer: less than 2 years of professional experience.
   juniorDeveloper('junior_developer'),
 
-  /// Cambiando de carrera: viene de otro sector y quiere entrar a tech.
+  /// Career switcher: comes from another sector and wants to enter tech.
   careerSwitcher('career_switcher');
 
   const ExperienceLevel(this.slug);
 
-  /// Valor estable para persistencia. Nunca cambiar sin migrar los datos.
+  /// Stable value for persistence. Never change it without migrating data.
   final String slug;
 
-  /// Devuelve el nivel cuyo [slug] coincide, o `null` si no hay ninguno.
+  /// Returns the level whose [slug] matches, or `null` if there is none.
   ///
-  /// Tolera `null` y valores desconocidos a propósito: un perfil a medio
-  /// llenar o una fila vieja no debe hacer explotar la lectura.
+  /// It tolerates `null` and unknown values on purpose: a half-filled
+  /// profile or an old row must not blow up the read.
   static ExperienceLevel? fromSlug(String? slug) {
     for (final level in ExperienceLevel.values) {
       if (level.slug == slug) return level;

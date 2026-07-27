@@ -100,7 +100,7 @@ cada `CREATE TABLE` sobre `public`.
 
 | Decisión | Valor |
 |---|---|
-| Idioma | UI y comentarios en español. Identificadores y código en inglés |
+| Idioma | **UI, comentarios e identificadores en inglés** (decisión del 2026-07-27, issue #35). Los issues del tablero y los documentos de `docs/` siguen en español |
 | Marca | Sin decidir. Todo nombre de producto pasa por `AppBranding.name` |
 | Tracks | Exactamente 3: `frontend`, `backend`, `infrastructure`. Sin Mobile ni UI/UX, aunque aparezcan en mockups |
 | Auth del MVP | Email/password. Google va al #15, post-mvp |
