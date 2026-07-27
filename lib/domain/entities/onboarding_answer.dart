@@ -22,6 +22,13 @@ abstract final class OnboardingKeys {
   /// `RoadmapTrack.fromSlug` devuelve `null` para él.
   static const String unknownTrackValue = 'unknown';
 
+  /// Valor de un paso que la usuaria **omitió** a propósito.
+  ///
+  /// Se guarda para que la reanudación pueda distinguir «lo salteé» de «no
+  /// llegué»: sin este rastro, volver al onboarding devolvería a la usuaria a un
+  /// paso que ya decidió no responder.
+  static const String skippedValue = 'skipped';
+
   /// Prefijo de las preguntas del cuestionario guía (issue #12), que son
   /// varias y numeradas: `quiz_1`, `quiz_2`, …
   static const String quizPrefix = 'quiz_';

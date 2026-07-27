@@ -28,8 +28,12 @@ import 'onboarding_state.dart';
 Timer? _autoAvance;
 
 /// Elige el nivel de experiencia y avanza.
+///
+/// La respuesta se persiste **al elegirla**, no al final del flujo: es lo que
+/// hace reanudable el onboarding (issue #14).
 void selectLevel(ExperienceLevel nivel) {
   selectedLevel.value = nivel;
+  _persistirRespuesta(OnboardingKeys.experienceLevel, nivel.slug);
   _avanzarConFeedback();
 }
 
@@ -40,12 +44,19 @@ void selectLevel(ExperienceLevel nivel) {
 void selectTrack(RoadmapTrack? track) {
   selectedTrack.value = track;
   usesGuidedQuiz.value = track == null;
+  // «Aún no lo sé» también se guarda: al reanudar hay que saber que la usuaria
+  // pidió la guía, no que dejó el paso sin responder.
+  _persistirRespuesta(
+    OnboardingKeys.track,
+    track?.slug ?? OnboardingKeys.unknownTrackValue,
+  );
   _avanzarConFeedback();
 }
 
 /// Elige la meta y avanza.
 void selectGoal(LearningGoal meta) {
   selectedGoal.value = meta;
+  _persistirRespuesta(OnboardingKeys.goal, meta.slug);
   _avanzarConFeedback();
 }
 
@@ -87,7 +98,31 @@ void goToPreviousStep() {
 /// depende de que la UI no ofrezca el botón no es una regla.
 void skipCurrentStep() {
   if (!canSkipCurrentStep.value) return;
+
+  // Omitir deja rastro. Sin él, reanudar devolvería a la usuaria a un paso que
+  // ya decidió saltear, porque una selección en `null` se ve igual que un paso
+  // al que nunca llegó.
+  final clave = _claveDelPaso(currentStep.value);
+  if (clave != null) {
+    _persistirRespuesta(clave, OnboardingKeys.skippedValue);
+  }
+
   goToNextStep();
+}
+
+/// Clave de `onboarding_answers` del paso, o `null` si el paso no guarda nada.
+String? _claveDelPaso(OnboardingStepId paso) {
+  switch (paso) {
+    case OnboardingStepId.level:
+      return OnboardingKeys.experienceLevel;
+    case OnboardingStepId.track:
+      return OnboardingKeys.track;
+    case OnboardingStepId.goal:
+      return OnboardingKeys.goal;
+    case OnboardingStepId.quiz:
+    case OnboardingStepId.summary:
+      return null;
+  }
 }
 
 /// Guarda el resultado del onboarding y devuelve `true` si salió bien.
@@ -130,6 +165,118 @@ Future<bool> submitOnboarding() async {
   } finally {
     onboardingSaving.value = false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Reanudación (issue #14)
+// ---------------------------------------------------------------------------
+
+/// Lee el estado parcial guardado y deja el flujo listo para continuar.
+///
+/// Se llama al leer el perfil de una usuaria con el onboarding incompleto, o
+/// sea antes de que la pantalla se monte. Reanudar es reconstruir dos cosas: las
+/// selecciones previas —para que se vean marcadas— y el primer paso sin
+/// responder, que es donde hay que aterrizar.
+Future<void> restoreOnboarding() async {
+  final List<OnboardingAnswer> respuestas;
+  try {
+    respuestas = await getIt<OnboardingRepository>().loadAnswers();
+  } catch (_) {
+    // Sin poder leer el estado parcial se empieza de cero, que es el
+    // comportamiento anterior al #14: peor experiencia, no un error.
+    return;
+  }
+  if (respuestas.isEmpty) return;
+
+  final porClave = <String, String>{
+    for (final r in respuestas) r.stepKey: r.value,
+  };
+  storedStepKeys.value = porClave.keys.toSet();
+
+  selectedLevel.value =
+      ExperienceLevel.fromSlug(porClave[OnboardingKeys.experienceLevel]);
+  selectedGoal.value = LearningGoal.fromSlug(porClave[OnboardingKeys.goal]);
+  selectedTrack.value = RoadmapTrack.fromSlug(porClave[OnboardingKeys.track]);
+
+  final delCuestionario = _respuestasDelCuestionario(respuestas);
+  quizAnswers.value = delCuestionario;
+
+  // La rama guiada se reconoce por cualquiera de dos rastros: el paso 2 guardado
+  // como «unknown», o respuestas del cuestionario ya dadas. El segundo importa
+  // porque al confirmar la recomendación el paso 2 se sobreescribe con el track
+  // real, y sin ese rastro el contador volvería a decir «de 4».
+  usesGuidedQuiz.value =
+      porClave[OnboardingKeys.track] == OnboardingKeys.unknownTrackValue ||
+          delCuestionario.isNotEmpty;
+
+  _situarEnElCuestionario(delCuestionario);
+  currentStepIndex.value = _primerPasoSinResponder();
+}
+
+Map<int, RoadmapTrack> _respuestasDelCuestionario(
+  List<OnboardingAnswer> respuestas,
+) {
+  final resultado = <int, RoadmapTrack>{};
+  for (final r in respuestas) {
+    if (!r.stepKey.startsWith(OnboardingKeys.quizPrefix)) continue;
+    final numero =
+        int.tryParse(r.stepKey.substring(OnboardingKeys.quizPrefix.length));
+    final track = RoadmapTrack.fromSlug(r.value);
+    if (numero != null && track != null) resultado[numero] = track;
+  }
+  return resultado;
+}
+
+/// Deja el cuestionario en la primera pregunta sin responder, o en el resultado
+/// si ya están todas.
+void _situarEnElCuestionario(Map<int, RoadmapTrack> respondidas) {
+  if (!usesGuidedQuiz.value) return;
+
+  final indice = preguntasDelCuestionario.indexWhere(
+    (p) => !respondidas.containsKey(p.number),
+  );
+
+  if (indice >= 0) {
+    quizQuestionIndex.value = indice;
+    quizShowingResult.value = false;
+    return;
+  }
+
+  // Todas respondidas. Si además falta confirmar el track, se vuelve a mostrar
+  // el resultado, recalculado por el caso de uso.
+  quizQuestionIndex.value = preguntasDelCuestionario.length - 1;
+  if (selectedTrack.value == null) {
+    _calcularRecomendacion();
+  }
+}
+
+/// Índice del primer paso del recorrido que no tiene respuesta.
+///
+/// Si están todos respondidos, aterriza en el resumen.
+int _primerPasoSinResponder() {
+  final pasos = activeSteps.value;
+
+  for (var i = 0; i < pasos.length; i++) {
+    switch (pasos[i]) {
+      case OnboardingStepId.level:
+        // Se pregunta por la fila guardada y no por la selección: omitir deja la
+        // selección en `null` igual que no haber llegado.
+        if (!storedStepKeys.value.contains(OnboardingKeys.experienceLevel)) {
+          return i;
+        }
+      case OnboardingStepId.track:
+        // Con la rama guiada activa el paso 2 ya está contestado: la respuesta
+        // fue «no lo sé».
+        if (selectedTrack.value == null && !usesGuidedQuiz.value) return i;
+      case OnboardingStepId.quiz:
+        if (selectedTrack.value == null) return i;
+      case OnboardingStepId.goal:
+        if (!storedStepKeys.value.contains(OnboardingKeys.goal)) return i;
+      case OnboardingStepId.summary:
+        return i;
+    }
+  }
+  return pasos.length - 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -237,6 +384,10 @@ void _calcularRecomendacion() {
 /// la reanudación de ese paso, no el paso. El resultado final se persiste igual
 /// en `submitOnboarding()`, que sí reporta el error.
 Future<void> _persistirRespuesta(String stepKey, String valor) async {
+  // Se marca como guardada apenas se intenta: la reanudación de esta sesión no
+  // debería depender de que el viaje al backend haya terminado.
+  storedStepKeys.value = <String>{...storedStepKeys.value, stepKey};
+
   try {
     await getIt<OnboardingRepository>().saveAnswer(
       OnboardingAnswer(stepKey: stepKey, value: valor),

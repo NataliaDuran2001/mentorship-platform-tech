@@ -62,6 +62,14 @@ final currentQuizAnswered = computed(
   () => quizAnswers.value.containsKey(currentQuizQuestion.value.number),
 );
 
+/// Claves de `onboarding_answers` que ya tienen una fila para esta usuaria,
+/// respondidas u omitidas.
+///
+/// Existe para que la reanudación distinga «lo omití» de «no llegué»: una
+/// selección en `null` no alcanza, porque omitir también deja la selección en
+/// `null`.
+final storedStepKeys = signal<Set<String>>(<String>{});
+
 /// Guardando el resultado final.
 final onboardingSaving = signal<bool>(false);
 
@@ -159,6 +167,7 @@ void resetOnboarding() {
   quizQuestionIndex.value = 0;
   quizShowingResult.value = false;
   quizRecommendation.value = null;
+  storedStepKeys.value = <String>{};
   selectedLevel.value = null;
   selectedTrack.value = null;
   selectedGoal.value = null;
