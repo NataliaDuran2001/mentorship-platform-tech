@@ -44,6 +44,9 @@ class LoginPage extends StatelessWidget {
             errorMessage: authError.value,
             onEmailChanged: (v) => loginEmail.value = v,
             onPasswordChanged: (v) => loginPassword.value = v,
+            obscurePassword: !loginPasswordVisible.value,
+            onToggleObscurePassword: () =>
+                loginPasswordVisible.value = !loginPasswordVisible.value,
             onSubmit: signInWithEmail,
             onResendConfirmation: needsConfirmation
                 ? () => resendConfirmationEmail(email: loginEmail.value.trim())

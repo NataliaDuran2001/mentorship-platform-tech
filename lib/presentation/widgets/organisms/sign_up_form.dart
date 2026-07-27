@@ -23,6 +23,8 @@ class SignUpForm extends StatelessWidget {
     required this.onPasswordChanged,
     required this.onSubmit,
     required this.onGoToLogin,
+    required this.obscurePassword,
+    required this.onToggleObscurePassword,
     this.errorMessage,
   });
 
@@ -31,6 +33,12 @@ class SignUpForm extends StatelessWidget {
   final ValueChanged<String> onPasswordChanged;
   final VoidCallback onSubmit;
   final VoidCallback onGoToLogin;
+
+  /// Whether the password travels hidden. The page owns it: this organism
+  /// reads no signals.
+  final bool obscurePassword;
+  final VoidCallback onToggleObscurePassword;
+
   final String? errorMessage;
 
   @override
@@ -62,7 +70,8 @@ class SignUpForm extends StatelessWidget {
         CustomInput(
           hintText: 'Password',
           prefixIcon: Icons.lock,
-          obscureText: true,
+          obscureText: obscurePassword,
+          onToggleObscure: onToggleObscurePassword,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.newPassword],
           onChanged: onPasswordChanged,

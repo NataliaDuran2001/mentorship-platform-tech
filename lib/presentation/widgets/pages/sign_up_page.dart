@@ -58,6 +58,9 @@ class SignUpPage extends StatelessWidget {
             onNameChanged: (v) => signUpName.value = v,
             onEmailChanged: (v) => signUpEmail.value = v,
             onPasswordChanged: (v) => signUpPassword.value = v,
+            obscurePassword: !signUpPasswordVisible.value,
+            onToggleObscurePassword: () =>
+                signUpPasswordVisible.value = !signUpPasswordVisible.value,
             onSubmit: signUpWithEmail,
             onGoToLogin: () {
               clearAuthForms();

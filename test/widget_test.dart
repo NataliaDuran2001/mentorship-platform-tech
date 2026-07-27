@@ -252,6 +252,47 @@ void main() {
       );
       expect(currentSession.value, isNull);
     });
+
+    testWidgets('the password can be revealed and hidden again (#33)',
+        (tester) async {
+      _widenWindow(tester);
+      await tester.pumpWidget(const MyApp());
+
+      TextField passwordField() => tester.widget<TextField>(
+            find.byWidgetPredicate(
+              (w) => w is TextField && w.decoration?.hintText == 'Password',
+            ),
+          );
+
+      // It starts hidden: revealing is always an explicit act.
+      expect(passwordField().obscureText, isTrue);
+
+      await tester.tap(find.byTooltip('Show password'));
+      await tester.pumpAndSettle();
+      expect(passwordField().obscureText, isFalse);
+
+      await tester.tap(find.byTooltip('Hide password'));
+      await tester.pumpAndSettle();
+      expect(passwordField().obscureText, isTrue);
+    });
+
+    testWidgets('leaving the screen hides the password again (#33)',
+        (tester) async {
+      _widenWindow(tester);
+      await tester.pumpWidget(const MyApp());
+
+      await tester.tap(find.byTooltip('Show password'));
+      await tester.pumpAndSettle();
+      expect(loginPasswordVisible.value, isTrue);
+
+      // Going to sign up clears the forms; a password left revealed on screen
+      // would be worse than the typo the toggle avoids.
+      await tester.tap(find.text('Sign up'));
+      await tester.pumpAndSettle();
+
+      expect(loginPasswordVisible.value, isFalse);
+      expect(signUpPasswordVisible.value, isFalse);
+    });
   });
 
   group('Login against the repository', () {

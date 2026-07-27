@@ -67,6 +67,14 @@ final signUpName = signal<String>('');
 final signUpEmail = signal<String>('');
 final signUpPassword = signal<String>('');
 
+/// Whether the password fields are showing their text (issue #33).
+///
+/// They start hidden and go back to hidden whenever the forms are cleared: a
+/// revealed password left on screen after leaving the page would be worse
+/// than the typo it helps to avoid.
+final loginPasswordVisible = signal<bool>(false);
+final signUpPasswordVisible = signal<bool>(false);
+
 /// Empties the fields and the messages. It is called when entering and leaving
 /// the authentication screens, and after every successful submit.
 void clearAuthForms() {
@@ -75,6 +83,8 @@ void clearAuthForms() {
   signUpName.value = '';
   signUpEmail.value = '';
   signUpPassword.value = '';
+  loginPasswordVisible.value = false;
+  signUpPasswordVisible.value = false;
   authError.value = null;
   authErrorKind.value = null;
   confirmationEmailResent.value = false;

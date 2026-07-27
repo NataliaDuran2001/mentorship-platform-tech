@@ -26,6 +26,15 @@ class CustomInput extends StatelessWidget {
   /// translate.
   final String? errorText;
 
+  /// Toggles between hiding and showing the text. When it is not null the
+  /// field gets a reveal button, and whoever passes it owns the visibility:
+  /// this atom keeps no state of its own.
+  ///
+  /// It exists because typing a password blind is where sign-up goes wrong,
+  /// and the resulting failure reads as "wrong credentials", which points at
+  /// the wrong problem.
+  final VoidCallback? onToggleObscure;
+
   final bool enabled;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -41,6 +50,7 @@ class CustomInput extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.errorText,
+    this.onToggleObscure,
     this.enabled = true,
     this.keyboardType,
     this.textInputAction,
@@ -82,6 +92,19 @@ class CustomInput extends StatelessWidget {
                 hintText: hintText,
                 prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
                 errorText: errorText,
+                suffixIcon: onToggleObscure == null
+                    ? null
+                    : IconButton(
+                        onPressed: enabled ? onToggleObscure : null,
+                        icon: Icon(
+                          obscureText
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        // Both are read by screen readers and shown on hover;
+                        // they name the action, not the current state.
+                        tooltip: obscureText ? 'Show password' : 'Hide password',
+                      ),
               ),
             ),
           );
