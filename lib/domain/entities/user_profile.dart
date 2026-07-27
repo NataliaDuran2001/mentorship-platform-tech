@@ -11,12 +11,14 @@
 import 'experience_level.dart';
 import 'learning_goal.dart';
 import 'roadmap_track.dart';
+import 'user_role.dart';
 
 class UserProfile {
   const UserProfile({
     required this.id,
     required this.email,
     this.displayName,
+    this.role = UserRole.student,
     this.experienceLevel,
     this.track,
     this.learningGoal,
@@ -29,6 +31,14 @@ class UserProfile {
 
   /// Display name. Optional: email sign-up does not ask for it.
   final String? displayName;
+
+  /// What the user is (issue #36). Everybody signs up as a student; an admin
+  /// is promoted from outside the app, on purpose.
+  ///
+  /// Never use it as the only gate on a write: the database policies are what
+  /// actually enforce this. Here it is for showing or hiding the admin parts
+  /// of the UI once they exist.
+  final UserRole role;
 
   final ExperienceLevel? experienceLevel;
   final RoadmapTrack? track;
@@ -55,6 +65,10 @@ class UserProfile {
     return UserProfile(
       id: id,
       email: email,
+      // The role is not a parameter of copyWith on purpose: it cannot be
+      // changed from the client, so offering a way to "change" it here would
+      // only build something the database rejects.
+      role: role,
       displayName: displayName ?? this.displayName,
       experienceLevel: experienceLevel ?? this.experienceLevel,
       track: track ?? this.track,
