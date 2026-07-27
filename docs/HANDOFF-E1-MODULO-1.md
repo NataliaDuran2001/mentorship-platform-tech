@@ -166,7 +166,7 @@ Reescribir desde `gh` en cada iteración.
 | C1 · Capa de dominio | #8 | `status:hecha` | — | `86fddba` |
 | C2 · Esquema Supabase + RLS | #7 | `status:hecha` | — (#3, #4 cerrados) | `8c17ab5` |
 | C3 · Átomos y moléculas del onboarding | #10 | `status:hecha` | — (#2 cerrado) | `d12a516` |
-| C4 · Autenticación real | #9 | `status:bloqueada` — 5/7 AC | #7, #8 | `2ec1b98` |
+| C4 · Autenticación real | #9 | `status:hecha` — **7/7 AC**, cerrado | #7, #8 | `2ec1b98` |
 | C5 · Onboarding directo (4 pasos) | #11 | `status:hecha` | #8, #10 | `5075cab` |
 | C6 · Cuestionario guía | #12 | `status:hecha` | #11 | `78131cc` |
 | C7 · Persistencia y reanudación | #14 | `status:hecha` | #11 (afina #12) | `ae8365b` |
@@ -464,14 +464,56 @@ reanudación, 8 del árbol de tópicos y 16 de autenticación, guards y shell.
 Todos los PRs de E1 se mergearon a `main` con el check `analyze-y-test` en
 verde: #21, #22, #23, #24, #26, #27, #28.
 
-### Lo que queda pendiente, y por qué
+### Nada queda pendiente: el Módulo 1 está entregado
 
-Queda un solo issue bloqueado, y su bloqueo es verificación manual contra el
-backend real. Nada del código depende de él.
+**Los 8 issues de E1 están cerrados.** El último en caer fue el #9, cuyos dos AC
+de verificación manual los cubrió la dueña del repo el 2026-07-27 contra el
+backend real: registro con una casilla real, correo de confirmación recibido,
+login con la cuenta confirmada, y sesión que **sobrevive al F5**. También quedó
+confirmado que el botón de Google está presente y deshabilitado, como pedía su
+comentario de alcance.
 
-| Issue | AC pendientes | Qué hace falta |
+La Historia 1.1 queda cumplida en sus tres criterios —CA 1.1 autenticación,
+CA 1.2 selección de roadmap por sus dos ramas, CA 1.3 árbol de tópicos— más el
+CA 4 de reanudación que este épico propuso agregar al documento de producto.
+
+### Trabajo derivado, fuera del Módulo 1
+
+La prueba manual dejó tres cosas registradas como issues propios. **Ninguna
+bloquea el cierre del módulo**: el criterio aplicado fue si algún AC de la
+Historia 1.1 las exige, y ninguno lo hace.
+
+| Issue | Qué | Ubicación |
 |---|---|---|
-| #9 | AC1 (registro y login reales), AC3 (recargar mantiene la sesión) | Una usuaria confirmada y un navegador. Ver `docs/SUPABASE.md` |
+| #33 | Los campos de contraseña no permiten revelar el texto | `fase:pulido` |
+| #34 | El enlace de confirmación aterriza en la raíz y obliga a reingresar credenciales | `fase:pulido` |
+| #35 | Migrar la UI y el código a inglés | `transversal` |
+
+El #35 nace de una **decisión de producto del 2026-07-27 que revierte la §3**:
+la UI y el código pasan a inglés; los issues y la documentación siguen en
+español. Supera el AC de idioma de los issues #9, #11, #12 y #13, que quedan
+cerrados igual porque su alcance funcional se entregó; cada uno tiene el
+comentario que lo deja anotado. Conviene ejecutarlo **antes** de escribir las
+pantallas de E2: cada pantalla nueva en español es deuda que se agranda.
+
+### E2, ya iniciado en el tablero
+
+| Issue | Qué |
+|---|---|
+| #36 | Modelo de roles: estudiante y administradora, con RLS por rol |
+| #37 | Knowledge base y generación de roadmaps con IA |
+
+El #36 se adelanta **a propósito**: el esquema del #7 está vacío, así que sumar
+el rol y sus políticas cuesta una migración corta. Después, con datos adentro,
+significa rehacer el RLS de las 5 tablas. Su AC más importante no estaba en el
+pedido original: **una estudiante no puede promoverse a administradora sola**.
+Hoy cada usuaria puede actualizar su fila de `profiles` —lo necesita el
+onboarding—, así que sin una política explícita el rol sería decorativo.
+
+El #37 responde la decisión que quedó abierta en el Módulo 1: quién escribe el
+currículum. No lo escribe nadie a mano en una migración; lo carga una
+administradora como material y la IA deriva el árbol de tópicos que el #13 ya
+sabe renderizar.
 
 El #7 se cerró con sus 7 AC: el AC3 y el AC5 se verificaron corriendo
 `supabase/tests/rls_modulo_1.sql`, con 13 de 13 pruebas en OK y sin dejar
