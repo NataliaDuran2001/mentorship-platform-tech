@@ -24,6 +24,22 @@ class SupabaseConfig {
     defaultValue: 'sb_publishable_bAzEua7Wl02VoNofOuI7_g_iSXKUIwv',
   );
 
+  /// Where the confirmation email sends the user back (issue #34).
+  ///
+  /// It is derived from the origin the app is actually running on instead of
+  /// being hardcoded, so the same build works on localhost and on a real
+  /// domain. Supabase's redirect allow-list still has to authorize it: it is
+  /// an explicit list, and a URL that is not on it silently falls back to the
+  /// Site URL.
+  ///
+  /// The `/#/` is not decoration: Flutter Web routes with the hash strategy,
+  /// so that is the shape of every route in this app.
+  static String get emailRedirectTo {
+    const override = String.fromEnvironment('SUPABASE_EMAIL_REDIRECT');
+    if (override.isNotEmpty) return override;
+    return '${Uri.base.origin}/#/auth/confirmed';
+  }
+
   /// Boots the Supabase SDK. Must be called in main() before runApp().
   static Future<void> initialize() async {
     await Supabase.initialize(url: url, publishableKey: publishableKey);

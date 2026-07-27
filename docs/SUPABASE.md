@@ -169,6 +169,27 @@ aparezcan hallazgos nuevos:
 get_advisors(security)   → esperado: {"lints":[]}
 ```
 
+## Dónde aterriza el enlace de confirmación — issue #34
+
+El correo de confirmación vuelve a la ruta **`/#/auth/confirmed`**, no a la
+raíz. La app la registra como pública y el guard **nunca redirige fuera de
+ella**, ni siquiera con sesión: quien hizo clic en el enlace tiene que ver que
+funcionó. Antes aterrizaba en la raíz y la app mostraba el login pelado,
+pidiendo de nuevo las credenciales recién tipeadas y sin decir si la
+confirmación había salido bien.
+
+La URL la calcula `SupabaseConfig.emailRedirectTo` desde el origen en el que la
+app está corriendo, así que el mismo build sirve en localhost y en un dominio
+real. Se puede forzar con `--dart-define=SUPABASE_EMAIL_REDIRECT=...`.
+
+**Requisito**: la allow-list de *Redirect URLs* tiene que autorizarla. Con
+`http://localhost:5000/**` ya queda cubierta; una URL que no esté en la lista
+se ignora en silencio y Supabase cae al Site URL, que es justamente el
+comportamiento viejo.
+
+Recordá correr la app con `--web-port 5000`, o el enlace apuntará a un puerto
+donde no hay nada escuchando.
+
 ## Promover a una administradora — issue #36
 
 Hay dos roles: `student`, que es con el que nace toda usuaria al registrarse, y

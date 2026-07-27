@@ -12,6 +12,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
+import '../../core/config/supabase_config.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/failures/auth_failure.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -31,6 +32,10 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _client.auth.signUp(
         email: email,
         password: password,
+        // Where the link in the email lands (issue #34). Without this,
+        // Supabase falls back to the Site URL and the app has no way to tell
+        // a confirmation from a plain visit.
+        emailRedirectTo: SupabaseConfig.emailRedirectTo,
         // The handle_new_user() trigger reads it to fill
         // profiles.display_name.
         data: displayName == null || displayName.isEmpty
@@ -93,7 +98,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> resendConfirmationEmail({required String email}) {
     return _translate(
-      () => _client.auth.resend(type: sb.OtpType.signup, email: email),
+      () => _client.auth.resend(
+        type: sb.OtpType.signup,
+        email: email,
+        emailRedirectTo: SupabaseConfig.emailRedirectTo,
+      ),
     );
   }
 
