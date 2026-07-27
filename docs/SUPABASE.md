@@ -157,6 +157,10 @@ aplicadas a mano en el dashboard.
 | `20260726073609` | Revoca `EXECUTE` sobre `rls_auto_enable()` (issue #16) |
 | `20260726231624` | Esquema del Módulo 1: 5 tablas, RLS, trigger de perfil, 3 tracks (issue #7) |
 | `20260726232005` | Revoca `EXECUTE` sobre `handle_new_user()` y `touch_updated_at()` (issue #7) |
+| `20260727042317` | Traduce el catálogo sembrado al inglés (issue #35) |
+| `20260727044422` | Rol `student`/`admin` en `profiles`, RLS de escritura del catálogo (issue #36) |
+| `20260727044728` | Corrige el trigger del rol: tenía que ser `SECURITY INVOKER` (issue #36) |
+| `20260727050231` | El rol también es inmutable en el `insert` (issue #36) |
 
 Después de cada migración, correr el linter de seguridad y verificar que no
 aparezcan hallazgos nuevos:
@@ -164,6 +168,42 @@ aparezcan hallazgos nuevos:
 ```
 get_advisors(security)   → esperado: {"lints":[]}
 ```
+
+## Promover a una administradora — issue #36
+
+Hay dos roles: `student`, que es con el que nace toda usuaria al registrarse, y
+`admin`, que es quien carga el material de estudio del que saldrán los roadmaps
+(#37).
+
+**Promover es un acto manual y deliberado. La app no lo puede hacer, y eso es
+a propósito.** Un trigger (`profiles_role_is_immutable`) rechaza cualquier
+cambio de rol que venga de una sesión del cliente, tanto en el `update` como
+en el `insert`. Sin esa regla, cualquiera se promovería con una llamada desde
+el navegador: la publishable key viaja en el bundle y la política de RLS ya
+deja a cada usuaria escribir su propia fila de `profiles`.
+
+Desde el **SQL editor** del dashboard, que corre como `postgres` y por eso el
+trigger la deja pasar:
+
+```sql
+update public.profiles
+set role = 'admin'
+where email = 'la-que-corresponda@ejemplo.com';
+```
+
+Verificar:
+
+```sql
+select email, role from public.profiles order by role, email;
+```
+
+Para degradar, el mismo `update` con `role = 'student'`.
+
+Ojo con lo que **no** cambia el rol: no da acceso a los datos de otras
+usuarias. La administradora escribe `tracks` y `topics`, y sigue viendo solo su
+propio perfil, su progreso y sus respuestas, igual que cualquiera. Está
+verificado en [`supabase/tests/rls_roles.sql`](../supabase/tests/rls_roles.sql),
+que hay que volver a correr cada vez que se toquen las políticas.
 
 ## Guardrail heredado
 

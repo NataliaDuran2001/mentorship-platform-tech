@@ -10,12 +10,14 @@ import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/user_role.dart';
 
 class UserModel {
   const UserModel({
     required this.id,
     required this.email,
     this.displayName,
+    this.role,
     this.experienceLevel,
     this.trackId,
     this.learningGoal,
@@ -26,12 +28,13 @@ class UserModel {
   /// column to the table does not silently change what travels to the
   /// client.
   static const String columns =
-      'id, email, display_name, experience_level, track_id, learning_goal, '
-      'onboarding_completed_at';
+      'id, email, display_name, role, experience_level, track_id, '
+      'learning_goal, onboarding_completed_at';
 
   final String id;
   final String email;
   final String? displayName;
+  final String? role;
   final String? experienceLevel;
   final String? trackId;
   final String? learningGoal;
@@ -44,6 +47,7 @@ class UserModel {
       // never null; the fallback keeps an old row from breaking the read.
       email: json['email'] as String? ?? '',
       displayName: json['display_name'] as String?,
+      role: json['role'] as String?,
       experienceLevel: json['experience_level'] as String?,
       trackId: json['track_id'] as String?,
       learningGoal: json['learning_goal'] as String?,
@@ -56,6 +60,7 @@ class UserModel {
       id: profile.id,
       email: profile.email,
       displayName: profile.displayName,
+      role: profile.role.slug,
       experienceLevel: profile.experienceLevel?.slug,
       trackId: profile.track?.slug,
       learningGoal: profile.learningGoal?.slug,
@@ -68,6 +73,7 @@ class UserModel {
       id: id,
       email: email,
       displayName: displayName,
+      role: UserRole.fromSlug(role),
       // An unknown slug is read as null instead of breaking: a row written by
       // a newer version of the app must not leave the user unable to get in.
       experienceLevel: ExperienceLevel.fromSlug(experienceLevel),
@@ -82,6 +88,7 @@ class UserModel {
       'id': id,
       'email': email,
       'display_name': displayName,
+      'role': role,
       'experience_level': experienceLevel,
       'track_id': trackId,
       'learning_goal': learningGoal,
