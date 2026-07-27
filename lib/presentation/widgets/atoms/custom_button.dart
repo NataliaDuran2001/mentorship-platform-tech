@@ -7,7 +7,11 @@ import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+
+  /// `null` deshabilita el botón, como cualquier botón de Material. Es como el
+  /// paso 2 del onboarding impide avanzar sin haber elegido un track.
+  final VoidCallback? onPressed;
+
   final bool isPrimary;
   final Widget? icon;
 
