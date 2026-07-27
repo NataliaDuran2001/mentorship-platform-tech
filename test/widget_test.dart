@@ -31,6 +31,7 @@ import 'package:aspire_app/domain/usecases/sign_out_usecase.dart';
 import 'package:aspire_app/domain/usecases/sign_up_usecase.dart';
 import 'package:aspire_app/main.dart';
 import 'package:aspire_app/presentation/state/auth_state.dart';
+import 'package:aspire_app/presentation/widgets/pages/auth_confirmed_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/chat_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/dashboard_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/login_page.dart';
@@ -446,6 +447,48 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Check your email'), findsNothing);
+    });
+  });
+
+  group('Email confirmation landing (#34)', () {
+    testWidgets('without a session it confirms and offers to sign in',
+        (tester) async {
+      _widenWindow(tester);
+      AppRouter.router.go('/auth/confirmed');
+
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      // The guard does not bounce it to the login even without a session:
+      // whoever clicked the link has to see that it worked.
+      expect(find.byType(AuthConfirmedPage), findsOneWidget);
+      expect(find.text('Email confirmed'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Sign in'), findsOneWidget);
+    });
+
+    testWidgets('with a session it offers to continue, and the guard routes',
+        (tester) async {
+      _widenWindow(tester);
+      currentSession.value = _session;
+      currentProfile.value = _completeProfile;
+      AppRouter.router.go('/auth/confirmed');
+
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      // With a session it still shows the outcome instead of jumping into the
+      // app: it is the only feedback that the confirmation worked.
+      expect(find.byType(AuthConfirmedPage), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      // It goes to the root and the guard decides; with the onboarding done
+      // that is the learning path.
+      expect(
+        AppRouter.router.routerDelegate.currentConfiguration.uri.path,
+        '/path',
+      );
     });
   });
 

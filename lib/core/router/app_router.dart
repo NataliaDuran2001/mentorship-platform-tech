@@ -10,6 +10,7 @@ import '../config/app_branding.dart';
 import '../../presentation/state/auth_actions.dart';
 import '../../presentation/state/auth_state.dart';
 import '../../presentation/widgets/organisms/app_shell.dart';
+import '../../presentation/widgets/pages/auth_confirmed_page.dart';
 import '../../presentation/widgets/pages/chat_page.dart';
 import '../../presentation/widgets/pages/dashboard_page.dart';
 import '../../presentation/widgets/pages/interviews_page.dart';
@@ -49,7 +50,14 @@ const _routes = <String>[
 ];
 
 /// Routes reachable without a session.
-const _publicRoutes = <String>{'/login', '/sign-up'};
+const _publicRoutes = <String>{'/login', '/sign-up', _confirmedRoute};
+
+/// Where the confirmation email lands (issue #34).
+///
+/// It is public and, unlike the rest, the guard never redirects away from it
+/// even with a session: whoever clicked the link has to see that it worked.
+/// The page itself carries the way forward.
+const _confirmedRoute = '/auth/confirmed';
 
 /// The only route allowed with a session and an incomplete onboarding.
 const _onboardingRoute = '/onboarding';
@@ -78,6 +86,10 @@ class AppRouter {
       // Outside the shell: no visible nav.
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/sign-up', builder: (_, __) => const SignUpPage()),
+      GoRoute(
+        path: _confirmedRoute,
+        builder: (_, __) => const AuthConfirmedPage(),
+      ),
       GoRoute(
         path: _onboardingRoute,
         builder: (_, __) => const OnboardingPage(),
@@ -132,6 +144,10 @@ class AppRouter {
   static String? _guard(BuildContext context, GoRouterState state) {
     final destination = state.matchedLocation;
     final isPublic = _publicRoutes.contains(destination);
+
+    // The confirmation landing reports an outcome; bouncing away from it
+    // would leave the user without knowing whether the link worked.
+    if (destination == _confirmedRoute) return null;
 
     if (!isAuthenticated.value) {
       return isPublic ? null : '/login';

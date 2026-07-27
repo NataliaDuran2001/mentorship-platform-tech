@@ -49,6 +49,10 @@ class AppConstants {
   /// Small icon, the one used by the states of the topic tree.
   static const double iconSizeSm = 20.0;
 
+  /// Large icon, the one that carries the message on a full-screen outcome
+  /// such as the email confirmation landing.
+  static const double iconSizeLg = 48.0;
+
   static const double radioSize = 24.0;
   static const double radioDotSize = 12.0;
 
