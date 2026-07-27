@@ -25,12 +25,16 @@ abstract class OnboardingRepository {
 
   /// Marca el onboarding como completado y persiste el resultado en el perfil.
   ///
-  /// El track es obligatorio y no nulable a propósito: sin track no hay
-  /// roadmap que mostrar (CA 1.3), y ningún camino puede dejar el perfil
-  /// completo con `track_id` nulo.
+  /// El track es obligatorio y no nulable a propósito: sin track no hay roadmap
+  /// que mostrar (CA 1.3), y ningún camino puede dejar el perfil completo con
+  /// `track_id` nulo.
+  ///
+  /// El nivel y la meta **sí** son nulables, porque sus pasos son omitibles y
+  /// omitir no puede traducirse en un valor inventado: se guardan en `null` y se
+  /// pueden completar después desde el perfil.
   Future<UserProfile> completeOnboarding({
-    required ExperienceLevel experienceLevel,
     required RoadmapTrack track,
-    required LearningGoal learningGoal,
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
   });
 }

@@ -39,30 +39,60 @@ class OnboardingFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Visibility(
-          visible: showBack,
-          maintainSize: true,
-          maintainAnimation: true,
-          maintainState: true,
-          child: _BotonGhost(
-            label: 'Regresar',
-            onPressed: showBack ? onBack : null,
-          ),
-        ),
-        const Spacer(),
-        if (showSkip)
-          Padding(
-            padding: const EdgeInsets.only(right: AppConstants.spacingSm),
-            child: _BotonGhost(label: 'Omitir', onPressed: onSkip),
-          ),
-        CustomButton(
-          text: continueLabel,
-          onPressed: onContinue,
-          isPrimary: true,
-        ),
-      ],
+    final regresar = Visibility(
+      visible: showBack,
+      maintainSize: true,
+      maintainAnimation: true,
+      maintainState: true,
+      child: _BotonGhost(
+        label: 'Regresar',
+        onPressed: showBack ? onBack : null,
+      ),
+    );
+
+    final omitir = showSkip
+        ? _BotonGhost(label: 'Omitir', onPressed: onSkip)
+        : const SizedBox.shrink();
+
+    final continuar = CustomButton(
+      text: continueLabel,
+      onPressed: onContinue,
+      isPrimary: true,
+    );
+
+    // En móvil los tres botones no caben en una fila —«Entrar al Dashboard» es
+    // largo—, así que la acción principal pasa a ocupar todo el ancho arriba y
+    // las secundarias quedan debajo. Se mide el ancho del pie y no el de la
+    // ventana, porque el pie vive dentro de un panel con márgenes.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppConstants.footerCompactWidth) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              continuar,
+              const SizedBox(height: AppConstants.spacingSm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [regresar, omitir],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            regresar,
+            const Spacer(),
+            if (showSkip)
+              Padding(
+                padding: const EdgeInsets.only(right: AppConstants.spacingSm),
+                child: omitir,
+              ),
+            continuar,
+          ],
+        );
+      },
     );
   }
 }
