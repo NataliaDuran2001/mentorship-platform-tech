@@ -164,7 +164,7 @@ Reescribir desde `gh` en cada iteración.
 | Tarea | Issue | Estado | Depende de | Commit |
 |---|---|---|---|---|
 | C1 · Capa de dominio | #8 | `status:hecha` | — | `86fddba` |
-| C2 · Esquema Supabase + RLS | #7 | `status:bloqueada` — 5/7 AC | — (#3, #4 cerrados) | `8c17ab5` |
+| C2 · Esquema Supabase + RLS | #7 | `status:hecha` | — (#3, #4 cerrados) | `8c17ab5` |
 | C3 · Átomos y moléculas del onboarding | #10 | `status:hecha` | — (#2 cerrado) | `d12a516` |
 | C4 · Autenticación real | #9 | `status:bloqueada` — 5/7 AC | #7, #8 | `2ec1b98` |
 | C5 · Onboarding directo (4 pasos) | #11 | `status:hecha` | #8, #10 | `5075cab` |
@@ -174,11 +174,9 @@ Reescribir desde `gh` en cada iteración.
 
 Orden recomendado: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8.
 
-**Lo único pendiente del #7** son el AC3 (aislamiento entre dos usuarias) y el
-AC5 (el trigger crea el perfil). Los dos necesitan dos filas reales en
-`auth.users`; se desbloquean corriendo `supabase/tests/rls_modulo_1.sql` desde
-el SQL editor del dashboard. No bloquean a ninguna otra tarea: el esquema está
-aplicado y las 5 tablas funcionan.
+**El #7 quedó cerrado con sus 7 AC.** El AC3 y el AC5 se verificaron corriendo
+`supabase/tests/rls_modulo_1.sql` desde el SQL editor: 13 de 13 pruebas en OK,
+sin dejar rastro. Volver a correrlo cada vez que cambien las políticas.
 
 **El merge a `main` quedó autorizado para E1** (antes era exclusivo de la
 dueña). `main` sigue protegida con el check `analyze-y-test` y
@@ -468,13 +466,16 @@ verde: #21, #22, #23, #24, #26, #27, #28.
 
 ### Lo que queda pendiente, y por qué
 
-Los dos issues bloqueados tienen **el mismo bloqueo**: verificación manual
-contra el backend real. Nada del código depende de ellos.
+Queda un solo issue bloqueado, y su bloqueo es verificación manual contra el
+backend real. Nada del código depende de él.
 
 | Issue | AC pendientes | Qué hace falta |
 |---|---|---|
-| #7 | AC3 (aislamiento entre dos usuarias), AC5 (el trigger crea el perfil) | Correr `supabase/tests/rls_modulo_1.sql` en el SQL editor. Termina en `ROLLBACK`, no deja rastro ni manda correos |
 | #9 | AC1 (registro y login reales), AC3 (recargar mantiene la sesión) | Una usuaria confirmada y un navegador. Ver `docs/SUPABASE.md` |
+
+El #7 se cerró con sus 7 AC: el AC3 y el AC5 se verificaron corriendo
+`supabase/tests/rls_modulo_1.sql`, con 13 de 13 pruebas en OK y sin dejar
+rastro.
 
 ### Verificación end-to-end, pendiente
 
@@ -821,6 +822,24 @@ los handoffs de E0.
 - **C8 · Para producto, no bloquea**: sin tópicos no se muestra un `0%
   completado`, que parecería un fracaso cuando en realidad no hay contra qué
   medir. Se muestra el estado vacío con su explicación.
+
+- **C2 · El guion de verificación de RLS no servía hasta que se arregló.** La
+  primera versión tenía dos defectos que solo aparecen al correrla: el editor SQL
+  del dashboard muestra únicamente el resultado de la **última** sentencia —y la
+  última era `rollback`, así que la salida era vacía—, y las cuatro pruebas de
+  `insert` estaban comentadas para correr de a una, lo que es incompatible con
+  envolver todo en una transacción única (el `begin` de una corrida no sobrevive
+  a la siguiente). Ahora cada prueba acumula en una tabla temporal, el script
+  termina con un único `select` con columna `ok`, y los `insert` que deben fallar
+  van en bloques `plpgsql` con manejo de excepción, que abortan solo su
+  subtransacción. Lección: un guion de verificación que nunca se corrió no está
+  verificado.
+
+- **C2 · La prueba «A sí escribe lo propio» importa tanto como las de
+  denegación.** Sin ella, unas políticas mal escritas que dejaran la tabla
+  silenciosamente inaccesible pasarían igual todo el resto del guion. Es
+  exactamente el modo de falla que el guardrail `ensure_rls` volvió el más
+  probable.
 
 - **Para producto, decisión pendiente (de C7)**: el comportamiento de
   reanudación debería incorporarse a la Historia 1.1 como CA 4. Hay una decisión
