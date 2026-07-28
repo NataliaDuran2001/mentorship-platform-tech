@@ -41,14 +41,14 @@ class ProfileDetails extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     AppColors.primary,
-                    AppColors.primary.withOpacity(0.5),
+                    AppColors.primary.withValues(alpha: 0.5),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -87,8 +87,8 @@ class ProfileDetails extends StatelessWidget {
                 onPressed: null, // Disabled in MVP
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
-                  disabledForegroundColor: AppColors.onPrimary.withOpacity(0.8),
+                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+                  disabledForegroundColor: AppColors.onPrimary.withValues(alpha: 0.8),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

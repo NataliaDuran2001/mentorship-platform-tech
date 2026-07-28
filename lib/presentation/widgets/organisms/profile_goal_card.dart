@@ -43,7 +43,7 @@ class ProfileGoalCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-                Icon(
+                const Icon(
                   Icons.edit_outlined,
                   size: 20,
                   color: AppColors.primary,
