@@ -15,7 +15,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 import '../../domain/repositories/roadmap_repository.dart';
 import '../../domain/repositories/lab_repository.dart';
-import '../../data/repositories/mock_lab_repository.dart';
+import '../../data/repositories/lab_repository_impl.dart';
 import '../../domain/usecases/get_roadmap_tree_usecase.dart';
 import '../../domain/usecases/recommend_track_usecase.dart';
 import '../../domain/usecases/sign_in_usecase.dart';
@@ -49,7 +49,7 @@ void setupDependencies() {
     () => RoadmapRepositoryImpl(getIt<SupabaseClient>()),
   );
   getIt.registerLazySingleton<LabRepository>(
-    () => MockLabRepository(),
+    () => LabRepositoryImpl(getIt<SupabaseClient>()),
   );
 
   // Use cases.
