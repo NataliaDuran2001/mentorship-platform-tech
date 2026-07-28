@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 import '../config/app_branding.dart';
+import '../../presentation/utils/app_colors.dart';
 import '../../presentation/state/auth_actions.dart';
 import '../../presentation/state/auth_state.dart';
 import '../../presentation/widgets/organisms/app_shell.dart';
@@ -20,6 +21,7 @@ import '../../presentation/widgets/pages/onboarding_page.dart';
 import '../../presentation/widgets/pages/profile_page.dart';
 import '../../presentation/widgets/pages/roadmap_page.dart';
 import '../../presentation/widgets/pages/sign_up_page.dart';
+import '../../presentation/widgets/pages/lab_page.dart';
 
 /// Shell destinations and their routes, in the same order. Profile does not
 /// take a bottom nav slot: on ≤768 it is reached through the AppBar icon (§9
@@ -94,6 +96,13 @@ class AppRouter {
         path: _onboardingRoute,
         builder: (_, __) => const OnboardingPage(),
       ),
+      GoRoute(
+        path: '/lab/:topicId',
+        builder: (context, state) {
+          final topicId = state.pathParameters['topicId']!;
+          return LabPage(topicId: topicId);
+        },
+      ),
 
       ShellRoute(
         builder: (context, state, child) {
@@ -111,18 +120,48 @@ class AppRouter {
           );
         },
         routes: [
-          GoRoute(path: '/path', builder: (_, __) => const RoadmapPage()),
+          GoRoute(
+            path: '/path',
+            builder: (_, __) => const ColoredBox(
+              color: AppColors.background,
+              child: RoadmapPage(),
+            ),
+          ),
           GoRoute(
             path: '/dashboard',
-            builder: (_, __) => const DashboardPage(),
+            builder: (_, __) => const ColoredBox(
+              color: AppColors.background,
+              child: DashboardPage(),
+            ),
           ),
-          GoRoute(path: '/chat', builder: (_, __) => const ChatPage()),
-          GoRoute(path: '/logic', builder: (_, __) => const LogicPage()),
+          GoRoute(
+            path: '/chat',
+            builder: (_, __) => const ColoredBox(
+              color: AppColors.background,
+              child: ChatPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/logic',
+            builder: (_, __) => const ColoredBox(
+              color: AppColors.background,
+              child: LogicPage(),
+            ),
+          ),
           GoRoute(
             path: '/interviews',
-            builder: (_, __) => const InterviewsPage(),
+            builder: (_, __) => const ColoredBox(
+              color: AppColors.background,
+              child: InterviewsPage(),
+            ),
           ),
-          GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
+          GoRoute(
+            path: '/profile',
+            builder: (_, __) => const ColoredBox(
+              color: AppColors.background,
+              child: ProfilePage(),
+            ),
+          ),
         ],
       ),
     ],

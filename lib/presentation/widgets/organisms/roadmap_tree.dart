@@ -11,6 +11,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../domain/entities/topic_node.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
@@ -172,12 +174,18 @@ class _TopicRow extends StatelessWidget {
                 )
               : null,
         ),
-        child: isLocked || onTap == null
+        child: isLocked
             ? content
             : Material(
                 type: MaterialType.transparency,
                 child: InkWell(
-                  onTap: () => onTap!(node),
+                  onTap: () {
+                    if (onTap != null) {
+                      onTap!(node);
+                    } else {
+                      context.go('/lab/${node.id}');
+                    }
+                  },
                   borderRadius:
                       BorderRadius.circular(AppConstants.radiusDefault),
                   child: content,
@@ -283,6 +291,12 @@ class RoadmapEmptyState extends StatelessWidget {
               color: AppColors.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppConstants.spacingLg),
+          OutlinedButton.icon(
+            onPressed: () => context.go('/lab/demo-topic-id'),
+            icon: const Icon(Icons.science),
+            label: const Text('Try Interactive Lab Demo'),
           ),
         ],
       ),

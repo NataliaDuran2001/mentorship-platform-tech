@@ -92,6 +92,13 @@ class AppShell extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(selected.label),
+        leading: bottomIndex < 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back',
+                onPressed: () => onDestinationSelected(0), // Default to first tab (My path)
+              )
+            : null,
         actions: [
           for (final destination in destinations)
             if (!destination.inBottomNav)
@@ -102,12 +109,6 @@ class AppShell extends StatelessWidget {
                 onPressed: () =>
                     onDestinationSelected(destinations.indexOf(destination)),
               ),
-          if (onLogout != null)
-            IconButton(
-              icon: const Icon(Icons.logout),
-              tooltip: 'Sign out',
-              onPressed: onLogout,
-            ),
         ],
       ),
       drawer: isMobile ? null : _buildDrawer(context),

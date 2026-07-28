@@ -145,10 +145,25 @@ class AppTheme {
       drawerTheme: const DrawerThemeData(
         backgroundColor: AppColors.surfaceContainerLow,
       ),
-      navigationBarTheme: const NavigationBarThemeData(
+      navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surfaceContainerLowest,
         indicatorColor: AppColors.primaryFixed,
         surfaceTintColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.onPrimaryFixed);
+          }
+          return const IconThemeData(color: AppColors.onSurfaceVariant);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              color: AppColors.onSurface,
+              fontWeight: FontWeight.bold,
+            );
+          }
+          return const TextStyle(color: AppColors.onSurfaceVariant);
+        }),
       ),
       // Primary button: primary background, white text, radius 8, no shadow.
       elevatedButtonTheme: ElevatedButtonThemeData(
