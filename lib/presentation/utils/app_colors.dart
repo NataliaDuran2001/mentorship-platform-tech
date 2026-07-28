@@ -62,6 +62,12 @@ class AppColors {
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onErrorContainer = Color(0xFF93000A);
 
+  // Success (Added for Learning Engine feedback)
+  static const Color success = Color(0xFF198754);
+  static const Color onSuccess = Color(0xFFFFFFFF);
+  static const Color successContainer = Color(0xFFD1E7DD);
+  static const Color onSuccessContainer = Color(0xFF0A3622);
+
   // Background (in this design system it matches surface/onSurface)
   static const Color background = Color(0xFFF7F9FB);
   static const Color onBackground = Color(0xFF191C1E);
