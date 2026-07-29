@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/roadmap_track.dart';
 import '../../../domain/entities/track_recommendation.dart';
+import '../../state/onboarding_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
@@ -88,6 +89,9 @@ class GuidedQuizStep extends StatelessWidget {
 /// The confirmation is explicit on purpose: the recommendation is a
 /// suggestion, not an assignment. And if the result came out of a tie, that is
 /// said, instead of presenting it as conclusive.
+///
+/// AI-First: When `recommendation.isAiGenerated` is true, the card shows
+/// Kimi3's natural-language reasoning instead of a generic label.
 class GuidedQuizResult extends StatelessWidget {
   const GuidedQuizResult({
     super.key,
@@ -106,6 +110,25 @@ class GuidedQuizResult extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final track = recommendation.track;
+
+    // AI is still computing: show a spinner with a friendly message.
+    if (quizAnalyzing.value) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Center(child: CircularProgressIndicator()),
+          const SizedBox(height: AppConstants.spacingMd),
+          Text(
+            '✨ Analyzing your profile with AI…',
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
 
     if (track == null) {
       // With no usable answers there is nothing to recommend. It can happen if
@@ -134,21 +157,39 @@ class GuidedQuizResult extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'We suggest this path',
-          style: textTheme.labelMedium?.copyWith(color: AppColors.primary),
-        ),
+        // AI badge or generic label
+        if (recommendation.isAiGenerated)
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome,
+                  size: 14, color: AppColors.primary),
+              const SizedBox(width: 4),
+              Text(
+                'AI-Powered Analysis',
+                style: textTheme.labelSmall
+                    ?.copyWith(color: AppColors.primary),
+              ),
+            ],
+          )
+        else
+          Text(
+            'We suggest this path',
+            style: textTheme.labelMedium
+                ?.copyWith(color: AppColors.primary),
+          ),
         const SizedBox(height: AppConstants.spacingSm),
         // The card is marked as selected, but the track is NOT assigned yet:
         // it gets assigned on confirm.
         TrackCard(
           icon: label.icon,
           title: label.label,
-          description: recommendationRationale[track],
+          description: recommendation.isAiGenerated
+              ? recommendation.reasoning
+              : recommendationRationale[track],
           isSelected: true,
           onTap: onConfirm,
         ),
-        if (recommendation.wasTie) ...[
+        if (recommendation.wasTie && !recommendation.isAiGenerated) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
             'It was close with another path, so take a look at the suggestion '
@@ -157,6 +198,40 @@ class GuidedQuizResult extends StatelessWidget {
               color: AppColors.onSurfaceVariant,
             ),
           ),
+        ],
+        // AI alternatives block
+        if (recommendation.isAiGenerated &&
+            recommendation.alternatives.isNotEmpty) ...[
+          const SizedBox(height: AppConstants.spacingMd),
+          Text(
+            'Also worth considering:',
+            style: textTheme.labelMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingSm),
+          for (final alt in recommendation.alternatives)
+            Padding(
+              padding:
+                  const EdgeInsets.only(bottom: AppConstants.spacingSm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(trackLabels[alt.track]!.icon,
+                      size: 16,
+                      color: AppColors.onSurfaceVariant),
+                  const SizedBox(width: AppConstants.spacingSm),
+                  Expanded(
+                    child: Text(
+                      '${trackLabels[alt.track]!.label}: ${alt.reason}',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
         const SizedBox(height: AppConstants.spacingLg),
         Text(

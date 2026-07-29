@@ -5,6 +5,7 @@ import '../../domain/usecases/complete_topic_usecase.dart';
 import '../utils/auth_error_messages.dart';
 import 'lab_state.dart';
 import 'roadmap_actions.dart';
+import 'ai_actions.dart';
 
 Future<void> loadLabs(String topicId) async {
   labTopicId.value = topicId;
@@ -15,6 +16,9 @@ Future<void> loadLabs(String topicId) async {
   labCurrentIndex.value = 0;
   labSelectedAnswers.value = {};
   labIsCurrentValid.value = null;
+
+  // Clear AI hints on starting a new lab topic
+  clearLabHintsForTopic(topicId);
 
   try {
     final repo = getIt<LabRepository>();
@@ -73,6 +77,11 @@ Future<void> nextLabChallenge() async {
   labIsCurrentValid.value = null;
   labSelectedAnswers.value = {};
   labCurrentIndex.value = labCurrentIndex.value + 1;
+
+  final topicId = labTopicId.value;
+  if (topicId != null) {
+    clearLabHintsForTopic(topicId);
+  }
 
   if (labIsCompleted.value) {
     await completeCurrentTopic();

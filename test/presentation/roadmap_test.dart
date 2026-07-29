@@ -21,6 +21,14 @@ import 'package:aspire_app/presentation/state/roadmap_state.dart';
 import 'package:aspire_app/presentation/widgets/organisms/roadmap_tree.dart';
 import 'package:aspire_app/presentation/widgets/pages/roadmap_page.dart';
 
+import 'package:aspire_app/domain/entities/onboarding_answer.dart';
+import 'package:aspire_app/domain/entities/experience_level.dart';
+import 'package:aspire_app/domain/entities/learning_goal.dart';
+import 'package:aspire_app/domain/entities/track_recommendation.dart';
+import 'package:aspire_app/domain/repositories/ai_repository.dart';
+import 'package:aspire_app/presentation/state/ai_state.dart';
+
+
 /// In-memory repository. It returns the **flat** list, as per the contract.
 class FakeRoadmapRepository implements RoadmapRepository {
   FakeRoadmapRepository({this.topics = const [], this.failure});
@@ -58,6 +66,41 @@ class FakeRoadmapRepository implements RoadmapRepository {
         topic.id == topicId ? topic.copyWith(isCompleted: true) : topic,
     ];
   }
+}
+
+class FakeAiRepository implements AiRepository {
+  @override
+  Future<TrackRecommendation> analyzeProfile({
+    required List<OnboardingAnswer> answers,
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
+  }) async => const TrackRecommendation.empty();
+
+  @override
+  Future<String> generateDailyBrief({
+    required String userId,
+    required String trackSlug,
+    required String? experienceLevelSlug,
+    required String? learningGoalSlug,
+    required int completedTopics,
+    required int totalTopics,
+  }) async => 'Daily Brief';
+
+  @override
+  Future<String> generateLabHint({
+    required String challengeQuestion,
+    required String challengeType,
+    required int attemptCount,
+    required String? userContext,
+  }) async => 'Lab Hint';
+
+  @override
+  Future<String> generateRoadmapCoachMessage({
+    required String trackSlug,
+    required String? learningGoalSlug,
+    required double progressFraction,
+    required String? nextTopicTitle,
+  }) async => 'Your Path';
 }
 
 TopicNode _node(
@@ -104,8 +147,10 @@ void main() {
     repo = FakeRoadmapRepository();
     overrideDependency<RoadmapRepository>(repo);
     overrideDependency(GetRoadmapTreeUseCase(repo));
+    overrideDependency<AiRepository>(FakeAiRepository());
 
     resetRoadmap();
+    resetAiState();
     currentProfile.value = const UserProfile(
       id: 'u1',
       email: 'ana@example.com',

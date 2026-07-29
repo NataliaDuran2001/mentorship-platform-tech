@@ -18,6 +18,8 @@ import 'package:aspire_app/domain/entities/user_profile.dart';
 import 'package:aspire_app/domain/repositories/onboarding_repository.dart';
 import 'package:aspire_app/domain/usecases/recommend_track_usecase.dart';
 import 'package:aspire_app/domain/usecases/submit_onboarding_usecase.dart';
+import 'package:aspire_app/domain/repositories/ai_repository.dart';
+import 'package:aspire_app/domain/failures/ai_failure.dart';
 import 'package:aspire_app/presentation/state/auth_state.dart';
 import 'package:aspire_app/presentation/state/onboarding_actions.dart';
 import 'package:aspire_app/presentation/state/onboarding_state.dart';
@@ -55,18 +57,66 @@ class SpyOnboardingRepository implements OnboardingRepository {
   }
 }
 
+/// AiRepository stub for the quiz test: always throws so the fake use case
+/// double is the only result path.
+class _OfflineAiRepository implements AiRepository {
+  const _OfflineAiRepository();
+
+  @override
+  Future<TrackRecommendation> analyzeProfile({
+    required List<OnboardingAnswer> answers,
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
+  }) async =>
+      throw const AiFailure(AiFailureKind.network);
+
+  @override
+  Future<String> generateDailyBrief({
+    required String userId,
+    required String trackSlug,
+    required String? experienceLevelSlug,
+    required String? learningGoalSlug,
+    required int completedTopics,
+    required int totalTopics,
+  }) async =>
+      throw const AiFailure(AiFailureKind.network);
+
+  @override
+  Future<String> generateLabHint({
+    required String challengeQuestion,
+    required String challengeType,
+    required int attemptCount,
+    required String? userContext,
+  }) async =>
+      throw const AiFailure(AiFailureKind.network);
+
+  @override
+  Future<String> generateRoadmapCoachMessage({
+    required String trackSlug,
+    required String? learningGoalSlug,
+    required double progressFraction,
+    required String? nextTopicTitle,
+  }) async =>
+      throw const AiFailure(AiFailureKind.network);
+}
+
 /// Fake use case: it returns whatever it is told and notes what it received.
 ///
 /// It serves to prove that the UI does **not** decide: if the widget had its
 /// own rule, the result would not match what this double returns.
-class FakeRecommendTrackUseCase implements RecommendTrackUseCase {
-  FakeRecommendTrackUseCase(this.result);
+class FakeRecommendTrackUseCase extends RecommendTrackUseCase {
+  FakeRecommendTrackUseCase(this.result)
+      : super(const _OfflineAiRepository());
 
   TrackRecommendation result;
   List<OnboardingAnswer>? received;
 
   @override
-  TrackRecommendation call(List<OnboardingAnswer> answers) {
+  Future<TrackRecommendation> call(
+    List<OnboardingAnswer> answers, {
+    ExperienceLevel? experienceLevel,
+    LearningGoal? learningGoal,
+  }) async {
     received = answers;
     return result;
   }
