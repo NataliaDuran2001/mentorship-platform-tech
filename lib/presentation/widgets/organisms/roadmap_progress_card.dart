@@ -25,7 +25,7 @@ class RoadmapProgressCard extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              'Progreso del Roadmap',
+              'Path progress',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: AppColors.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -63,7 +63,7 @@ class RoadmapProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'COMPLETADO',
+                          'COMPLETE',
                           style: Theme.of(context)
                               .textTheme
                               .labelSmall

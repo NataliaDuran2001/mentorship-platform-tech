@@ -94,7 +94,7 @@ class ProfileDetails extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Editar Perfil'),
+                child: const Text('Edit profile'),
               ),
             ),
           ],

@@ -18,7 +18,7 @@ class ProfileGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final goalStr = goalName(profile.learningGoal) ?? 'Sin meta definida';
+    final goalStr = goalName(profile.learningGoal) ?? 'No goal set';
     final percentage = (progress * 100).toInt();
 
     return Card(
@@ -37,7 +37,7 @@ class ProfileGoalCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Metas de Aprendizaje',
+                  'Learning goals',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.bold,
