@@ -52,6 +52,12 @@ final quizShowingResult = signal<bool>(false);
 /// Output of RecommendTrackUseCase. `null` while it has not been computed.
 final quizRecommendation = signal<TrackRecommendation?>(null);
 
+/// AI-First: `true` while Kimi3 is analyzing the quiz answers.
+///
+/// The UI shows a loading indicator during this time so the user knows
+/// the AI is working, not that the app is frozen.
+final quizAnalyzing = signal<bool>(false);
+
 /// Current question of the quiz.
 final currentQuizQuestion = computed<QuizQuestion>(() {
   final index = quizQuestionIndex.value.clamp(0, quizQuestions.length - 1);
@@ -169,6 +175,7 @@ void resetOnboarding() {
   quizQuestionIndex.value = 0;
   quizShowingResult.value = false;
   quizRecommendation.value = null;
+  quizAnalyzing.value = false;
   storedStepKeys.value = <String>{};
   selectedLevel.value = null;
   selectedTrack.value = null;

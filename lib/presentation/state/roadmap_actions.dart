@@ -5,6 +5,7 @@ import '../../domain/usecases/get_roadmap_tree_usecase.dart';
 import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
 import 'roadmap_state.dart';
+import 'ai_actions.dart';
 
 /// Loads the topic tree of the user's track.
 ///
@@ -27,6 +28,10 @@ Future<void> loadRoadmap() async {
     // nothing is sorted nor is it decided what is unlocked.
     roadmapTree.value = await getIt<GetRoadmapTreeUseCase>()(track);
     roadmapLoaded.value = true;
+
+    // Trigger AI features that depend on the roadmap progress
+    loadRoadmapCoachMessage();
+    loadDailyBrief();
   } catch (e) {
     roadmapError.value = errorMessage(e);
   } finally {

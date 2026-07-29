@@ -11,10 +11,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
 import '../../data/repositories/roadmap_repository_impl.dart';
+import '../../data/repositories/ai_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 import '../../domain/repositories/roadmap_repository.dart';
 import '../../domain/repositories/lab_repository.dart';
+import '../../domain/repositories/ai_repository.dart';
 import '../../data/repositories/lab_repository_impl.dart';
 import '../../domain/usecases/complete_topic_usecase.dart';
 import '../../domain/usecases/get_roadmap_tree_usecase.dart';
@@ -52,6 +54,9 @@ void setupDependencies() {
   getIt.registerLazySingleton<LabRepository>(
     () => LabRepositoryImpl(getIt<SupabaseClient>()),
   );
+  getIt.registerLazySingleton<AiRepository>(
+    () => AiRepositoryImpl(getIt<SupabaseClient>()),
+  );
 
   // Use cases.
   getIt.registerLazySingleton(() => SignUpUseCase(getIt<AuthRepository>()));
@@ -66,8 +71,11 @@ void setupDependencies() {
   getIt.registerLazySingleton(
     () => CompleteTopicUseCase(getIt<RoadmapRepository>()),
   );
-  // No dependencies: it is pure logic over the questionnaire answers.
-  getIt.registerLazySingleton(() => const RecommendTrackUseCase());
+  // RecommendTrackUseCase now requires AiRepository (tries Kimi3 first,
+  // falls back to the deterministic vote-count rule on failure).
+  getIt.registerLazySingleton(
+    () => RecommendTrackUseCase(getIt<AiRepository>()),
+  );
 }
 
 /// Registers already built dependencies, for the tests.

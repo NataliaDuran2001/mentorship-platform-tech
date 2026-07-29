@@ -24,6 +24,7 @@ import '../utils/constants.dart';
 import '../utils/onboarding_quiz.dart';
 import 'auth_state.dart';
 import 'onboarding_state.dart';
+// quizAnalyzing is declared in onboarding_state.dart and imported above.
 
 Timer? _autoAdvance;
 
@@ -325,14 +326,14 @@ void goToPreviousQuizQuestion() {
 
 /// Moves to the next question or computes the recommendation if it was the
 /// last one.
-void advanceQuiz() {
+Future<void> advanceQuiz() async {
   cancelOnboardingTimers();
 
   if (quizQuestionIndex.value < quizQuestions.length - 1) {
     quizQuestionIndex.value = quizQuestionIndex.value + 1;
     return;
   }
-  _computeRecommendation();
+  await _computeRecommendation();
 }
 
 /// Accepts the recommended track and carries on to the goal step.
@@ -367,7 +368,7 @@ Future<void> _assignQuizTrack(RoadmapTrack track) async {
 /// The decision rule is NOT here: it comes out of the domain use case, which is
 /// what AC3 of this issue verifies. This method only translates the map of
 /// answers into the format of the contract.
-void _computeRecommendation() {
+Future<void> _computeRecommendation() async {
   final answers = [
     for (final entry in quizAnswers.value.entries)
       OnboardingAnswer(
@@ -376,7 +377,17 @@ void _computeRecommendation() {
       ),
   ];
 
-  quizRecommendation.value = getIt<RecommendTrackUseCase>()(answers);
+  // AI-First: show loading while Kimi3 analyzes the full profile.
+  quizAnalyzing.value = true;
+  try {
+    quizRecommendation.value = await getIt<RecommendTrackUseCase>()(
+      answers,
+      experienceLevel: selectedLevel.value,
+      learningGoal: selectedGoal.value,
+    );
+  } finally {
+    quizAnalyzing.value = false;
+  }
   quizShowingResult.value = true;
 }
 

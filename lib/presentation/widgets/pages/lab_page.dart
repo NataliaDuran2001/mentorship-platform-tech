@@ -5,6 +5,8 @@ import 'package:signals_flutter/signals_flutter.dart';
 import '../../../domain/entities/lab_challenge.dart';
 import '../../state/lab_actions.dart';
 import '../../state/lab_state.dart';
+import '../../state/ai_state.dart';
+import '../../state/ai_actions.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../organisms/lab_fill_blank.dart';
@@ -97,7 +99,16 @@ class _LabPageState extends State<LabPage> {
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: AppConstants.maxReadableWidth),
-                      child: _buildChallengeWidget(challenge),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildChallengeWidget(challenge),
+                          _AiHintSection(
+                            topicId: widget.topicId,
+                            challenge: challenge,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -287,6 +298,120 @@ class _CompletedView extends StatelessWidget {
               ],
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _AiHintSection extends StatelessWidget {
+  const _AiHintSection({required this.topicId, required this.challenge});
+
+  final String topicId;
+  final LabChallenge challenge;
+
+  String _challengeType(LabChallenge challenge) {
+    if (challenge is MultipleChoiceChallenge) return 'multiple_choice';
+    if (challenge is FillBlankChallenge) return 'fill_blank';
+    if (challenge is OrderLogicChallenge) return 'order_logic';
+    return 'unknown';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SignalBuilder(
+      builder: (context) {
+        final hintsList = labHints.value[topicId] ?? const <String>[];
+        final textTheme = Theme.of(context).textTheme;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppConstants.spacingLg),
+            const Divider(),
+            const SizedBox(height: AppConstants.spacingMd),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
+                    const SizedBox(width: AppConstants.spacingSm),
+                    Text(
+                      'AI Lab Assistant',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                if (labHintLoading.value)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: () {
+                      requestLabHint(
+                        topicId,
+                        challenge.question,
+                        _challengeType(challenge),
+                      );
+                    },
+                    icon: const Icon(Icons.lightbulb_outline, size: 16),
+                    label: Text(hintsList.isEmpty ? 'Get Hint' : 'Get Another Hint'),
+                  ),
+              ],
+            ),
+            if (labHintError.value != null) ...[
+              const SizedBox(height: AppConstants.spacingSm),
+              Text(
+                'Could not load hint. Try again.',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.error),
+              ),
+            ],
+            if (hintsList.isNotEmpty) ...[
+              const SizedBox(height: AppConstants.spacingSm),
+              Container(
+                padding: const EdgeInsets.all(AppConstants.spacingMd),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int i = 0; i < hintsList.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '💡 ',
+                              style: textTheme.bodyMedium,
+                            ),
+                            Expanded(
+                              child: Text(
+                                hintsList[i],
+                                style: textTheme.bodyMedium?.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         );
       },
     );
