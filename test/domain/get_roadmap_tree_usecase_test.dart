@@ -14,7 +14,7 @@ import 'package:aspire_app/domain/usecases/get_roadmap_tree_usecase.dart';
 class _FakeRoadmapRepository implements RoadmapRepository {
   _FakeRoadmapRepository(this.topics);
 
-  final List<TopicNode> topics;
+  List<TopicNode> topics;
 
   @override
   Future<List<Track>> listTracks() async => const <Track>[];
@@ -22,6 +22,14 @@ class _FakeRoadmapRepository implements RoadmapRepository {
   @override
   Future<List<TopicNode>> listTopics(RoadmapTrack track) async =>
       topics.where((t) => t.trackId == track).toList();
+
+  @override
+  Future<void> markTopicCompleted(String topicId) async {
+    topics = [
+      for (final topic in topics)
+        topic.id == topicId ? topic.copyWith(isCompleted: true) : topic,
+    ];
+  }
 }
 
 TopicNode _node(
@@ -179,4 +187,7 @@ class _NoRepo implements RoadmapRepository {
   @override
   Future<List<TopicNode>> listTopics(RoadmapTrack track) =>
       throw UnimplementedError();
+
+  @override
+  Future<void> markTopicCompleted(String topicId) => throw UnimplementedError();
 }

@@ -226,25 +226,69 @@ class _CompletedView extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.emoji_events, size: 80, color: AppColors.tertiary),
-          const SizedBox(height: AppConstants.spacingLg),
-          Text('Lab Completed!', style: textTheme.headlineLarge),
-          const SizedBox(height: AppConstants.spacingMd),
-          Text(
-            'You have successfully passed all the interactive challenges.',
-            style: textTheme.bodyLarge?.copyWith(color: AppColors.onSurfaceVariant),
+    return SignalBuilder(
+      builder: (context) {
+        final saveError = labSaveError.value;
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.emoji_events,
+                size: AppConstants.iconSizeCelebration,
+                color: AppColors.tertiary,
+              ),
+              const SizedBox(height: AppConstants.spacingLg),
+              Text('Lab Completed!', style: textTheme.headlineLarge),
+              const SizedBox(height: AppConstants.spacingMd),
+              Text(
+                'You have successfully passed all the interactive challenges.',
+                style: textTheme.bodyLarge
+                    ?.copyWith(color: AppColors.onSurfaceVariant),
+              ),
+              // The topic is closed here, so the path is left up to date before
+              // going back to it. While it is being recorded the way out is
+              // held, otherwise the tree would be reached still showing the
+              // topic as pending.
+              if (labSavingProgress.value) ...[
+                const SizedBox(height: AppConstants.spacingXl),
+                const CircularProgressIndicator(),
+                const SizedBox(height: AppConstants.spacingMd),
+                Text(
+                  'Saving your progress…',
+                  style: textTheme.bodyMedium
+                      ?.copyWith(color: AppColors.onSurfaceVariant),
+                ),
+              ] else if (saveError != null) ...[
+                const SizedBox(height: AppConstants.spacingLg),
+                Text(
+                  "$saveError Your answers are safe, but the topic wasn't "
+                  'marked as completed.',
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppConstants.spacingMd),
+                const ElevatedButton(
+                  onPressed: completeCurrentTopic,
+                  child: Text('Retry'),
+                ),
+                const SizedBox(height: AppConstants.spacingSm),
+                TextButton(
+                  onPressed: () => context.go('/path'),
+                  child: const Text('Return to my path'),
+                ),
+              ] else ...[
+                const SizedBox(height: AppConstants.spacingXl),
+                ElevatedButton(
+                  onPressed: () => context.go('/path'),
+                  child: const Text('Return to my path'),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: AppConstants.spacingXl),
-          ElevatedButton(
-            onPressed: () => context.go('/path'),
-            child: const Text('Return to my path'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
