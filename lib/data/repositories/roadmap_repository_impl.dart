@@ -71,6 +71,35 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
     });
   }
 
+  @override
+  Future<void> markTopicCompleted(String topicId) {
+    return _translate(() async {
+      final userId = _client.auth.currentUser?.id;
+      // Without a session there is nobody to record progress for. The route
+      // guards already prevent it; failing loudly here would turn a signed-out
+      // race into an error dialog on a finished lab.
+      if (userId == null) return;
+
+      // Upsert against `user_progress_una_fila_por_topico (user_id, topic_id)`
+      // and not a select-then-insert: replaying a lab is a normal thing to do,
+      // and the uniqueness rule already lives in the database.
+      //
+      // `completed_at` travels with the status because of the
+      // `user_progress_completado_con_fecha` check: `completed` without a date
+      // is rejected.
+      await _client.from(_progressTable).upsert(
+        <String, dynamic>{
+          'user_id': userId,
+          'topic_id': topicId,
+          'status': 'completed',
+          'completed_at': DateTime.now().toUtc().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'user_id,topic_id',
+      );
+    });
+  }
+
   Future<Set<String>> _completedIds() async {
     final id = _client.auth.currentUser?.id;
     if (id == null) return <String>{};

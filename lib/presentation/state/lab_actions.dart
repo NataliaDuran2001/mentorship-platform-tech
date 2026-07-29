@@ -1,11 +1,16 @@
 import '../../core/di/injection.dart';
 import '../../domain/entities/lab_challenge.dart';
 import '../../domain/repositories/lab_repository.dart';
+import '../../domain/usecases/complete_topic_usecase.dart';
+import '../utils/auth_error_messages.dart';
 import 'lab_state.dart';
+import 'roadmap_actions.dart';
 
 Future<void> loadLabs(String topicId) async {
+  labTopicId.value = topicId;
   labLoading.value = true;
   labError.value = null;
+  labSaveError.value = null;
   labChallenges.value = const [];
   labCurrentIndex.value = 0;
   labSelectedAnswers.value = {};
@@ -16,7 +21,7 @@ Future<void> loadLabs(String topicId) async {
     final challenges = await repo.getChallengesForTopic(topicId);
     labChallenges.value = challenges;
   } catch (e) {
-    labError.value = 'No se pudieron cargar los laboratorios: $e';
+    labError.value = errorMessage(e);
   } finally {
     labLoading.value = false;
   }
@@ -60,10 +65,39 @@ void submitLabAnswer() {
   }
 }
 
-void nextLabChallenge() {
+/// Advances to the next challenge and, if there is none left, closes the topic.
+///
+/// Solving the last challenge is what completes the topic: that is the only
+/// event today that moves the roadmap forward (issue #47).
+Future<void> nextLabChallenge() async {
   labIsCurrentValid.value = null;
   labSelectedAnswers.value = {};
   labCurrentIndex.value = labCurrentIndex.value + 1;
+
+  if (labIsCompleted.value) {
+    await completeCurrentTopic();
+  }
+}
+
+/// Records the open topic as completed and refreshes the path.
+///
+/// The reload is not optional: progress that is saved but not visible on the
+/// path reads exactly like progress that was lost.
+Future<void> completeCurrentTopic() async {
+  final topicId = labTopicId.value;
+  if (topicId == null) return;
+
+  labSavingProgress.value = true;
+  labSaveError.value = null;
+
+  try {
+    await getIt<CompleteTopicUseCase>()(topicId);
+    await loadRoadmap();
+  } catch (e) {
+    labSaveError.value = errorMessage(e);
+  } finally {
+    labSavingProgress.value = false;
+  }
 }
 
 void setLabAnswer(String key, String value) {

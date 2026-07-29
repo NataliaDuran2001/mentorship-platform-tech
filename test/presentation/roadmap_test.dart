@@ -29,6 +29,14 @@ class FakeRoadmapRepository implements RoadmapRepository {
   AuthFailure? failure;
   int calls = 0;
 
+  /// Topics marked as completed, in order, so a test can tell "it recorded it"
+  /// from "it recorded it twice".
+  final List<String> completed = <String>[];
+
+  /// Failure for [markTopicCompleted] only: the challenges did load fine and
+  /// only saving the progress fails (issue #47).
+  AuthFailure? completionFailure;
+
   @override
   Future<List<TopicNode>> listTopics(RoadmapTrack track) async {
     calls++;
@@ -38,6 +46,18 @@ class FakeRoadmapRepository implements RoadmapRepository {
 
   @override
   Future<List<Track>> listTracks() async => const <Track>[];
+
+  @override
+  Future<void> markTopicCompleted(String topicId) async {
+    if (completionFailure != null) throw completionFailure!;
+    completed.add(topicId);
+    // Mirrors the upsert: the row is one per topic, however many times it is
+    // completed.
+    topics = [
+      for (final topic in topics)
+        topic.id == topicId ? topic.copyWith(isCompleted: true) : topic,
+    ];
+  }
 }
 
 TopicNode _node(

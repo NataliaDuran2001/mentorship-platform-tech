@@ -16,6 +16,7 @@ import '../../domain/repositories/onboarding_repository.dart';
 import '../../domain/repositories/roadmap_repository.dart';
 import '../../domain/repositories/lab_repository.dart';
 import '../../data/repositories/lab_repository_impl.dart';
+import '../../domain/usecases/complete_topic_usecase.dart';
 import '../../domain/usecases/get_roadmap_tree_usecase.dart';
 import '../../domain/usecases/recommend_track_usecase.dart';
 import '../../domain/usecases/sign_in_usecase.dart';
@@ -61,6 +62,9 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton(
     () => GetRoadmapTreeUseCase(getIt<RoadmapRepository>()),
+  );
+  getIt.registerLazySingleton(
+    () => CompleteTopicUseCase(getIt<RoadmapRepository>()),
   );
   // No dependencies: it is pure logic over the questionnaire answers.
   getIt.registerLazySingleton(() => const RecommendTrackUseCase());

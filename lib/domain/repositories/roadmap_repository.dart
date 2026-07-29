@@ -17,4 +17,11 @@ abstract class RoadmapRepository {
   /// hierarchy and the sequencing are business rules, so they are derived by
   /// `GetRoadmapTreeUseCase` and not by the Data layer or a widget.
   Future<List<TopicNode>> listTopics(RoadmapTrack track);
+
+  /// Records the topic as completed for the signed-in user.
+  ///
+  /// It is idempotent: completing the same topic twice leaves one record and
+  /// does not fail. Progress belongs to the user, so the implementation takes
+  /// the identity from the session and never from the caller.
+  Future<void> markTopicCompleted(String topicId);
 }

@@ -53,6 +53,9 @@ class AppConstants {
   /// such as the email confirmation landing.
   static const double iconSizeLg = 48.0;
 
+  /// Celebration icon, only for the screen that closes a completed lab.
+  static const double iconSizeCelebration = 80.0;
+
   static const double radioSize = 24.0;
   static const double radioDotSize = 12.0;
 

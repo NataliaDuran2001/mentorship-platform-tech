@@ -41,7 +41,7 @@ class ProfilePage extends StatelessWidget {
                     onPressed: signOut,
                     icon: const Icon(Icons.logout, color: AppColors.error),
                     label: Text(
-                      'Cerrar Sesión',
+                      'Sign out',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                             color: AppColors.error,
                             fontWeight: FontWeight.bold,

@@ -292,12 +292,6 @@ class RoadmapEmptyState extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppConstants.spacingLg),
-          OutlinedButton.icon(
-            onPressed: () => context.go('/lab/demo-topic-id'),
-            icon: const Icon(Icons.science),
-            label: const Text('Try Interactive Lab Demo'),
-          ),
         ],
       ),
     );
