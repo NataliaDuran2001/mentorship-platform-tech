@@ -54,7 +54,7 @@ class AiRepositoryImpl implements AiRepository {
         );
       }
 
-      final data = response.data as Map<String, dynamic>;
+      final data = (response.data as Map).cast<String, dynamic>();
       return _parseTrackRecommendation(data);
     } on AiFailure {
       rethrow;
@@ -138,7 +138,7 @@ class AiRepositoryImpl implements AiRepository {
         );
       }
 
-      final data = response.data as Map<String, dynamic>;
+      final data = (response.data as Map).cast<String, dynamic>();
       final text = data['brief'] as String?;
       if (text == null || text.isEmpty) {
         throw const AiFailure(
@@ -183,7 +183,7 @@ class AiRepositoryImpl implements AiRepository {
         );
       }
 
-      final data = response.data as Map<String, dynamic>;
+      final data = (response.data as Map).cast<String, dynamic>();
       final hint = data['hint'] as String?;
       if (hint == null || hint.isEmpty) {
         throw const AiFailure(
@@ -228,7 +228,7 @@ class AiRepositoryImpl implements AiRepository {
         );
       }
 
-      final data = response.data as Map<String, dynamic>;
+      final data = (response.data as Map).cast<String, dynamic>();
       final message = data['message'] as String?;
       if (message == null || message.isEmpty) {
         throw const AiFailure(
