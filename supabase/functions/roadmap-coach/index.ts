@@ -148,7 +148,8 @@ serve(async (req: Request) => {
           },
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.8, // Fun and energetic coaching variation
+        // kimi-k3 only accepts its default temperature (1); sending any other
+        // value gets a 400 invalid_request_error back.
       }),
     });
 

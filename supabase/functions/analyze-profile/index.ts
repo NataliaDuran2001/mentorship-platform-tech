@@ -143,7 +143,8 @@ serve(async (req: Request) => {
           },
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.3, // Low temperature for consistent recommendations
+        // kimi-k3 only accepts its default temperature (1); sending any other
+        // value gets a 400 invalid_request_error back.
       }),
     });
 
