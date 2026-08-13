@@ -18,7 +18,7 @@ class ProfileGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final goalStr = goalName(profile.learningGoal) ?? 'No goal set';
+    final goalStr = goalName(profile.learningGoal) ?? 'No goal yet';
     final percentage = (progress * 100).toInt();
 
     return Card(

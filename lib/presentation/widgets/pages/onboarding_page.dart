@@ -125,7 +125,7 @@ class OnboardingPage extends StatelessWidget {
       case OnboardingStepId.level:
         return 'Hi! How would you describe yourself today?';
       case OnboardingStepId.track:
-        return 'What is your specialty?';
+        return 'What do you want to focus on?';
       case OnboardingStepId.quiz:
         return quizShowingResult.value
             ? 'We found your path'

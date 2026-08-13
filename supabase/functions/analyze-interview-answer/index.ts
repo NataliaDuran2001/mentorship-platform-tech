@@ -1,23 +1,26 @@
-// Supabase Edge Function: lab-hint
+// Supabase Edge Function: analyze-interview-answer
 //
-// Receives context about the current lab challenge question, the challenge type,
-// the number of failed attempts, and the user profile context, and calls Kimi3
-// to generate a helpful Socratic hint without giving away the answer.
+// Receives one typed answer to one interview-practice question and asks
+// Kimi3 for constructive, encouraging feedback. Never cached: every answer
+// is unique text, there is nothing to reuse.
 //
-// Endpoint: POST /functions/v1/lab-hint
+// Endpoint: POST /functions/v1/analyze-interview-answer
 // Auth: Bearer <supabase_anon_key> (user must be authenticated)
 //
 // Request body:
 // {
-//   "challengeQuestion": string,
-//   "challengeType": "multiple_choice" | "fill_blank" | "order_logic",
-//   "attemptCount": number,
-//   "userContext": string | null
+//   "trackSlug": "frontend" | "backend" | "infrastructure",
+//   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
+//   "questionPrompt": string,
+//   "answerText": string
 // }
 //
 // Response body:
 // {
-//   "hint": "Try checking..."
+//   "summary": "...",
+//   "strengths": ["...", ...],
+//   "improvements": ["...", ...],
+//   "score": 0-100
 // }
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -26,40 +29,43 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 const KIMI_MODEL = 'kimi-k3';
 
-const SYSTEM_PROMPT = `You are a patient and expert Socratic coding tutor.
-Your task is to generate a helpful hint for a student struggling with an interactive challenge.
+const SYSTEM_PROMPT = `You are a supportive, encouraging interview coach giving feedback to someone new to tech who just practiced answering an interview question.
 
-CRITICAL RULES:
-1. NEVER reveal the correct answer or show the correct code snippet directly. Doing so breaks learning!
-2. Keep your hint brief (1 to 2 sentences max).
-3. Use a Socratic approach: guide them with a question or point their attention to a concept (e.g. "Think about how space is distributed around an element in the box model").
-4. Adapt the hint's directness based on the attempt count:
-   - Attempt 1: Very conceptual, pointing to the general topic.
-   - Attempt 2: Slightly more specific, pointing to a key property or tag.
-   - Attempt 3+: Specific tip on where they might have made a typo or logical mistake, but still no direct answer.
-5. Speak in English.
-6. Avoid unexplained technical jargon; write as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
+Your task is to read their answer and give constructive, actionable feedback.
+
+The feedback must:
+1. Never feel like a pass/fail grade: this is practice, not a real interview. Be encouraging even when the answer is weak.
+2. Point out 1 to 3 concrete things the answer does well (strengths). If the answer is very thin, it is fine to have just 1.
+3. Point out 1 to 3 concrete, actionable ways to improve (improvements) — specific advice, not vague ("be more specific"), e.g. "Mention a real example from a project you've worked on."
+4. Give a 0-100 score reflecting how complete and clear the answer is, used only to track progress over time, not as a verdict.
+5. Use plain, jargon-free language. Avoid unexplained technical jargon; write as if explaining to someone new to tech.
+6. Speak in English.
 
 Format the output strictly as a JSON object:
 {
-  "hint": "..."
+  "summary": "One or two encouraging sentences summarizing the answer.",
+  "strengths": ["...", ...],
+  "improvements": ["...", ...],
+  "score": 0
 }
 Do not return any markdown formatting or surrounding text.`;
 
 function buildUserPrompt(
-  challengeQuestion: string,
-  challengeType: string,
-  attemptCount: number,
-  userContext: string | null,
+  trackSlug: string,
+  experienceLevelSlug: string | null,
+  questionPrompt: string,
+  answerText: string,
 ): string {
   return `
-Challenge context:
-- Type: ${challengeType}
-- Question: "${challengeQuestion}"
-- Attempt Count: ${attemptCount} (this is the student's attempt #${attemptCount})
-- Student Level: ${userContext ?? 'not specified'}
+Student context:
+- Specialization Track: ${trackSlug}
+- Current Level: ${experienceLevelSlug ?? 'not specified'}
 
-Please generate a helpful hint conforming to the Socratic tutor rules.`.trim();
+Interview question: "${questionPrompt}"
+
+Student's answer: "${answerText}"
+
+Please give feedback on this answer, following the rules.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -94,17 +100,21 @@ serve(async (req: Request) => {
     // --- Parse body ---
     const body = await req.json();
     const {
-      challengeQuestion,
-      challengeType,
-      attemptCount = 1,
-      userContext = null,
+      trackSlug,
+      experienceLevelSlug = null,
+      questionPrompt,
+      answerText,
     } = body;
 
-    if (!challengeQuestion || !challengeType) {
-      return Response.json({ error: 'challengeQuestion and challengeType are required' }, { status: 400 });
+    if (!trackSlug || !questionPrompt || !answerText) {
+      return Response.json(
+        { error: 'trackSlug, questionPrompt and answerText are required' },
+        { status: 400 },
+      );
     }
 
     // --- Call Kimi3 ---
+    // No cache: every answer is unique text, there is nothing to reuse.
     const kimiKey = Deno.env.get('KIMI_API_KEY');
     if (!kimiKey) {
       return Response.json({ error: 'AI service not configured' }, { status: 503 });
@@ -122,12 +132,7 @@ serve(async (req: Request) => {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: buildUserPrompt(
-              challengeQuestion,
-              challengeType,
-              attemptCount,
-              userContext,
-            ),
+            content: buildUserPrompt(trackSlug, experienceLevelSlug, questionPrompt, answerText),
           },
         ],
         response_format: { type: 'json_object' },
@@ -138,7 +143,7 @@ serve(async (req: Request) => {
 
     if (!kimiResponse.ok) {
       const errorText = await kimiResponse.text();
-      console.error('Kimi3 API error (lab-hint):', kimiResponse.status, errorText);
+      console.error('Kimi3 API error (analyze-interview-answer):', kimiResponse.status, errorText);
       return Response.json({ error: 'AI service unavailable' }, { status: 502 });
     }
 
@@ -149,20 +154,17 @@ serve(async (req: Request) => {
       return Response.json({ error: 'Empty AI response' }, { status: 502 });
     }
 
-    const hintResult = JSON.parse(rawContent);
+    const feedbackResult = JSON.parse(rawContent);
 
-    if (!hintResult.hint) {
+    if (!feedbackResult.summary || typeof feedbackResult.score !== 'number') {
       return Response.json({ error: 'Invalid AI response structure' }, { status: 502 });
     }
 
-    // No DB caching for hints is needed since attempts increase and change dynamically,
-    // and hints are stateless on-demand guides.
-
-    return Response.json(hintResult, {
+    return Response.json(feedbackResult, {
       headers: { 'Access-Control-Allow-Origin': '*' },
     });
   } catch (e) {
-    console.error('lab-hint error:', e);
+    console.error('analyze-interview-answer error:', e);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 });

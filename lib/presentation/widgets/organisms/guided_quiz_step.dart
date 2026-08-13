@@ -120,7 +120,7 @@ class GuidedQuizResult extends StatelessWidget {
           const Center(child: CircularProgressIndicator()),
           const SizedBox(height: AppConstants.spacingMd),
           Text(
-            '✨ Analyzing your profile with AI…',
+            '✨ Looking at your answers…',
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -165,7 +165,7 @@ class GuidedQuizResult extends StatelessWidget {
                   size: 14, color: AppColors.primary),
               const SizedBox(width: 4),
               Text(
-                'AI-Powered Analysis',
+                'Picked for you by AI',
                 style: textTheme.labelSmall
                     ?.copyWith(color: AppColors.primary),
               ),

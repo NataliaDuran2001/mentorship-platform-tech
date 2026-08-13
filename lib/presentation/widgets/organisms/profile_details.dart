@@ -17,8 +17,8 @@ class ProfileDetails extends StatelessWidget {
         ? profile.displayName!
         : profile.email.split('@').first;
     
-    final trackStr = trackName(profile.track) ?? 'No Track';
-    final levelStr = levelName(profile.experienceLevel) ?? 'No Level';
+    final trackStr = trackName(profile.track) ?? 'No focus yet';
+    final levelStr = levelName(profile.experienceLevel) ?? 'No level yet';
     final subtitle = '$trackStr · $levelStr';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 

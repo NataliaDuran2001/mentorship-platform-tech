@@ -238,9 +238,9 @@ Color _colorFor(TopicStatus status) {
 String _labelFor(TopicStatus status) {
   switch (status) {
     case TopicStatus.completed:
-      return 'Completed';
+      return 'Done';
     case TopicStatus.available:
-      return 'Available';
+      return 'Start now';
     case TopicStatus.locked:
       return 'Locked';
   }

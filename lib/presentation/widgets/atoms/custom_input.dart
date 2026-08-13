@@ -42,6 +42,10 @@ class CustomInput extends StatelessWidget {
   /// Hints for the browser's and the password manager's autofill.
   final Iterable<String>? autofillHints;
 
+  /// Lines the field grows to, e.g. for a free-text answer instead of a
+  /// single-line credential.
+  final int maxLines;
+
   const CustomInput({
     super.key,
     required this.hintText,
@@ -55,6 +59,7 @@ class CustomInput extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.autofillHints,
+    this.maxLines = 1,
   });
 
   @override
@@ -88,6 +93,7 @@ class CustomInput extends StatelessWidget {
               keyboardType: keyboardType,
               textInputAction: textInputAction,
               autofillHints: autofillHints,
+              maxLines: obscureText ? 1 : maxLines,
               decoration: InputDecoration(
                 hintText: hintText,
                 prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,

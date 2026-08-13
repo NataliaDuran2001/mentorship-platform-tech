@@ -20,6 +20,7 @@ import '../../domain/usecases/sign_out_usecase.dart';
 import '../../domain/usecases/sign_up_usecase.dart';
 import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
+import 'interview_state.dart';
 import 'onboarding_actions.dart';
 import 'onboarding_state.dart';
 import 'roadmap_state.dart';
@@ -198,6 +199,7 @@ Future<void> signOut() async {
     cancelOnboardingTimers();
     resetOnboarding();
     resetRoadmap();
+    resetInterviewState();
     authLoading.value = false;
   }
 }

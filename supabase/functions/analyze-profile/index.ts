@@ -44,6 +44,8 @@ Available tracks:
 
 Analyze the provided answers deeply — consider the patterns, the hesitations (quiz answers), the experience level, and the stated goal.
 
+Write the "reasoning" and "reason" fields in plain, jargon-free, beginner-friendly language, as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
+
 Respond with a JSON object in this exact schema:
 {
   "recommendedTrack": "frontend" | "backend" | "infrastructure",

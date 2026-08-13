@@ -12,11 +12,13 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
 import '../../data/repositories/roadmap_repository_impl.dart';
 import '../../data/repositories/ai_repository_impl.dart';
+import '../../data/repositories/interview_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 import '../../domain/repositories/roadmap_repository.dart';
 import '../../domain/repositories/lab_repository.dart';
 import '../../domain/repositories/ai_repository.dart';
+import '../../domain/repositories/interview_repository.dart';
 import '../../data/repositories/lab_repository_impl.dart';
 import '../../domain/usecases/complete_topic_usecase.dart';
 import '../../domain/usecases/get_roadmap_tree_usecase.dart';
@@ -56,6 +58,9 @@ void setupDependencies() {
   );
   getIt.registerLazySingleton<AiRepository>(
     () => AiRepositoryImpl(getIt<SupabaseClient>()),
+  );
+  getIt.registerLazySingleton<InterviewRepository>(
+    () => InterviewRepositoryImpl(getIt<SupabaseClient>()),
   );
 
   // Use cases.
