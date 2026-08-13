@@ -46,3 +46,11 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# AI Agent tooling & local configs
+.agents/
+.claude/
+skills-lock.json
