@@ -27,15 +27,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 const KIMI_MODEL = 'kimi-k3';
 
-const SYSTEM_PROMPT = `You are a supportive, encouraging, and highly technical mentor.
+const SYSTEM_PROMPT = `You are a supportive and encouraging mentor.
 Your task is to write a personalized "Daily Brief" (2 to 3 sentences) for a student on a mentorship platform.
 
 The brief must:
 1. Address the student directly and warmly.
 2. Contextualize their progress (e.g. 5 of 10 topics completed).
 3. Connect their track (Frontend/Backend/Infrastructure) and experience level/goal to their next logical steps in a motivational way.
-4. Keep it concise, professional, yet warm.
+4. Keep it concise, warm, and easy to read.
 5. Speak in English.
+6. Avoid unexplained technical jargon; write as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
 
 Format the output strictly as a JSON object:
 {

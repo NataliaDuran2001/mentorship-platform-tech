@@ -10,8 +10,7 @@ class LogicPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const DestinationPlaceholder(
       title: 'Logic',
-      detail: 'Destination under construction: logic practice arrives with '
-          'the topic tree of Module 1 (E1).',
+      detail: "Logic practice is coming soon. We're building it now!",
     );
   }
 }

@@ -54,28 +54,28 @@ const List<QuizQuestion> quizQuestions = [
   QuizQuestion(
     number: 1,
     prompt: 'What kind of problems do you enjoy solving the most?',
-    subtitle: 'Your answer helps us map out your ideal learning path towards '
-        'technical mastery.',
+    subtitle: 'Your answer helps us find the learning path that fits you '
+        'best.',
     options: [
       QuizOption(
         affinity: RoadmapTrack.frontend,
         label: 'Front-end',
-        description: 'Build visual interfaces and user experiences that win '
-            'people over at first sight.',
+        description: 'Build the screens and buttons people see and tap — the '
+            'part that makes a great first impression.',
         icon: Icons.brush_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.backend,
         label: 'Back-end',
-        description: 'Design the logic behind the scenes and solid databases '
-            'to scale systems.',
+        description: 'Build the logic that works behind the scenes and store '
+            'information so everything keeps working as more people use it.',
         icon: Icons.storage_outlined,
       ),
       QuizOption(
         affinity: RoadmapTrack.infrastructure,
         label: 'Infrastructure',
-        description: 'Organize processes, automate tasks and smooth out huge '
-            'workflows.',
+        description: 'Set up the tools that keep everything running smoothly '
+            'and help apps reach more people without breaking.',
         icon: Icons.settings_suggest_outlined,
       ),
     ],
@@ -142,9 +142,10 @@ const List<QuizQuestion> quizQuestions = [
 /// so it lives in this layer.
 const Map<RoadmapTrack, String> recommendationRationale = {
   RoadmapTrack.frontend: 'Your answers point to what people see and touch: '
-      'interfaces, how it feels to use and visual detail.',
-  RoadmapTrack.backend: 'Your answers point to logic and data: how the '
-      'information is organized and how a system holds up.',
-  RoadmapTrack.infrastructure: 'Your answers point to things running and '
-      'scaling: automation, deployment and operations.',
+      'screens, how things feel to use, and the little visual details.',
+  RoadmapTrack.backend: 'Your answers point to logic and information: how '
+      'data is organized and how everything keeps working smoothly.',
+  RoadmapTrack.infrastructure: 'Your answers point to keeping things '
+      'running: automating tasks, launching updates, and keeping systems '
+      'healthy.',
 };

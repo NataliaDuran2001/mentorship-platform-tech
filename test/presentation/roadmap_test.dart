@@ -193,8 +193,8 @@ void main() {
 
       // Completed, available and locked, each with its label and its icon.
       // They are told apart by shape as well as by color.
-      expect(find.text('Completed'), findsWidgets);
-      expect(find.text('Available'), findsWidgets);
+      expect(find.text('Done'), findsWidgets);
+      expect(find.text('Start now'), findsWidgets);
       expect(find.text('Locked'), findsWidgets);
 
       expect(find.byIcon(Icons.check_circle), findsWidgets);

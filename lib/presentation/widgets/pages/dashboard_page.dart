@@ -36,7 +36,7 @@ class DashboardPage extends StatelessWidget {
         }
 
         final profile = currentProfile.value;
-        final trackNameStr = trackName(profile?.track) ?? 'Specialty';
+        final trackNameStr = trackName(profile?.track) ?? 'your focus area';
         final textTheme = Theme.of(context).textTheme;
 
         return SingleChildScrollView(
@@ -135,7 +135,7 @@ class DashboardPage extends StatelessWidget {
                     ),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
-                      'AI Daily Brief',
+                      'Your Daily Update',
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -150,7 +150,7 @@ class DashboardPage extends StatelessWidget {
                   _buildErrorState()
                 else
                   Text(
-                    dailyBrief.value ?? 'No brief available today. Keep learning to generate new insights!',
+                    dailyBrief.value ?? "Nothing here yet today. Keep learning and check back soon!",
                     style: textTheme.bodyLarge?.copyWith(
                       color: AppColors.onSurfaceVariant,
                       height: 1.5,
@@ -197,7 +197,7 @@ class DashboardPage extends StatelessWidget {
         SizedBox(width: AppConstants.spacingSm),
         Expanded(
           child: Text(
-            'Could not load your personalized brief. Running in offline fallback.',
+            "We couldn't load your personalized update right now. Showing the basics for today instead.",
             style: TextStyle(color: AppColors.onSurfaceVariant),
           ),
         ),

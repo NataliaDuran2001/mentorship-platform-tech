@@ -138,7 +138,7 @@ Future<bool> submitOnboarding() async {
 
   if (track == null) {
     onboardingError.value =
-        'We need to know your specialty to build your path.';
+        'We need to know what you want to focus on to build your path.';
     currentStepIndex.value = activeSteps.value.indexOf(OnboardingStepId.track);
     return false;
   }

@@ -1,22 +1,24 @@
-// Supabase Edge Function: roadmap-coach
+// Supabase Edge Function: generate-interview-questions
 //
-// Receives the current track, learning goal, progress fraction, and next topic,
-// and returns a personalized short motivational header coaching message from Kimi3.
+// Receives the user's track/level/goal and asks Kimi3 for a fresh set of
+// interview-practice questions. Never cached: unlike the other AI features,
+// dynamic variation between calls is a requirement here, not something to
+// avoid.
 //
-// Endpoint: POST /functions/v1/roadmap-coach
+// Endpoint: POST /functions/v1/generate-interview-questions
 // Auth: Bearer <supabase_anon_key> (user must be authenticated)
 //
 // Request body:
 // {
 //   "trackSlug": "frontend" | "backend" | "infrastructure",
+//   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
-//   "progressPercent": number,
-//   "nextTopicTitle": string | null
+//   "count": number (optional, default 5)
 // }
 //
 // Response body:
 // {
-//   "message": "Step by step, you are mastering the front-end! Today's goal is..."
+//   "questions": [{ "prompt": "...", "category": "behavioral" | "technical" }, ...]
 // }
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -25,36 +27,40 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 const KIMI_MODEL = 'kimi-k3';
 
-const SYSTEM_PROMPT = `You are a supportive, high-energy coding coach.
-Your task is to write a single, brief, punchy motivational coaching statement (1 sentence, max 15 words) for a student's learning path header.
+const SYSTEM_PROMPT = `You are a friendly interview coach helping someone new to tech practice for a job interview.
 
-The coaching message must:
-1. Speak directly to the student in English.
-2. Be extremely concise (exactly 1 sentence).
-3. Personalize the message based on their progress percentage and what is coming up next.
-4. Keep it positive and action-oriented.
-5. Avoid unexplained technical jargon; write as if explaining to someone new to tech.
+Your task is to write a set of interview-practice questions tailored to the student's track, level and goal.
+
+The questions must:
+1. Mix "behavioral" questions (about teamwork, problem-solving, motivation) and "technical" questions (about concepts from the student's track), roughly half and half.
+2. Match the student's experience level: simpler, foundational questions for a student/self-taught learner; more specific ones for someone with some professional experience.
+3. Be phrased in plain, beginner-friendly language. Avoid unexplained technical jargon; write as if explaining to someone new to tech.
+4. Be realistic questions a real interviewer would ask, not trick questions.
+5. Vary from one request to the next: do not always default to the most generic/obvious questions for a track.
+6. Speak in English.
 
 Format the output strictly as a JSON object:
 {
-  "message": "..."
+  "questions": [
+    { "prompt": "...", "category": "behavioral" },
+    { "prompt": "...", "category": "technical" }
+  ]
 }
 Do not return any markdown formatting or surrounding text.`;
 
 function buildUserPrompt(
   trackSlug: string,
+  experienceLevelSlug: string | null,
   learningGoalSlug: string | null,
-  progressPercent: number,
-  nextTopicTitle: string | null,
+  count: number,
 ): string {
   return `
-Coach Context:
-- Track: ${trackSlug}
-- Goal: ${learningGoalSlug ?? 'not specified'}
-- Current Progress: ${progressPercent}% complete
-- Next upcoming topic: ${nextTopicTitle ?? 'None (all completed)'}
+Student context:
+- Specialization Track: ${trackSlug}
+- Current Level: ${experienceLevelSlug ?? 'not specified'}
+- Focus/Goal: ${learningGoalSlug ?? 'not specified'}
 
-Please write a highly relevant 1-sentence motivational coaching header message for this student.`.trim();
+Please write ${count} interview-practice questions for this student, following the rules.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -90,39 +96,19 @@ serve(async (req: Request) => {
     const body = await req.json();
     const {
       trackSlug,
+      experienceLevelSlug = null,
       learningGoalSlug = null,
-      progressPercent = 0,
-      nextTopicTitle = null,
+      count = 5,
     } = body;
 
     if (!trackSlug) {
       return Response.json({ error: 'trackSlug is required' }, { status: 400 });
     }
 
-    // --- Check cache (ai_profile_insights) ---
-    const serviceSupabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-    const { data: cachedInsights, error: cacheError } = await serviceSupabase
-      .from('ai_profile_insights')
-      .select('content')
-      .eq('user_id', user.id)
-      .eq('insight_type', 'roadmap_coach')
-      .gt('created_at', twelveHoursAgo)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (!cacheError && cachedInsights && cachedInsights.length > 0) {
-      const cachedMessage = cachedInsights[0].content as { message: string };
-      return Response.json(cachedMessage, {
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      });
-    }
-
     // --- Call Kimi3 ---
+    // No cache check here on purpose: dynamic variation between sessions is
+    // a stated requirement of the interview simulator, unlike the other AI
+    // features, which cache to save cost.
     const kimiKey = Deno.env.get('KIMI_API_KEY');
     if (!kimiKey) {
       return Response.json({ error: 'AI service not configured' }, { status: 503 });
@@ -140,23 +126,19 @@ serve(async (req: Request) => {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: buildUserPrompt(
-              trackSlug,
-              learningGoalSlug,
-              progressPercent,
-              nextTopicTitle,
-            ),
+            content: buildUserPrompt(trackSlug, experienceLevelSlug, learningGoalSlug, count),
           },
         ],
         response_format: { type: 'json_object' },
         // kimi-k3 only accepts its default temperature (1); sending any other
-        // value gets a 400 invalid_request_error back.
+        // value gets a 400 invalid_request_error back. Variation between
+        // calls comes from the prompt instructions instead (rule 5 above).
       }),
     });
 
     if (!kimiResponse.ok) {
       const errorText = await kimiResponse.text();
-      console.error('Kimi3 API error (roadmap-coach):', kimiResponse.status, errorText);
+      console.error('Kimi3 API error (generate-interview-questions):', kimiResponse.status, errorText);
       return Response.json({ error: 'AI service unavailable' }, { status: 502 });
     }
 
@@ -167,25 +149,17 @@ serve(async (req: Request) => {
       return Response.json({ error: 'Empty AI response' }, { status: 502 });
     }
 
-    const coachResult = JSON.parse(rawContent);
+    const questionsResult = JSON.parse(rawContent);
 
-    if (!coachResult.message) {
+    if (!Array.isArray(questionsResult.questions) || questionsResult.questions.length === 0) {
       return Response.json({ error: 'Invalid AI response structure' }, { status: 502 });
     }
 
-    // --- Cache the result ---
-    await serviceSupabase.from('ai_profile_insights').insert({
-      user_id: user.id,
-      insight_type: 'roadmap_coach',
-      content: coachResult,
-      model: KIMI_MODEL,
-    });
-
-    return Response.json(coachResult, {
+    return Response.json(questionsResult, {
       headers: { 'Access-Control-Allow-Origin': '*' },
     });
   } catch (e) {
-    console.error('roadmap-coach error:', e);
+    console.error('generate-interview-questions error:', e);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 });

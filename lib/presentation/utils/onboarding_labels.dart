@@ -51,20 +51,20 @@ const Map<ExperienceLevel, OptionVisual> levelLabels = {
 const Map<RoadmapTrack, OptionVisual> trackLabels = {
   RoadmapTrack.frontend: OptionVisual(
     label: 'Front-end',
-    description: 'Build visual interfaces and user experiences that win '
-        'people over at first sight.',
+    description: 'Build the screens and buttons people see and tap — the '
+        'part that makes a great first impression.',
     icon: Icons.brush_outlined,
   ),
   RoadmapTrack.backend: OptionVisual(
     label: 'Back-end',
-    description: 'Design the logic behind the scenes and solid databases to '
-        'scale systems.',
+    description: 'Build the logic that works behind the scenes and store '
+        'information so everything keeps working as more people use it.',
     icon: Icons.storage_outlined,
   ),
   RoadmapTrack.infrastructure: OptionVisual(
     label: 'Infrastructure',
-    description: 'Organize processes, automate tasks and smooth out huge '
-        'workflows.',
+    description: 'Set up the tools that keep everything running smoothly '
+        'and help apps reach more people without breaking.',
     icon: Icons.settings_suggest_outlined,
   ),
 };

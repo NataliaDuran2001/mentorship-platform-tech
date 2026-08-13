@@ -14,6 +14,7 @@ import '../../presentation/widgets/organisms/app_shell.dart';
 import '../../presentation/widgets/pages/auth_confirmed_page.dart';
 import '../../presentation/widgets/pages/chat_page.dart';
 import '../../presentation/widgets/pages/dashboard_page.dart';
+import '../../presentation/widgets/pages/interview_session_page.dart';
 import '../../presentation/widgets/pages/interviews_page.dart';
 import '../../presentation/widgets/pages/logic_page.dart';
 import '../../presentation/widgets/pages/login_page.dart';
@@ -102,6 +103,10 @@ class AppRouter {
           final topicId = state.pathParameters['topicId']!;
           return LabPage(topicId: topicId);
         },
+      ),
+      GoRoute(
+        path: '/interviews/session',
+        builder: (_, __) => const InterviewSessionPage(),
       ),
 
       ShellRoute(

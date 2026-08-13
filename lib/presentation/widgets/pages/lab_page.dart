@@ -254,7 +254,7 @@ class _CompletedView extends StatelessWidget {
               Text('Lab Completed!', style: textTheme.headlineLarge),
               const SizedBox(height: AppConstants.spacingMd),
               Text(
-                'You have successfully passed all the interactive challenges.',
+                'You finished every challenge here. Nice work!',
                 style: textTheme.bodyLarge
                     ?.copyWith(color: AppColors.onSurfaceVariant),
               ),
@@ -338,7 +338,7 @@ class _AiHintSection extends StatelessWidget {
                     const Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
-                      'AI Lab Assistant',
+                      'Need a Hint?',
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,

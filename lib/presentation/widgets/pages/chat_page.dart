@@ -10,8 +10,8 @@ class ChatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const DestinationPlaceholder(
       title: 'Chat',
-      detail: 'Destination under construction: the chat with the AI mentor '
-          'arrives in phases after Module 1.',
+      detail: "Chatting with your AI mentor is coming soon. We're building "
+          "it now!",
     );
   }
 }

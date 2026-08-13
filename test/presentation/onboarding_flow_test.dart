@@ -126,7 +126,7 @@ void main() {
       await _waitForAutoAdvance(tester);
 
       expect(find.text('STEP 2 OF 4'), findsOneWidget);
-      expect(find.text('What is your specialty?'), findsOneWidget);
+      expect(find.text('What do you want to focus on?'), findsOneWidget);
     });
 
     testWidgets('the progress bar reflects the real total of steps',
@@ -241,7 +241,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // It goes back to step 2 with Front-end still chosen.
-      expect(find.text('What is your specialty?'), findsOneWidget);
+      expect(find.text('What do you want to focus on?'), findsOneWidget);
       expect(selectedTrack.value, RoadmapTrack.frontend);
 
       await tester.tap(find.text('Back'));
@@ -368,7 +368,7 @@ void main() {
       expect(repo.calls, 0);
       expect(currentStep.value, OnboardingStepId.track);
       expect(
-        find.textContaining('We need to know your specialty'),
+        find.textContaining('We need to know what you want to focus on'),
         findsOneWidget,
       );
     });
