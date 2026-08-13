@@ -1,7 +1,6 @@
 // Layer: Presentation / Test (Unit test for Data Layer: AiRepositoryImpl)
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' show MultipartFile;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:aspire_app/data/repositories/ai_repository_impl.dart';
