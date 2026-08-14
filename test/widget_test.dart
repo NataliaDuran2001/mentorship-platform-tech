@@ -32,8 +32,8 @@ import 'package:aspire_app/domain/usecases/sign_up_usecase.dart';
 import 'package:aspire_app/main.dart';
 import 'package:aspire_app/presentation/state/auth_state.dart';
 import 'package:aspire_app/presentation/widgets/pages/auth_confirmed_page.dart';
-import 'package:aspire_app/presentation/widgets/pages/chat_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/dashboard_page.dart';
+import 'package:aspire_app/presentation/widgets/pages/interviews_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/login_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/onboarding_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/roadmap_page.dart';
@@ -600,13 +600,13 @@ void main() {
 
       expect(find.byType(DashboardPage), findsOneWidget);
 
-      await tester.tap(find.text('Chat'));
+      await tester.tap(find.text('Interviews'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ChatPage), findsOneWidget);
+      expect(find.byType(InterviewsPage), findsOneWidget);
       expect(
         AppRouter.router.routerDelegate.currentConfiguration.uri.path,
-        '/chat',
+        '/interviews',
       );
     });
 

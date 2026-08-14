@@ -12,11 +12,9 @@ import '../../presentation/state/auth_actions.dart';
 import '../../presentation/state/auth_state.dart';
 import '../../presentation/widgets/organisms/app_shell.dart';
 import '../../presentation/widgets/pages/auth_confirmed_page.dart';
-import '../../presentation/widgets/pages/chat_page.dart';
 import '../../presentation/widgets/pages/dashboard_page.dart';
 import '../../presentation/widgets/pages/interview_session_page.dart';
 import '../../presentation/widgets/pages/interviews_page.dart';
-import '../../presentation/widgets/pages/logic_page.dart';
 import '../../presentation/widgets/pages/login_page.dart';
 import '../../presentation/widgets/pages/onboarding_page.dart';
 import '../../presentation/widgets/pages/profile_page.dart';
@@ -24,32 +22,76 @@ import '../../presentation/widgets/pages/roadmap_page.dart';
 import '../../presentation/widgets/pages/sign_up_page.dart';
 import '../../presentation/widgets/pages/lab_page.dart';
 
-/// Shell destinations and their routes, in the same order. Profile does not
-/// take a bottom nav slot: on ≤768 it is reached through the AppBar icon (§9
-/// of the handoff).
+/// A shell destination: what the nav shows, where it points and what it paints.
+///
+/// Label/icon, route and page used to live in two parallel `const` lists
+/// indexed against each other. Removing an entry from one and not the other
+/// desynchronised the whole nav silently —every destination past the gap
+/// pointed at its neighbour's route—. Keeping the three together makes that
+/// class of bug unrepresentable.
+class _ShellDestination {
+  const _ShellDestination({
+    required this.label,
+    required this.icon,
+    required this.route,
+    required this.page,
+    this.inBottomNav = true,
+  });
+
+  final String label;
+  final IconData icon;
+  final String route;
+  final Widget page;
+
+  /// Whether it takes one of the bottom nav slots.
+  final bool inBottomNav;
+
+  AppDestination get destination =>
+      AppDestination(label: label, icon: icon, inBottomNav: inBottomNav);
+}
+
+/// The shell's navigation, in display order. Profile does not take a bottom nav
+/// slot: on ≤768 it is reached through the AppBar icon (§9 of the handoff).
 ///
 /// "My path" goes first because it is the destination the user lands on when
 /// finishing the onboarding: it is what closes AC 1.3.
-const _destinations = <AppDestination>[
-  AppDestination(label: 'My path', icon: Icons.route_outlined),
-  AppDestination(label: 'Dashboard', icon: Icons.space_dashboard_outlined),
-  AppDestination(label: 'Chat', icon: Icons.chat_bubble_outline),
-  AppDestination(label: 'Logic', icon: Icons.psychology_outlined),
-  AppDestination(label: 'Interviews', icon: Icons.record_voice_over_outlined),
-  AppDestination(
+const _shell = <_ShellDestination>[
+  _ShellDestination(
+    label: 'My path',
+    icon: Icons.route_outlined,
+    route: '/path',
+    page: RoadmapPage(),
+  ),
+  _ShellDestination(
+    label: 'Dashboard',
+    icon: Icons.space_dashboard_outlined,
+    route: '/dashboard',
+    page: DashboardPage(),
+  ),
+  _ShellDestination(
+    label: 'Interviews',
+    icon: Icons.record_voice_over_outlined,
+    route: '/interviews',
+    page: InterviewsPage(),
+  ),
+  _ShellDestination(
     label: 'Profile',
     icon: Icons.person_outline,
+    route: '/profile',
+    page: ProfilePage(),
     inBottomNav: false,
   ),
 ];
 
-const _routes = <String>[
-  '/path',
-  '/dashboard',
-  '/chat',
-  '/logic',
-  '/interviews',
-  '/profile',
+/// Built once, not per read: AppShell compares destinations by identity to work
+/// out which one is selected, so handing it fresh instances would break the
+/// nav highlight.
+final _destinations = [
+  for (final d in _shell) d.destination,
+];
+
+final _routes = [
+  for (final d in _shell) d.route,
 ];
 
 /// Routes reachable without a session.
@@ -125,48 +167,14 @@ class AppRouter {
           );
         },
         routes: [
-          GoRoute(
-            path: '/path',
-            builder: (_, __) => const ColoredBox(
-              color: AppColors.background,
-              child: RoadmapPage(),
+          for (final destination in _shell)
+            GoRoute(
+              path: destination.route,
+              builder: (_, __) => ColoredBox(
+                color: AppColors.background,
+                child: destination.page,
+              ),
             ),
-          ),
-          GoRoute(
-            path: '/dashboard',
-            builder: (_, __) => const ColoredBox(
-              color: AppColors.background,
-              child: DashboardPage(),
-            ),
-          ),
-          GoRoute(
-            path: '/chat',
-            builder: (_, __) => const ColoredBox(
-              color: AppColors.background,
-              child: ChatPage(),
-            ),
-          ),
-          GoRoute(
-            path: '/logic',
-            builder: (_, __) => const ColoredBox(
-              color: AppColors.background,
-              child: LogicPage(),
-            ),
-          ),
-          GoRoute(
-            path: '/interviews',
-            builder: (_, __) => const ColoredBox(
-              color: AppColors.background,
-              child: InterviewsPage(),
-            ),
-          ),
-          GoRoute(
-            path: '/profile',
-            builder: (_, __) => const ColoredBox(
-              color: AppColors.background,
-              child: ProfilePage(),
-            ),
-          ),
         ],
       ),
     ],

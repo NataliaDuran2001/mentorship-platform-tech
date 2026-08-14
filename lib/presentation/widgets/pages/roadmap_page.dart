@@ -14,6 +14,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 import '../../state/auth_state.dart';
 import '../../state/roadmap_actions.dart';
 import '../../state/roadmap_state.dart';
+import '../../state/ai_actions.dart';
 import '../../state/ai_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
@@ -36,6 +37,13 @@ class RoadmapPage extends StatelessWidget {
           // Outside of the current build cycle, so signals do not change while
           // it is being built.
           WidgetsBinding.instance.addPostFrameCallback((_) => loadRoadmap());
+        }
+        // The coach line is this page's own AI piece, so this page asks for it.
+        if (roadmapCoachMessage.value == null &&
+            !roadmapCoachLoading.value &&
+            roadmapCoachError.value == null) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => loadRoadmapCoachMessage());
         }
 
         final currentTrackName =
