@@ -13,6 +13,8 @@ import '../../presentation/state/auth_state.dart';
 import '../../presentation/widgets/organisms/app_shell.dart';
 import '../../presentation/widgets/pages/auth_confirmed_page.dart';
 import '../../presentation/widgets/pages/dashboard_page.dart';
+import '../../presentation/widgets/pages/forgot_password_page.dart';
+import '../../presentation/widgets/pages/password_recovery_page.dart';
 import '../../presentation/widgets/pages/interview_session_page.dart';
 import '../../presentation/widgets/pages/interviews_page.dart';
 import '../../presentation/widgets/pages/login_page.dart';
@@ -95,7 +97,13 @@ final _routes = [
 ];
 
 /// Routes reachable without a session.
-const _publicRoutes = <String>{'/login', '/sign-up', _confirmedRoute};
+const _publicRoutes = <String>{
+  '/login',
+  '/sign-up',
+  _confirmedRoute,
+  _forgotPasswordRoute,
+  _recoveryRoute,
+};
 
 /// Where the confirmation email lands (issue #34).
 ///
@@ -103,6 +111,17 @@ const _publicRoutes = <String>{'/login', '/sign-up', _confirmedRoute};
 /// even with a session: whoever clicked the link has to see that it worked.
 /// The page itself carries the way forward.
 const _confirmedRoute = '/auth/confirmed';
+
+/// Requesting the recovery email (issue #57). Public: whoever forgot their
+/// password has no session by definition.
+const _forgotPasswordRoute = '/forgot-password';
+
+/// Where the recovery email lands (issue #57).
+///
+/// Like [_confirmedRoute], the guard never redirects away from it: the link
+/// opens a session while the page is loading, and bouncing to `/path` at that
+/// moment would leave the user signed in with the password they forgot.
+const _recoveryRoute = '/auth/recovery';
 
 /// The only route allowed with a session and an incomplete onboarding.
 const _onboardingRoute = '/onboarding';
@@ -134,6 +153,18 @@ class AppRouter {
       GoRoute(
         path: _confirmedRoute,
         builder: (_, __) => const AuthConfirmedPage(),
+      ),
+      GoRoute(
+        path: _forgotPasswordRoute,
+        builder: (_, __) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: _recoveryRoute,
+        // The token travels as a query parameter inside the hash route; the
+        // page exchanges it for a session on mount.
+        builder: (_, state) => PasswordRecoveryPage(
+          tokenHash: state.uri.queryParameters['token_hash'],
+        ),
       ),
       GoRoute(
         path: _onboardingRoute,
@@ -197,9 +228,13 @@ class AppRouter {
     final destination = state.matchedLocation;
     final isPublic = _publicRoutes.contains(destination);
 
-    // The confirmation landing reports an outcome; bouncing away from it
-    // would leave the user without knowing whether the link worked.
-    if (destination == _confirmedRoute) return null;
+    // The confirmation and recovery landings report an outcome; bouncing away
+    // from them would leave the user without knowing whether the link worked —
+    // and the recovery link opens a session mid-load, which would otherwise
+    // yank the user to the path still carrying the password they forgot.
+    if (destination == _confirmedRoute || destination == _recoveryRoute) {
+      return null;
+    }
 
     if (!isAuthenticated.value) {
       return isPublic ? null : '/login';

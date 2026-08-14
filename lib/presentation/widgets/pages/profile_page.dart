@@ -7,12 +7,31 @@ import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
 import '../../state/roadmap_state.dart';
 import '../../utils/app_colors.dart';
+import '../organisms/change_password_card.dart';
 import '../organisms/profile_details.dart';
 import '../organisms/profile_goal_card.dart';
 import '../organisms/roadmap_progress_card.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
+
+  /// Client-side checks mirror the sign-up rules; the backend re-validates.
+  void _submitPasswordChange() {
+    if (passwordFormNew.value.length < 6) {
+      passwordUpdateError.value =
+          'That password is too weak. Use at least 6 characters.';
+      return;
+    }
+    if (passwordFormNew.value != passwordFormConfirm.value) {
+      passwordUpdateError.value =
+          "The new passwords don't match. Check them and try again.";
+      return;
+    }
+    changePassword(
+      currentPassword: passwordFormCurrent.value,
+      newPassword: passwordFormNew.value,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +54,19 @@ class ProfilePage extends StatelessWidget {
                 RoadmapProgressCard(progress: progress),
                 const SizedBox(height: 16),
                 ProfileGoalCard(profile: profile, progress: progress),
+                const SizedBox(height: 16),
+                ChangePasswordCard(
+                  onCurrentChanged: (v) => passwordFormCurrent.value = v,
+                  onNewChanged: (v) => passwordFormNew.value = v,
+                  onConfirmChanged: (v) => passwordFormConfirm.value = v,
+                  obscurePasswords: !passwordFormVisible.value,
+                  onToggleObscure: () =>
+                      passwordFormVisible.value = !passwordFormVisible.value,
+                  isLoading: passwordUpdateLoading.value,
+                  isDone: passwordUpdateDone.value,
+                  errorMessage: passwordUpdateError.value,
+                  onSubmit: _submitPasswordChange,
+                ),
                 const SizedBox(height: 32),
                 Center(
                   child: OutlinedButton.icon(

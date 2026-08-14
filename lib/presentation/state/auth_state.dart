@@ -75,6 +75,54 @@ final signUpPassword = signal<String>('');
 final loginPasswordVisible = signal<bool>(false);
 final signUpPasswordVisible = signal<bool>(false);
 
+// ---------------------------------------------------------------------------
+// Password recovery and change (issue #57)
+// ---------------------------------------------------------------------------
+
+/// The recovery email was requested and (as far as the user may know) sent.
+///
+/// It is also true when the account does not exist: enumeration protection
+/// means the UI says "if that email has an account..." either way.
+final recoveryEmailSent = signal<bool>(false);
+
+/// A password update (recovery landing or profile form) is in progress.
+final passwordUpdateLoading = signal<bool>(false);
+
+/// Error of the last password update, already translated. `null` if none.
+final passwordUpdateError = signal<String?>(null);
+
+/// Kind of the last password update failure, for the decisions that depend on
+/// *which* error it was: today, offering a fresh link when the recovery link
+/// expired. Mirrors [authErrorKind].
+final passwordUpdateErrorKind = signal<AuthFailureKind?>(null);
+
+/// The last password update finished successfully.
+final passwordUpdateDone = signal<bool>(false);
+
+/// Fields of the recovery/change forms. Shared: the recovery landing and the
+/// profile form never coexist on screen, and both are cleared together.
+final passwordFormEmail = signal<String>('');
+final passwordFormCurrent = signal<String>('');
+final passwordFormNew = signal<String>('');
+final passwordFormConfirm = signal<String>('');
+final passwordFormVisible = signal<bool>(false);
+
+/// Leaves the recovery/change state as freshly opened. Called when entering
+/// the screens that use it, so nobody meets the previous attempt's outcome —
+/// or its passwords.
+void resetPasswordFlows() {
+  recoveryEmailSent.value = false;
+  passwordUpdateLoading.value = false;
+  passwordUpdateError.value = null;
+  passwordUpdateErrorKind.value = null;
+  passwordUpdateDone.value = false;
+  passwordFormEmail.value = '';
+  passwordFormCurrent.value = '';
+  passwordFormNew.value = '';
+  passwordFormConfirm.value = '';
+  passwordFormVisible.value = false;
+}
+
 /// Empties the fields and the messages. It is called when entering and leaving
 /// the authentication screens, and after every successful submit.
 void clearAuthForms() {
@@ -88,4 +136,5 @@ void clearAuthForms() {
   authError.value = null;
   authErrorKind.value = null;
   confirmationEmailResent.value = false;
+  resetPasswordFlows();
 }

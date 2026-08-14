@@ -24,6 +24,7 @@ class LoginForm extends StatelessWidget {
     required this.onPasswordChanged,
     required this.onSubmit,
     required this.onGoToSignUp,
+    required this.onForgotPassword,
     required this.obscurePassword,
     required this.onToggleObscurePassword,
     this.errorMessage,
@@ -34,6 +35,9 @@ class LoginForm extends StatelessWidget {
   final ValueChanged<String> onPasswordChanged;
   final VoidCallback onSubmit;
   final VoidCallback onGoToSignUp;
+
+  /// Opens the password recovery flow (issue #57).
+  final VoidCallback onForgotPassword;
 
   /// Whether the password travels hidden. The page owns it: this organism
   /// reads no signals.
@@ -84,7 +88,14 @@ class LoginForm extends StatelessWidget {
           // Enter submits: on web you expect to get in without the button.
           onSubmitted: (_) => onSubmit(),
         ),
-        const SizedBox(height: AppConstants.defaultPadding * 1.5),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: onForgotPassword,
+            child: const Text('Forgot your password?'),
+          ),
+        ),
+        const SizedBox(height: AppConstants.defaultPadding / 2),
         CustomButton(text: 'Sign in', onPressed: onSubmit),
         const SizedBox(height: AppConstants.defaultPadding),
         // Wrap and not Row: on narrow screens the question and the link do not
