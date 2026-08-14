@@ -19,6 +19,7 @@ import '../../domain/usecases/sign_in_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
 import '../../domain/usecases/sign_up_usecase.dart';
 import '../utils/auth_error_messages.dart';
+import 'ai_state.dart';
 import 'auth_state.dart';
 import 'interview_state.dart';
 import 'onboarding_actions.dart';
@@ -200,6 +201,9 @@ Future<void> signOut() async {
     resetOnboarding();
     resetRoadmap();
     resetInterviewState();
+    // The summary and the coaching lines are written about the person who is
+    // leaving; without this they greeted the next one by their progress.
+    resetAiState();
     authLoading.value = false;
   }
 }

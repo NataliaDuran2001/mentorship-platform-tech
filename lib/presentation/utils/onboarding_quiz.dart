@@ -73,7 +73,7 @@ const List<QuizQuestion> quizQuestions = [
       ),
       QuizOption(
         affinity: RoadmapTrack.infrastructure,
-        label: 'Infrastructure',
+        label: 'Infrastructure & DevOps',
         description: 'Set up the tools that keep everything running smoothly '
             'and help apps reach more people without breaking.',
         icon: Icons.settings_suggest_outlined,

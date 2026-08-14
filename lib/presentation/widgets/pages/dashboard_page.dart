@@ -28,11 +28,17 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SignalBuilder(
       builder: (context) {
-        // Trigger lazy loading of the roadmap
+        // Lazy loads, fired outside the build cycle so no signal changes while
+        // it is being built. The summary has its own trigger and does not ride
+        // on the roadmap's: arriving here with the tree already loaded from
+        // "My path" used to leave the card showing its empty-state copy.
         if (!roadmapLoaded.value && !roadmapLoading.value && roadmapError.value == null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            loadRoadmap();
-          });
+          WidgetsBinding.instance.addPostFrameCallback((_) => loadRoadmap());
+        }
+        if (dailyBrief.value == null &&
+            !dailyBriefLoading.value &&
+            dailyBriefError.value == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => loadDailyBrief());
         }
 
         final profile = currentProfile.value;
@@ -135,7 +141,7 @@ class DashboardPage extends StatelessWidget {
                     ),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
-                      'Your Daily Update',
+                      'Your Summary',
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -150,7 +156,7 @@ class DashboardPage extends StatelessWidget {
                   _buildErrorState()
                 else
                   Text(
-                    dailyBrief.value ?? "Nothing here yet today. Keep learning and check back soon!",
+                    dailyBrief.value ?? "We're putting your summary together. Check back in a moment!",
                     style: textTheme.bodyLarge?.copyWith(
                       color: AppColors.onSurfaceVariant,
                       height: 1.5,
@@ -197,7 +203,7 @@ class DashboardPage extends StatelessWidget {
         SizedBox(width: AppConstants.spacingSm),
         Expanded(
           child: Text(
-            "We couldn't load your personalized update right now. Showing the basics for today instead.",
+            "We couldn't put your summary together right now. Your progress is safe — try again.",
             style: TextStyle(color: AppColors.onSurfaceVariant),
           ),
         ),

@@ -166,7 +166,7 @@ void main() {
 
       expect(find.text('Front-end'), findsOneWidget);
       expect(find.text('Back-end'), findsOneWidget);
-      expect(find.text('Infrastructure'), findsOneWidget);
+      expect(find.text('Infrastructure & DevOps'), findsOneWidget);
       expect(find.text(notSureOption.label), findsOneWidget);
 
       // The tracks the mockup offers but the MVP does not have.
@@ -319,7 +319,7 @@ void main() {
       await tester.tap(find.text('Skip'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Infrastructure'));
+      await tester.tap(find.text('Infrastructure & DevOps'));
       await _waitForAutoAdvance(tester);
 
       // Skips the goal.

@@ -165,25 +165,37 @@ void main() {
       await _mount(tester);
 
       expect(find.text('Front-end'), findsOneWidget);
+      // Sections name themselves in the badge, which upper-cases them; leaf
+      // topics keep their title as written.
       for (final title in [
-        'Module A',
+        'MODULE A',
         'Topic A1',
         'Topic A2',
-        'Module B',
+        'MODULE B',
         'Topic B1',
       ]) {
         expect(find.text(title), findsOneWidget);
       }
 
       // The vertical order reflects sort_order: Module A before Module B.
-      final yA = tester.getTopLeft(find.text('Module A')).dy;
-      final yB = tester.getTopLeft(find.text('Module B')).dy;
+      final yA = tester.getTopLeft(find.text('MODULE A')).dy;
+      final yB = tester.getTopLeft(find.text('MODULE B')).dy;
       expect(yA, lessThan(yB));
 
-      // And the children end up indented relative to their module.
-      final xModule = tester.getTopLeft(find.text('Module A')).dx;
+      // And the children end up indented relative to their section.
+      final xModule = tester.getTopLeft(find.text('MODULE A')).dx;
       final xChild = tester.getTopLeft(find.text('Topic A1')).dx;
       expect(xChild, greaterThan(xModule));
+    });
+
+    testWidgets('each section carries its own progress count', (tester) async {
+      repo.topics = _placeholders;
+      await _mount(tester);
+
+      // Module A has two topics with the first one completed; Module B has one
+      // still pending. The count is over leaves, like the overall progress.
+      expect(find.text('1 of 2'), findsOneWidget);
+      expect(find.text('0 of 1'), findsOneWidget);
     });
 
     testWidgets('the three states are visually distinguishable',
@@ -302,7 +314,7 @@ void main() {
 
       expect(repo.calls, 2);
       expect(find.byType(RoadmapErrorState), findsNothing);
-      expect(find.text('Module A'), findsOneWidget);
+      expect(find.text('MODULE A'), findsOneWidget);
     });
   });
 

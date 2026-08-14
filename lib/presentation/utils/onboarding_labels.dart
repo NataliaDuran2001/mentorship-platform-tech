@@ -62,10 +62,22 @@ const Map<RoadmapTrack, OptionVisual> trackLabels = {
     icon: Icons.storage_outlined,
   ),
   RoadmapTrack.infrastructure: OptionVisual(
-    label: 'Infrastructure',
+    label: 'Infrastructure & DevOps',
     description: 'Set up the tools that keep everything running smoothly '
         'and help apps reach more people without breaking.',
     icon: Icons.settings_suggest_outlined,
+  ),
+  RoadmapTrack.uiux: OptionVisual(
+    label: 'UI/UX Design',
+    description: 'Understand people and design the screens they will love — '
+        'from the first sketch to the final look and feel.',
+    icon: Icons.palette_outlined,
+  ),
+  RoadmapTrack.projectManagement: OptionVisual(
+    label: 'Project Management',
+    description: 'Guide teams and projects from idea to delivery — plan the '
+        'work, manage risks and keep everyone moving together.',
+    icon: Icons.fact_check_outlined,
   ),
 };
 
