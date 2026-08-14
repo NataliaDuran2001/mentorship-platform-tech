@@ -42,6 +42,21 @@ abstract class AuthRepository {
   /// Resends the confirmation email of an unconfirmed account.
   Future<void> resendConfirmationEmail({required String email});
 
+  /// Sends the password recovery email (issue #57).
+  ///
+  /// It does not reveal whether the account exists: with enumeration
+  /// protection on, the backend answers the same either way, and so does this
+  /// method. "If that email has an account, the link is on its way."
+  Future<void> requestPasswordRecovery({required String email});
+
+  /// Replaces the password of the authenticated user (issue #57).
+  ///
+  /// It serves both flows: the recovery landing (the emailed link opens a
+  /// session before this is called) and the profile's change form. Throws
+  /// `AuthFailure` with `weakPassword`, `samePassword`, or `sessionExpired`
+  /// when the recovery link is no longer valid.
+  Future<void> updatePassword({required String newPassword});
+
   /// Current session, or `null` if there is none. Synchronous read: the SDK
   /// restores the persisted session before the UI starts.
   AuthSession? get currentSession;

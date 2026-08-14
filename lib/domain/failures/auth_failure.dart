@@ -20,6 +20,13 @@ enum AuthFailureKind {
   /// The password does not meet Supabase's minimum policy.
   weakPassword,
 
+  /// The new password is the same as the current one (issue #57).
+  samePassword,
+
+  /// The operation needed a live session and there was none: the typical
+  /// case is a recovery link that expired or was already used (issue #57).
+  sessionExpired,
+
   /// The email is not well-formed.
   invalidEmail,
 

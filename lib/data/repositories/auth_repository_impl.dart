@@ -107,6 +107,25 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> requestPasswordRecovery({required String email}) {
+    return _translate(
+      () => _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: SupabaseConfig.passwordRecoveryRedirectTo,
+      ),
+    );
+  }
+
+  @override
+  Future<void> updatePassword({required String newPassword}) {
+    return _translate(
+      () => _client.auth.updateUser(
+        sb.UserAttributes(password: newPassword),
+      ),
+    );
+  }
+
+  @override
   AuthSession? get currentSession => _toSession(_client.auth.currentSession);
 
   @override
@@ -177,6 +196,19 @@ class AuthRepositoryImpl implements AuthRepository {
       case 'over_request_rate_limit':
       case 'over_email_send_rate_limit':
         return AuthFailureKind.tooManyRequests;
+      case 'same_password':
+        return AuthFailureKind.samePassword;
+      // updateUser without a live session: the typical case is a recovery
+      // link that expired or was already used (issue #57).
+      case 'session_expired':
+      case 'session_not_found':
+      case 'refresh_token_not_found':
+        return AuthFailureKind.sessionExpired;
+    }
+
+    // AuthSessionMissingException carries no stable code; its message does.
+    if (e.message.toLowerCase().contains('session missing')) {
+      return AuthFailureKind.sessionExpired;
     }
 
     final message = e.message.toLowerCase();

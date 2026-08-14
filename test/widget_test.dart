@@ -30,8 +30,12 @@ import 'package:aspire_app/domain/usecases/sign_in_usecase.dart';
 import 'package:aspire_app/domain/usecases/sign_out_usecase.dart';
 import 'package:aspire_app/domain/usecases/sign_up_usecase.dart';
 import 'package:aspire_app/main.dart';
+import 'package:aspire_app/presentation/state/auth_actions.dart'
+    show changePassword;
 import 'package:aspire_app/presentation/state/auth_state.dart';
 import 'package:aspire_app/presentation/widgets/pages/auth_confirmed_page.dart';
+import 'package:aspire_app/presentation/widgets/pages/forgot_password_page.dart';
+import 'package:aspire_app/presentation/widgets/pages/password_recovery_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/dashboard_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/interviews_page.dart';
 import 'package:aspire_app/presentation/widgets/pages/login_page.dart';
@@ -106,6 +110,25 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> resendConfirmationEmail({required String email}) async {
     resends++;
     lastResendEmail = email;
+  }
+
+  // --- Password recovery and change (issue #57) ---
+
+  AuthFailure? failureOnRecovery;
+  AuthFailure? failureOnUpdatePassword;
+  final List<String> recoveryEmails = <String>[];
+  final List<String> updatedPasswords = <String>[];
+
+  @override
+  Future<void> requestPasswordRecovery({required String email}) async {
+    if (failureOnRecovery != null) throw failureOnRecovery!;
+    recoveryEmails.add(email);
+  }
+
+  @override
+  Future<void> updatePassword({required String newPassword}) async {
+    if (failureOnUpdatePassword != null) throw failureOnUpdatePassword!;
+    updatedPasswords.add(newPassword);
   }
 
   void close() => _changes.close();
@@ -637,6 +660,129 @@ void main() {
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.byIcon(Icons.menu), findsNothing);
       expect(find.text('Dashboard'), findsWidgets); // sidebar + placeholder
+    });
+  });
+
+  group('Password recovery (#57)', () {
+    testWidgets(
+        'from the login you reach the forgot-password page, and requesting '
+        'the email neither confirms nor denies that the account exists',
+        (tester) async {
+      _widenWindow(tester);
+
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Forgot your password?'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ForgotPasswordPage), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'ana@example.com');
+      await tester.tap(find.text('Send recovery link'));
+      await tester.pumpAndSettle();
+
+      expect(auth.recoveryEmails, ['ana@example.com']);
+      // Enumeration protection: the copy is conditional on purpose.
+      expect(find.textContaining('If that email has an account'),
+          findsOneWidget);
+    });
+
+    testWidgets('the recovery landing is never redirected away, even with a '
+        'session mid-load', (tester) async {
+      _widenWindow(tester);
+      _withCompleteSession(); // the emailed link opens a session while loading
+
+      AppRouter.router.go('/auth/recovery');
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PasswordRecoveryPage), findsOneWidget);
+    });
+
+    testWidgets('mismatched passwords warn locally and never reach the '
+        'backend', (tester) async {
+      _widenWindow(tester);
+      _withCompleteSession();
+
+      AppRouter.router.go('/auth/recovery');
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'Secret123');
+      await tester.enterText(find.byType(TextField).at(1), 'Different123');
+      await tester.tap(find.text('Save new password'));
+      await tester.pumpAndSettle();
+
+      expect(auth.updatedPasswords, isEmpty);
+      expect(find.textContaining("don't match"), findsOneWidget);
+    });
+
+    testWidgets('a valid new password is saved and confirmed', (tester) async {
+      _widenWindow(tester);
+      _withCompleteSession();
+
+      AppRouter.router.go('/auth/recovery');
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'Secret123');
+      await tester.enterText(find.byType(TextField).at(1), 'Secret123');
+      await tester.tap(find.text('Save new password'));
+      await tester.pumpAndSettle();
+
+      expect(auth.updatedPasswords, ['Secret123']);
+      expect(find.text('Password updated'), findsOneWidget);
+    });
+
+    testWidgets('an expired link offers to request a new one, decided by '
+        'kind and not by message text', (tester) async {
+      _widenWindow(tester);
+      _withCompleteSession();
+      auth.failureOnUpdatePassword =
+          const AuthFailure(AuthFailureKind.sessionExpired);
+
+      AppRouter.router.go('/auth/recovery');
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).at(0), 'Secret123');
+      await tester.enterText(find.byType(TextField).at(1), 'Secret123');
+      await tester.tap(find.text('Save new password'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Request a new link'), findsOneWidget);
+    });
+  });
+
+  group('Change password from the profile (#57)', () {
+    test('a wrong current password blames the right field and changes '
+        'nothing', () async {
+      _withCompleteSession();
+      auth.failureOnSignIn =
+          const AuthFailure(AuthFailureKind.invalidCredentials);
+
+      await changePassword(
+        currentPassword: 'wrong-one',
+        newPassword: 'Secret123',
+      );
+
+      expect(auth.updatedPasswords, isEmpty);
+      expect(passwordUpdateError.value, contains('current password'));
+      expect(passwordUpdateDone.value, isFalse);
+    });
+
+    test('with the current password verified, the new one is saved',
+        () async {
+      _withCompleteSession();
+
+      await changePassword(
+        currentPassword: 'old-one',
+        newPassword: 'Secret123',
+      );
+
+      expect(auth.updatedPasswords, ['Secret123']);
+      expect(passwordUpdateError.value, isNull);
+      expect(passwordUpdateDone.value, isTrue);
     });
   });
 }
