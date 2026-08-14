@@ -160,7 +160,11 @@ class AppRouter {
       ),
       GoRoute(
         path: _recoveryRoute,
-        builder: (_, __) => const PasswordRecoveryPage(),
+        // The token travels as a query parameter inside the hash route; the
+        // page exchanges it for a session on mount.
+        builder: (_, state) => PasswordRecoveryPage(
+          tokenHash: state.uri.queryParameters['token_hash'],
+        ),
       ),
       GoRoute(
         path: _onboardingRoute,

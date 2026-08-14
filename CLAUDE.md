@@ -26,7 +26,7 @@ fvm install                 # after a fresh clone
 fvm flutter pub get
 fvm flutter run             # add -d chrome / -d windows to pick a device
 fvm flutter analyze --fatal-infos  # lint via analysis_options.yaml
-fvm flutter test            # runs all 152+ unit and widget tests
+fvm flutter test            # runs all 154+ unit and widget tests
 fvm flutter test test/presentation/roadmap_test.dart   # single test file
 ```
 

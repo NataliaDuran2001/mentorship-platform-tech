@@ -115,14 +115,23 @@ class FakeAuthRepository implements AuthRepository {
   // --- Password recovery and change (issue #57) ---
 
   AuthFailure? failureOnRecovery;
+  AuthFailure? failureOnConfirmRecovery;
   AuthFailure? failureOnUpdatePassword;
   final List<String> recoveryEmails = <String>[];
+  final List<String> confirmedTokenHashes = <String>[];
   final List<String> updatedPasswords = <String>[];
 
   @override
   Future<void> requestPasswordRecovery({required String email}) async {
     if (failureOnRecovery != null) throw failureOnRecovery!;
     recoveryEmails.add(email);
+  }
+
+  @override
+  Future<void> confirmPasswordRecovery({required String tokenHash}) async {
+    if (failureOnConfirmRecovery != null) throw failureOnConfirmRecovery!;
+    confirmedTokenHashes.add(tokenHash);
+    currentSession = sessionOnSignIn;
   }
 
   @override
@@ -697,6 +706,33 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(PasswordRecoveryPage), findsOneWidget);
+    });
+
+    testWidgets('the token_hash of the link is exchanged for a session on '
+        'arrival, before the user types anything', (tester) async {
+      _widenWindow(tester);
+
+      AppRouter.router.go('/auth/recovery?token_hash=pkce_abc123');
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      expect(auth.confirmedTokenHashes, ['pkce_abc123']);
+      expect(find.text('Set a new password'), findsOneWidget);
+    });
+
+    testWidgets('an expired token_hash says so on arrival and offers a fresh '
+        'link', (tester) async {
+      _widenWindow(tester);
+      auth.failureOnConfirmRecovery =
+          const AuthFailure(AuthFailureKind.sessionExpired);
+
+      AppRouter.router.go('/auth/recovery?token_hash=spent_token');
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+
+      // No password fields were shown for a link that cannot work.
+      expect(find.text('Request a new link'), findsOneWidget);
+      expect(find.text('Save new password'), findsNothing);
     });
 
     testWidgets('mismatched passwords warn locally and never reach the '

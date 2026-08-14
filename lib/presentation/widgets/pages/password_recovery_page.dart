@@ -1,11 +1,15 @@
 // Atomic Design (Page): Main structure that wires organisms together and
 // handles dependency injection and the global or view state.
 //
-// Where the password recovery email lands (issue #57). The link opens a
-// session while this page loads (supabase_flutter consumes the token from the
-// URL), so by the time the user submits, updating the password is a normal
-// authenticated call. If the link expired or was reused, that call fails with
-// `sessionExpired` and the page offers to request a fresh link.
+// Where the password recovery email lands (issue #57). The link carries a
+// `token_hash` that this page exchanges for a session on mount (verifyOtp).
+// It is deliberately NOT the PKCE code exchange: PKCE only works on the exact
+// browser profile that requested the email, and recovery emails are routinely
+// opened somewhere else — another profile, another device. The token hash
+// works anywhere, which is the whole point of the flow.
+//
+// It requires the Reset Password email template to link to
+// `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery` (see the PR).
 //
 // The route guard never redirects away from here (see app_router): bouncing
 // to the path mid-recovery would leave the user signed in with the password
@@ -25,8 +29,30 @@ import '../atoms/custom_input.dart';
 import '../organisms/auth_layout.dart';
 import '../organisms/auth_message.dart';
 
-class PasswordRecoveryPage extends StatelessWidget {
-  const PasswordRecoveryPage({super.key});
+class PasswordRecoveryPage extends StatefulWidget {
+  const PasswordRecoveryPage({super.key, this.tokenHash});
+
+  /// The `token_hash` query parameter of the emailed link. `null` when the
+  /// page is reached without one — then there is nothing to exchange and the
+  /// submit surfaces the missing session as an expired link.
+  final String? tokenHash;
+
+  @override
+  State<PasswordRecoveryPage> createState() => _PasswordRecoveryPageState();
+}
+
+class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
+  @override
+  void initState() {
+    super.initState();
+    // The exchange runs on arrival, not on submit: an expired link should
+    // say so before anyone types a new password twice.
+    final token = widget.tokenHash;
+    if (token != null && token.isNotEmpty) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => verifyRecoveryToken(token));
+    }
+  }
 
   void _submit() {
     final newPassword = passwordFormNew.value;

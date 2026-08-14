@@ -117,6 +117,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> confirmPasswordRecovery({required String tokenHash}) {
+    return _translate(
+      () => _client.auth.verifyOTP(
+        type: sb.OtpType.recovery,
+        tokenHash: tokenHash,
+      ),
+    );
+  }
+
+  @override
   Future<void> updatePassword({required String newPassword}) {
     return _translate(
       () => _client.auth.updateUser(
@@ -198,16 +208,20 @@ class AuthRepositoryImpl implements AuthRepository {
         return AuthFailureKind.tooManyRequests;
       case 'same_password':
         return AuthFailureKind.samePassword;
-      // updateUser without a live session: the typical case is a recovery
-      // link that expired or was already used (issue #57).
+      // updateUser without a live session, or a recovery token_hash that
+      // expired or was already used (issue #57).
       case 'session_expired':
       case 'session_not_found':
       case 'refresh_token_not_found':
+      case 'otp_expired':
         return AuthFailureKind.sessionExpired;
     }
 
     // AuthSessionMissingException carries no stable code; its message does.
-    if (e.message.toLowerCase().contains('session missing')) {
+    // And older backends report the spent token_hash by text alone.
+    final lower = e.message.toLowerCase();
+    if (lower.contains('session missing') ||
+        lower.contains('invalid or has expired')) {
       return AuthFailureKind.sessionExpired;
     }
 

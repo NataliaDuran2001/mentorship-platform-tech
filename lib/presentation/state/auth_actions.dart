@@ -204,11 +204,34 @@ Future<void> requestPasswordRecovery(String email) async {
   }
 }
 
+/// Exchanges the recovery link's token for a session (issue #57).
+///
+/// Called by the recovery landing as soon as it mounts, so an expired or
+/// already-used link says so before the user types anything. The token hash
+/// travels in the link, which is what makes the flow work on a different
+/// browser or device than the one that requested the email.
+Future<void> verifyRecoveryToken(String tokenHash) async {
+  passwordUpdateLoading.value = true;
+  passwordUpdateError.value = null;
+  passwordUpdateErrorKind.value = null;
+
+  try {
+    await getIt<AuthRepository>().confirmPasswordRecovery(
+      tokenHash: tokenHash,
+    );
+  } catch (e) {
+    passwordUpdateError.value = errorMessage(e);
+    passwordUpdateErrorKind.value = e is AuthFailure ? e.kind : null;
+  } finally {
+    passwordUpdateLoading.value = false;
+  }
+}
+
 /// Sets the new password from the recovery landing (issue #57).
 ///
-/// The emailed link already opened a session by the time this runs; if it did
-/// not (expired or reused link), the repository surfaces `sessionExpired` and
-/// the page offers to request a new link.
+/// [verifyRecoveryToken] already opened the session by the time this runs; if
+/// it could not (expired or reused link), the repository surfaces
+/// `sessionExpired` and the page offers to request a new link.
 Future<void> submitRecoveredPassword(String newPassword) async {
   passwordUpdateLoading.value = true;
   passwordUpdateError.value = null;
