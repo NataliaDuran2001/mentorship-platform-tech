@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) and AI coding assist
 ## Project
 
 Mentorship platform with AI for women in Bolivia entering tech (`aspire_app`).
-The user flow: email/password auth with email confirmation, onboarding with learning track assignment (`frontend`, `backend`, `infrastructure`), topic tree with sequential micro-labs, profile page, and AI features (daily brief on dashboard, roadmap coach, lab hints, profile analysis).
+The user flow: email/password auth with email confirmation, onboarding with learning track assignment (`frontend`, `backend`, `infrastructure`, `uiux`, `project_management`), topic tree with sequential micro-labs, profile page, and AI features (daily brief on dashboard, roadmap coach, lab hints, profile analysis).
 
 ### Learning path shape
 
@@ -13,7 +13,7 @@ The path is levelled through the existing hierarchy: a level (`Basic`, `Intermed
 
 A topic is a sequence of `lab_challenges`, and `theory` is one of the four `challenge_type` values. It is an explanation the learner acknowledges with "Got it": it takes its place in the sequence, counts toward the lab's progress bar, and gets no AI hint. That is what lets a topic alternate explaining and practising without a second flow. Theory density is meant to fall as the level rises.
 
-Frontend is the only track on this shape ([20260814000002](supabase/migrations/20260814000002_seed_frontend_leveled_path.sql)); backend and infrastructure are still flat topics, and the tree renders both.
+All five tracks are on this shape (seeds `20260814000002` and `20260814000004..7`, ~45 challenges per track). The guided quiz still recommends only among the three technical tracks; `uiux` and `project_management` are reachable through direct selection in step 2 and the quiz's override chips. Adding a track means: enum value in [roadmap_track.dart](lib/domain/entities/roadmap_track.dart) (at the end — the tie-break depends on order), entry in `trackLabels`, row in `public.tracks`, and its seed. [track_labels_test.dart](test/presentation/track_labels_test.dart) fails if the map and the enum drift apart.
 
 ## Toolchain
 
@@ -26,7 +26,7 @@ fvm install                 # after a fresh clone
 fvm flutter pub get
 fvm flutter run             # add -d chrome / -d windows to pick a device
 fvm flutter analyze --fatal-infos  # lint via analysis_options.yaml
-fvm flutter test            # runs all 141+ unit and widget tests
+fvm flutter test            # runs all 145+ unit and widget tests
 fvm flutter test test/presentation/roadmap_test.dart   # single test file
 ```
 

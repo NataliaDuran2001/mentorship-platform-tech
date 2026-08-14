@@ -13,7 +13,7 @@
 //
 // Request body:
 // {
-//   "trackSlug": "frontend" | "backend" | "infrastructure",
+//   "trackSlug": string — slug del track (clave de public.tracks),
 //   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
 //   "completedTopics": number,
@@ -38,7 +38,7 @@ Write 2 to 3 sentences that tell the learner where they stand on their learning 
 The summary must:
 1. Speak to the learner directly, by "you", in a warm and plain tone.
 2. State where they are on their path in concrete terms — how much of it they have completed and what that means. Name the numbers rather than only the percentage.
-3. Say what the sensible next move is, tied to their track (Frontend/Backend/Infrastructure) and their goal.
+3. Say what the sensible next move is, tied to their chosen track and their goal.
 4. Match the tone to the actual state: a learner who has just started needs reassurance that the beginning is the right place to be; one who is halfway needs to see the distance already covered; one who has finished everything available needs to know there is nothing pending.
 5. Speak in English.
 6. Avoid unexplained technical jargon; write as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
