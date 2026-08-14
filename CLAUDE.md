@@ -7,6 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) and AI coding assist
 Mentorship platform with AI for women in Bolivia entering tech (`aspire_app`).
 The user flow: email/password auth with email confirmation, onboarding with learning track assignment (`frontend`, `backend`, `infrastructure`), topic tree with sequential micro-labs, profile page, and AI features (daily brief on dashboard, roadmap coach, lab hints, profile analysis).
 
+### Learning path shape
+
+The path is levelled through the existing hierarchy: a level (`Basic`, `Intermediate`, `Advanced`) is a parent topic and its sections are its children. There is no difficulty column — do not add one without a reason the hierarchy cannot cover.
+
+A topic is a sequence of `lab_challenges`, and `theory` is one of the four `challenge_type` values. It is an explanation the learner acknowledges with "Got it": it takes its place in the sequence, counts toward the lab's progress bar, and gets no AI hint. That is what lets a topic alternate explaining and practising without a second flow. Theory density is meant to fall as the level rises.
+
+Frontend is the only track on this shape ([20260814000002](supabase/migrations/20260814000002_seed_frontend_leveled_path.sql)); backend and infrastructure are still flat topics, and the tree renders both.
+
 ## Toolchain
 
 Flutter is pinned via FVM in [.fvmrc](.fvmrc) to **3.44.2**, and [.vscode/settings.json](.vscode/settings.json) points the Dart extension at `.fvm/versions/3.44.2`.
@@ -18,7 +26,7 @@ fvm install                 # after a fresh clone
 fvm flutter pub get
 fvm flutter run             # add -d chrome / -d windows to pick a device
 fvm flutter analyze --fatal-infos  # lint via analysis_options.yaml
-fvm flutter test            # runs all 132+ unit and widget tests
+fvm flutter test            # runs all 141+ unit and widget tests
 fvm flutter test test/presentation/roadmap_test.dart   # single test file
 ```
 

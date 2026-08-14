@@ -12,6 +12,7 @@ import '../../utils/constants.dart';
 import '../organisms/lab_fill_blank.dart';
 import '../organisms/lab_multiple_choice.dart';
 import '../organisms/lab_order_logic.dart';
+import '../organisms/lab_theory.dart';
 
 class LabPage extends StatefulWidget {
   const LabPage({super.key, required this.topicId});
@@ -103,10 +104,13 @@ class _LabPageState extends State<LabPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildChallengeWidget(challenge),
-                          _AiHintSection(
-                            topicId: widget.topicId,
-                            challenge: challenge,
-                          ),
+                          // There is nothing to hint at on an explanation:
+                          // the answer is the text the learner is reading.
+                          if (challenge is! TheoryChallenge)
+                            _AiHintSection(
+                              topicId: widget.topicId,
+                              challenge: challenge,
+                            ),
                         ],
                       ),
                     ),
@@ -122,7 +126,9 @@ class _LabPageState extends State<LabPage> {
   }
 
   Widget _buildChallengeWidget(LabChallenge challenge) {
-    if (challenge is MultipleChoiceChallenge) {
+    if (challenge is TheoryChallenge) {
+      return LabTheory(challenge: challenge);
+    } else if (challenge is MultipleChoiceChallenge) {
       return LabMultipleChoice(challenge: challenge);
     } else if (challenge is FillBlankChallenge) {
       return LabFillBlank(challenge: challenge);
@@ -140,10 +146,37 @@ class _BottomValidationBar extends StatelessWidget {
       builder: (context) {
         final isValid = labIsCurrentValid.value;
         final hasSelection = labSelectedAnswers.value.isNotEmpty;
+        // An explanation has no right or wrong answer, so it gets neither the
+        // check nor the feedback colors: acknowledging it is the whole
+        // interaction.
+        final isTheory = labCurrentChallenge.value is TheoryChallenge;
 
         Color barColor = AppColors.surfaceContainerLowest;
         if (isValid == true) barColor = AppColors.successContainer;
         if (isValid == false) barColor = AppColors.errorContainer;
+
+        if (isTheory) {
+          return Container(
+            padding: const EdgeInsets.all(AppConstants.spacingLg),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              border: Border(top: BorderSide(color: AppColors.outlineVariant)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: nextLabChallenge,
+                    icon: const Icon(Icons.check),
+                    label: const Text('Got it'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return Container(
           padding: const EdgeInsets.all(AppConstants.spacingLg),

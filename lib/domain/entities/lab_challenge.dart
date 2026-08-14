@@ -14,6 +14,60 @@ abstract class LabChallenge {
   final String? description;
 }
 
+/// The kinds of block a [TheoryChallenge] is written with.
+enum TheoryBlockType {
+  /// Prose. The bulk of an explanation.
+  paragraph,
+
+  /// A code sample, shown verbatim in a monospaced block.
+  code,
+
+  /// A bulleted list, for enumerations that read badly as prose.
+  list,
+}
+
+/// One piece of an explanation.
+///
+/// Which fields carry content depends on [type]: [text] for `paragraph` and
+/// `code`, [items] for `list`, and [language] only ever on `code`.
+class TheoryBlock {
+  const TheoryBlock({
+    required this.type,
+    this.text,
+    this.items = const <String>[],
+    this.language,
+  });
+
+  final TheoryBlockType type;
+  final String? text;
+  final List<String> items;
+
+  /// Language of the sample, for labelling it. Purely informational: no
+  /// highlighting is applied.
+  final String? language;
+}
+
+/// An explanation the learner reads and acknowledges.
+///
+/// It sits in the same sequence as the exercises rather than on a screen of its
+/// own, so a topic can alternate explaining and practising. There is nothing to
+/// get wrong: it is closed by acknowledging it, not by answering it.
+class TheoryChallenge extends LabChallenge {
+  const TheoryChallenge({
+    required super.id,
+    required super.topicId,
+    required super.question,
+    super.description,
+    required this.blocks,
+    this.keyTakeaway,
+  });
+
+  final List<TheoryBlock> blocks;
+
+  /// The one sentence worth remembering if everything else is forgotten.
+  final String? keyTakeaway;
+}
+
 /// A multiple choice challenge with exactly one correct option.
 class MultipleChoiceChallenge extends LabChallenge {
   const MultipleChoiceChallenge({

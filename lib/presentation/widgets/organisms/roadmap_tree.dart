@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/topic_node.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../atoms/app_progress_bar.dart';
 
 class RoadmapTree extends StatelessWidget {
   const RoadmapTree({super.key, required this.roots, this.onTopicTap});
@@ -40,7 +41,13 @@ class RoadmapTree extends StatelessWidget {
   }
 }
 
-/// A first-level node with its children, or a standalone topic if it has none.
+/// A section of the path with its topics, or a standalone topic if it has no
+/// children.
+///
+/// The section is the unit the learner reads the path in: it carries its own
+/// name —"Basic", "Intermediate", "Advanced"— and its own progress, so the
+/// path reads as a few reachable stretches instead of one long list where
+/// everything past the current topic looks equally far away.
 class _Module extends StatelessWidget {
   const _Module({required this.node, this.onTopicTap});
 
@@ -53,12 +60,20 @@ class _Module extends StatelessWidget {
 
     final textTheme = Theme.of(context).textTheme;
 
+    // Counted over leaves, the same unit the overall progress uses: a section
+    // is the set of its topics, not a further thing to complete.
+    final leaves = node.flattened.where((n) => n.isLeaf).toList();
+    final done = leaves.where((n) => n.isCompleted).length;
+    final isCurrent = node.status == TopicStatus.available;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppConstants.radiusLg),
         border: Border.all(
-          color: AppColors.outlineVariant,
+          // The section being worked on is the only one outlined in purple, so
+          // where you are is findable without reading a single row.
+          color: isCurrent ? AppColors.primary : AppColors.outlineVariant,
           width: AppConstants.borderWidth,
         ),
       ),
@@ -68,27 +83,25 @@ class _Module extends StatelessWidget {
         children: [
           Row(
             children: [
-              _Indicator(status: node.status),
-              const SizedBox(width: AppConstants.spacingSm),
-              Expanded(
-                child: Text(
-                  node.title,
-                  style: textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ),
+              _LevelBadge(title: node.title, status: node.status),
+              const Spacer(),
               Text(
-                _labelFor(node.status),
+                '$done of ${leaves.length}',
                 style: textTheme.labelMedium?.copyWith(
-                  color: _colorFor(node.status),
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
             ],
           ),
+          if (leaves.isNotEmpty) ...[
+            const SizedBox(height: AppConstants.spacingSm),
+            AppProgressBar(
+              value: done / leaves.length,
+              semanticsLabel: '${node.title} progress',
+            ),
+          ],
           if (node.description != null) ...[
-            const SizedBox(height: AppConstants.spacingXs),
+            const SizedBox(height: AppConstants.spacingSm),
             Text(
               node.description!,
               style: textTheme.bodyMedium?.copyWith(
@@ -100,11 +113,51 @@ class _Module extends StatelessWidget {
           for (final child in node.children)
             Padding(
               padding: const EdgeInsets.only(
-                left: AppConstants.spacingLg,
+                left: AppConstants.spacingSm,
                 top: AppConstants.spacingXs,
               ),
               child: _TopicRow(node: child, onTap: onTopicTap),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Name of the section, told apart by icon and color as well as by text.
+class _LevelBadge extends StatelessWidget {
+  const _LevelBadge({required this.title, required this.status});
+
+  final String title;
+  final TopicStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _colorFor(status);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.spacingSm,
+        vertical: AppConstants.spacingXs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_iconFor(status), size: AppConstants.iconSizeSm, color: color),
+          const SizedBox(width: AppConstants.spacingXs),
+          Text(
+            title.toUpperCase(),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+          ),
         ],
       ),
     );

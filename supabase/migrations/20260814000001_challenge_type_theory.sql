@@ -1,0 +1,22 @@
+-- ===========================================================================
+-- challenge_type: 'theory'
+-- ===========================================================================
+--
+-- Hasta ahora un tópico sólo podía contener ejercicios. No había forma de
+-- entregar la explicación antes de la práctica: el path arrancaba pidiéndole a
+-- la persona que resolviera algo que nadie le había enseñado, que es
+-- exactamente lo contrario de cómo aprende alguien que recién entra a tech.
+--
+-- 'theory' es un reto más dentro de la secuencia del lab —ocupa su lugar en el
+-- orden, cuenta para la barra de progreso y se cierra con un "Got it"— en vez
+-- de una pantalla aparte. Así la teoría y la práctica se intercalan dentro de
+-- un mismo tópico sin duplicar el flujo de completado ni la navegación.
+--
+-- Va en su propia migración porque Postgres no permite USAR un valor de enum
+-- en la misma transacción en la que se lo agrega. La semilla del currículum,
+-- que sí lo usa, vive en el archivo siguiente.
+--
+-- Irreversible: 'alter type ... add value' no tiene inverso. Sacar 'theory'
+-- exigiría recrear el enum y la columna que lo usa.
+
+alter type public.challenge_type add value if not exists 'theory';

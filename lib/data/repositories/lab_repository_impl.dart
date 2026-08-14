@@ -28,6 +28,15 @@ class LabRepositoryImpl implements LabRepository {
         final Map<String, dynamic> content = row['content'] as Map<String, dynamic>;
 
         switch (type) {
+          case 'theory':
+            return TheoryChallenge(
+              id: id,
+              topicId: tId,
+              question: question,
+              description: description,
+              blocks: _theoryBlocks(content['blocks'] as List?),
+              keyTakeaway: content['keyTakeaway'] as String?,
+            );
           case 'multiple_choice':
             return MultipleChoiceChallenge(
               id: id,
@@ -65,5 +74,37 @@ class LabRepositoryImpl implements LabRepository {
     } catch (e) {
       throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.toString());
     }
+  }
+
+  /// Maps the `blocks` array of a theory challenge.
+  ///
+  /// A block whose `type` is not one this version knows about is dropped
+  /// instead of throwing: the content lives in the database and can gain new
+  /// kinds of block before an app release is out, and losing one paragraph is
+  /// better than an unreadable topic.
+  static List<TheoryBlock> _theoryBlocks(List? raw) {
+    if (raw == null) return const <TheoryBlock>[];
+
+    final blocks = <TheoryBlock>[];
+    for (final entry in raw) {
+      final map = (entry as Map).cast<String, dynamic>();
+      final type = switch (map['type'] as String?) {
+        'paragraph' => TheoryBlockType.paragraph,
+        'code' => TheoryBlockType.code,
+        'list' => TheoryBlockType.list,
+        _ => null,
+      };
+      if (type == null) continue;
+
+      blocks.add(
+        TheoryBlock(
+          type: type,
+          text: map['text'] as String?,
+          items: (map['items'] as List?)?.cast<String>() ?? const <String>[],
+          language: map['language'] as String?,
+        ),
+      );
+    }
+    return List<TheoryBlock>.unmodifiable(blocks);
   }
 }
