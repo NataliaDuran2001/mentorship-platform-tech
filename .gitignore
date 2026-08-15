@@ -57,16 +57,10 @@ skills-lock.json
 
 # Firebase
 #
-# Un `firebase init` local que quedo a medias: apunta al proyecto kora-dev-1,
-# sirve el directorio `public` —donde solo hay el index.html de bienvenida que
-# genera la herramienta— y no `build/web`, que es donde Flutter deja la app
-# compilada. O sea que hoy no despliega este proyecto.
+# `firebase.json` y `.firebaserc` NO van aca: son la configuracion del
+# despliegue y tienen que viajar con el repo, o cada persona termina apuntando
+# a un lugar distinto. Estuvieron ignorados un rato porque el `firebase init`
+# original habia quedado a medias y no desplegaba nada util.
 #
-# Se ignora en vez de borrarse: si alguien lo esta usando para probar, los
-# archivos siguen en su disco. El dia que Hosting entre de verdad, `firebase.json`
-# y `.firebaserc` son configuracion y van commiteados —hay que sacarlos de aca—,
-# mientras que `.firebase/` (cache de deploy) se queda ignorado para siempre.
+# `.firebase/` es cache local del deploy y no va al repo nunca.
 .firebase/
-.firebaserc
-firebase.json
-/public/
