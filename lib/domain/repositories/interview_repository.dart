@@ -14,6 +14,7 @@ import '../entities/app_language.dart';
 import '../entities/experience_level.dart';
 import '../entities/interview_question.dart';
 import '../entities/interview_session_feedback.dart';
+import '../entities/interview_session_record.dart';
 import '../entities/learning_goal.dart';
 import '../entities/roadmap_track.dart';
 
@@ -51,4 +52,18 @@ abstract interface class InterviewRepository {
     ExperienceLevel? experienceLevel,
     required AppLanguage language,
   });
+
+  /// Persists a finished session to history. Best-effort from the caller's
+  /// point of view: a failure here must never block the results screen the
+  /// student already earned from showing.
+  Future<void> saveSession({
+    required RoadmapTrack track,
+    String? desiredRole,
+    required List<InterviewQuestion> questions,
+    required Map<String, String> answers,
+    required InterviewSessionFeedback feedback,
+  });
+
+  /// Every session the authenticated user has finished, most recent first.
+  Future<List<InterviewSessionRecord>> loadSessions();
 }

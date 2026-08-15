@@ -1,27 +1,36 @@
 // Data layer: Implementation of InterviewRepository.
 //
-// Both calls go through Supabase Edge Functions, which proxy to the Kimi3
-// API (kimi-k3 by Moonshot AI), the same way AiRepositoryImpl does. Neither
-// call is cached: generate-interview-questions must vary between calls by
-// design, and analyze-interview-session grades a unique set of answers
-// every time.
+// generateQuestions/analyzeSession go through Supabase Edge Functions, which
+// proxy to the Kimi3 API (kimi-k3 by Moonshot AI), the same way
+// AiRepositoryImpl does. Neither call is cached: generate-interview-questions
+// must vary between calls by design, and analyze-interview-session grades a
+// unique set of answers every time.
+//
+// saveSession/loadSessions are plain table reads/writes against
+// `interview_sessions` instead — no Edge Function involved, same shape as
+// OnboardingRepositoryImpl's saveAnswer/loadAnswers.
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/interview_answer_feedback.dart';
 import '../../domain/entities/interview_question.dart';
 import '../../domain/entities/interview_session_feedback.dart';
+import '../../domain/entities/interview_session_record.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
 import '../../domain/failures/ai_failure.dart';
+import '../../domain/failures/auth_failure.dart';
 import '../../domain/repositories/interview_repository.dart';
+import '../models/interview_session_model.dart';
 
 class InterviewRepositoryImpl implements InterviewRepository {
   const InterviewRepositoryImpl(this._client);
 
-  final SupabaseClient _client;
+  final sb.SupabaseClient _client;
+
+  static const String _sessionsTable = 'interview_sessions';
 
   // ---------------------------------------------------------------------------
   // generateQuestions
@@ -199,5 +208,109 @@ class InterviewRepositoryImpl implements InterviewRepository {
       improvements: improvements,
       score: score.clamp(0, 100),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // saveSession / loadSessions
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<void> saveSession({
+    required RoadmapTrack track,
+    String? desiredRole,
+    required List<InterviewQuestion> questions,
+    required Map<String, String> answers,
+    required InterviewSessionFeedback feedback,
+  }) async {
+    final id = _requiredUserId;
+    final scores = feedback.results.map((f) => f.score);
+    final averageScore =
+        scores.isEmpty ? 0 : (scores.reduce((a, b) => a + b) / scores.length).round();
+
+    await _translate(() async {
+      await _client.from(_sessionsTable).insert(<String, dynamic>{
+        'user_id': id,
+        'track_id': track.slug,
+        'desired_role': desiredRole,
+        'average_score': averageScore,
+        'overall_summary': feedback.overallSummary,
+        'questions': [
+          for (final q in questions)
+            {'id': q.id, 'prompt': q.prompt, 'category': q.category},
+        ],
+        'answers': answers,
+        'feedback': [
+          for (final f in feedback.results)
+            {
+              'questionId': f.questionId,
+              'summary': f.summary,
+              'strengths': f.strengths,
+              'improvements': f.improvements,
+              'score': f.score,
+            },
+        ],
+      });
+    });
+  }
+
+  @override
+  Future<List<InterviewSessionRecord>> loadSessions() async {
+    final id = _userId;
+    if (id == null) return const <InterviewSessionRecord>[];
+
+    return _translate(() async {
+      final rows = await _client
+          .from(_sessionsTable)
+          .select(InterviewSessionModel.columns)
+          .eq('user_id', id)
+          .order('created_at', ascending: false);
+
+      return [
+        for (final row in rows) InterviewSessionModel.fromJson(row).toEntity(),
+      ];
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+
+  String? get _userId => _client.auth.currentUser?.id;
+
+  /// Same as [_userId] but fails when there is no session, for the writes.
+  String get _requiredUserId {
+    final id = _userId;
+    if (id == null) {
+      throw const AuthFailure(
+        AuthFailureKind.invalidCredentials,
+        technicalDetail: 'No active session while saving an interview session',
+      );
+    }
+    return id;
+  }
+
+  /// Translates the backend errors into AuthFailure, same as
+  /// OnboardingRepositoryImpl: presentation does not import supabase_flutter.
+  Future<T> _translate<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on AuthFailure {
+      rethrow;
+    } on sb.PostgrestException catch (e) {
+      throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.message);
+    } on sb.AuthException catch (e) {
+      throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.message);
+    } catch (e) {
+      final text = e.toString().toLowerCase();
+      final isNetwork = text.contains('socketexception') ||
+          text.contains('clientexception') ||
+          text.contains('failed host lookup') ||
+          text.contains('connection') ||
+          text.contains('timeout') ||
+          text.contains('xmlhttprequest');
+
+      throw AuthFailure(
+        isNetwork ? AuthFailureKind.network : AuthFailureKind.unknown,
+        technicalDetail: e.toString(),
+      );
+    }
   }
 }

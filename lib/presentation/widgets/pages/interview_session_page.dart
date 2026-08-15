@@ -13,8 +13,8 @@ import '../../utils/constants.dart';
 import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 import '../atoms/step_dots_indicator.dart';
-import '../organisms/interview_feedback_card.dart';
 import '../organisms/interview_question_card.dart';
+import '../organisms/interview_results_view.dart';
 
 class InterviewSessionPage extends StatefulWidget {
   const InterviewSessionPage({super.key});
@@ -199,8 +199,6 @@ class _CompletedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return SignalBuilder(
       builder: (context) {
         final questions = interviewQuestions.value;
@@ -210,62 +208,29 @@ class _CompletedView extends StatelessWidget {
             ? 0
             : (scores.reduce((a, b) => a + b) / scores.length).round();
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.spacingLg),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: AppConstants.maxReadableWidth,
+        return InterviewResultsView(
+          title: tr('Practice complete!', '¡Práctica completa!'),
+          summary: interviewOverallSummary.value ??
+              tr(
+                'You answered every question. Come back anytime for a new set of questions.',
+                'Respondiste todas las preguntas. Vuelve cuando quieras para un nuevo set de preguntas.',
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: ScoreGauge(
-                      score: averageScore,
-                      size: AppConstants.iconSizeCelebration,
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.spacingLg),
-                  Text(
-                    tr('Practice complete!', '¡Práctica completa!'),
-                    style: textTheme.headlineLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppConstants.spacingSm),
-                  Text(
-                    interviewOverallSummary.value ??
-                        tr(
-                          'You answered every question. Come back anytime for a new set of questions.',
-                          'Respondiste todas las preguntas. Vuelve cuando quieras para un nuevo set de preguntas.',
-                        ),
-                    style: textTheme.bodyLarge
-                        ?.copyWith(color: AppColors.onSurfaceVariant),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppConstants.spacingXl),
-                  for (final question in questions)
-                    if (feedback[question.id] case final questionFeedback?) ...[
-                      InterviewFeedbackCard(
-                        questionPrompt: question.prompt,
-                        category: question.category,
-                        feedback: questionFeedback,
-                      ),
-                      const SizedBox(height: AppConstants.spacingMd),
-                    ],
-                  const SizedBox(height: AppConstants.spacingMd),
-                  CustomButton(
-                    text: tr('Practice again', 'Practicar de nuevo'),
-                    onPressed: startInterviewSession,
-                  ),
-                  const SizedBox(height: AppConstants.spacingSm),
-                  TextButton(
-                    onPressed: () => context.go('/interviews'),
-                    child: Text(tr('Back to Interviews', 'Volver a Entrevistas')),
-                  ),
-                ],
+          averageScore: averageScore,
+          questions: questions,
+          feedback: feedback,
+          actions: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CustomButton(
+                text: tr('Practice again', 'Practicar de nuevo'),
+                onPressed: startInterviewSession,
               ),
-            ),
+              const SizedBox(height: AppConstants.spacingSm),
+              TextButton(
+                onPressed: () => context.go('/interviews'),
+                child: Text(tr('Back to Interviews', 'Volver a Entrevistas')),
+              ),
+            ],
           ),
         );
       },

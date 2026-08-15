@@ -20,6 +20,13 @@ final interviewQuestionsError = signal<String?>(null);
 /// sent along so questions can be tailored to it.
 final interviewDesiredRole = signal<String>('');
 
+/// The role actually used for the current session, captured once at
+/// `startInterviewSession()` — unlike [interviewDesiredRole] (the intro
+/// page's live input), this survives the rest of the session so
+/// `finishInterviewSession()` can save it alongside the result. `null` when
+/// the field was left blank.
+final interviewSessionRole = signal<String?>(null);
+
 /// Index of the question currently on screen. Reaching
 /// `interviewQuestions.value.length` means every question has been answered
 /// locally (see [interviewAllAnswered]) and the session moves to grading.
@@ -73,6 +80,7 @@ void resetInterviewState() {
   interviewQuestionsLoading.value = false;
   interviewQuestionsError.value = null;
   interviewDesiredRole.value = '';
+  interviewSessionRole.value = null;
   interviewCurrentIndex.value = 0;
   interviewAnswerDraft.value = '';
   interviewAnswers.value = const {};
