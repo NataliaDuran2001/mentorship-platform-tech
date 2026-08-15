@@ -321,10 +321,10 @@ class _CompletedView extends StatelessWidget {
                     style: textTheme.headlineLarge,
                   ),
                   const SizedBox(height: AppConstants.spacingLg),
-                  // A section made only of explanations has nothing to score,
-                  // and showing it a "0 / 0" would invent a defeat out of a
-                  // read.
-                  if (score.isScored)
+                  // A section made only of explanations would score a full
+                  // house for reading, and calling that a perfect run would
+                  // congratulate something that was never at stake.
+                  if (score.hasExercises)
                     LabScoreCard(
                       score: score,
                       missedQuestions: labMissedQuestions.value,

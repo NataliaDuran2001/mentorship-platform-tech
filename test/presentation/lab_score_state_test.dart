@@ -114,29 +114,30 @@ void main() {
     await loadRoadmap();
   });
 
-  test('a clean run scores every gradable challenge', () async {
+  test('a clean run earns every step of the lesson', () async {
     await loadLabs('t1');
     await nextLabChallenge(); // the explanation
     await _solveFirstTry();
     await _solveFirstTry();
 
     final score = labScore.value;
-    expect(score.correct, 2);
-    expect(score.total, 2);
+    expect(score.completedSteps, 3);
+    expect(score.totalSteps, 3);
     expect(labMissedQuestions.value, isEmpty);
   });
 
-  test('explanations are counted apart, not in the denominator', () async {
+  test('the total matches the screens the learner walked through', () async {
     await loadLabs('t1');
     await nextLabChallenge();
     await _solveFirstTry();
     await _solveFirstTry();
 
-    // Three screens were walked through, but only two could be got wrong.
-    // Both numbers are kept: the second one alone makes the score look wrong
-    // to anyone who counted the screens.
+    // Three screens, three steps. The explanation is one of them, counted
+    // apart from the exercises because it is earned by reading, not by
+    // getting it right — but a step all the same.
     expect(labChallenges.value.length, 3);
-    expect(labScore.value.total, 2);
+    expect(labScore.value.totalSteps, 3);
+    expect(labScore.value.exercisesTotal, 2);
     expect(labScore.value.concepts, 1);
   });
 
@@ -147,9 +148,12 @@ void main() {
     await _solveFirstTry();
 
     final score = labScore.value;
-    expect(score.correct, 1);
-    expect(score.total, 2);
+    expect(score.exercisesCorrect, 1);
+    expect(score.exercisesTotal, 2);
     expect(score.missed, 1);
+    // The explanation still counts: 1 concept read + 1 exercise first try.
+    expect(score.completedSteps, 2);
+    expect(score.totalSteps, 3);
   });
 
   test('the retried challenge is named so it can be reviewed', () async {
@@ -182,13 +186,16 @@ void main() {
     expect(labCheckedIndices.value, {1});
   });
 
-  test('a section that only explains has nothing to score', () async {
+  test('a section that only explains has nothing at stake', () async {
     await loadLabs('t-theory');
     await nextLabChallenge();
     await nextLabChallenge();
 
     expect(labIsCompleted.value, isTrue);
-    expect(labScore.value.isScored, isFalse);
+    // Both steps earned by reading, but nothing could have been got wrong,
+    // so there is no run to congratulate.
+    expect(labScore.value.completedSteps, 2);
+    expect(labScore.value.hasExercises, isFalse);
     expect(labMissedQuestions.value, isEmpty);
   });
 
@@ -197,11 +204,11 @@ void main() {
     await nextLabChallenge();
     await _solveAfterRetry();
     await _solveFirstTry();
-    expect(labScore.value.correct, 1);
+    expect(labScore.value.exercisesCorrect, 1);
 
     // Same lab again. A previous bad run must not follow the learner around.
     await loadLabs('t1');
-    expect(labScore.value.correct, 0);
+    expect(labScore.value.exercisesCorrect, 0);
     expect(labCheckedIndices.value, isEmpty);
     expect(labMissedQuestions.value, isEmpty);
 
@@ -209,7 +216,8 @@ void main() {
     await _solveFirstTry();
     await _solveFirstTry();
 
-    expect(labScore.value.correct, 2);
-    expect(labScore.value.total, 2);
+    expect(labScore.value.exercisesCorrect, 2);
+    expect(labScore.value.completedSteps, 3);
+    expect(labScore.value.totalSteps, 3);
   });
 }

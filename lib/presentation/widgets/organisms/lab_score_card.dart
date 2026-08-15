@@ -49,43 +49,23 @@ class LabScoreCard extends StatelessWidget {
           _ScoreFraction(score: score, color: style.color),
           const SizedBox(height: AppConstants.spacingXs),
           Text(
-            score.total == 1
-                ? tr(
-                    'exercise answered right on the first try',
-                    'ejercicio resuelto al primer intento',
-                  )
-                : tr(
-                    'exercises answered right on the first try',
-                    'ejercicios resueltos al primer intento',
-                  ),
+            tr('steps of this lesson', 'pasos de esta lección'),
             style: textTheme.bodySmall?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
-          // Without this line the denominator looks wrong to anyone who
-          // counted the screens they went through: they walked past the
-          // explanations too, and nothing on screen said those do not count.
-          if (score.concepts > 0) ...[
-            const SizedBox(height: AppConstants.spacingXs),
-            Text(
-              score.concepts == 1
-                  ? tr(
-                      'plus 1 concept read — explanations are not scored',
-                      'más 1 concepto leído — las explicaciones no puntúan',
-                    )
-                  : tr(
-                      'plus ${score.concepts} concepts read — '
-                          'explanations are not scored',
-                      'más ${score.concepts} conceptos leídos — '
-                          'las explicaciones no puntúan',
-                    ),
-              style: textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
+          // The breakdown is what keeps the headline number honest: the two
+          // kinds of step are earned differently —one is read, the other has
+          // to be right first time— and only this line says so.
+          const SizedBox(height: AppConstants.spacingXs),
+          Text(
+            _breakdown(score),
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.onSurfaceVariant,
             ),
-          ],
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: AppConstants.spacingMd),
           _BandBadge(style: style),
           const SizedBox(height: AppConstants.spacingSm),
@@ -104,6 +84,41 @@ class LabScoreCard extends StatelessWidget {
   }
 }
 
+/// Spells out where the headline number comes from, e.g.
+/// "1 concept read · 0 of 2 exercises right on the first try".
+String _breakdown(LabScore score) {
+  final parts = <String>[];
+
+  if (score.concepts > 0) {
+    parts.add(
+      score.concepts == 1
+          ? tr('1 concept read', '1 concepto leído')
+          : tr(
+              '${score.concepts} concepts read',
+              '${score.concepts} conceptos leídos',
+            ),
+    );
+  }
+
+  if (score.hasExercises) {
+    parts.add(
+      score.exercisesTotal == 1
+          ? tr(
+              '${score.exercisesCorrect} of 1 exercise right on the first try',
+              '${score.exercisesCorrect} de 1 ejercicio al primer intento',
+            )
+          : tr(
+              '${score.exercisesCorrect} of ${score.exercisesTotal} exercises '
+                  'right on the first try',
+              '${score.exercisesCorrect} de ${score.exercisesTotal} ejercicios '
+                  'al primer intento',
+            ),
+    );
+  }
+
+  return parts.join(' · ');
+}
+
 class _ScoreFraction extends StatelessWidget {
   const _ScoreFraction({required this.score, required this.color});
 
@@ -120,14 +135,14 @@ class _ScoreFraction extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          '${score.correct}',
+          '${score.completedSteps}',
           style: textTheme.displaySmall?.copyWith(
             color: color,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
-          ' / ${score.total}',
+          ' / ${score.totalSteps}',
           style: textTheme.headlineSmall?.copyWith(
             color: AppColors.onSurfaceVariant,
           ),

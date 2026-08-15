@@ -1,24 +1,30 @@
-// Domain layer: How well a lab was solved, and the plain-language tier that
-// reading lands in.
+// Domain layer: How a finished lab went, counted in the steps the learner
+// actually walked through.
 //
-// The score counts a challenge as correct only when it was answered right on
-// the FIRST check. Retrying until it is right is still how the lab advances —
-// nobody closes a topic without arriving at the answer — so a plain
-// "challenges solved" count would be N of N for everyone and would mean
-// nothing. First-try accuracy is the only reading of this flow that carries
-// information.
+// The number that closes a lab is `completedSteps of totalSteps`, and every
+// step of the lesson is in it — the explanations included. An explanation is
+// not an exercise, but reading it IS progress, and a learner who walked
+// through five screens and was shown a denominator of two had no way to tell
+// whether the number was broken or the explanations simply did not count.
 //
-// Explanations are not scored and do not count towards [total]: there is
-// nothing to get wrong on a screen whose whole interaction is acknowledging
-// it. A section made only of explanations therefore has no score at all,
-// which is what [isScored] is for.
+// What separates the two kinds of step is how they are earned. An explanation
+// counts as soon as it is acknowledged: there is nothing to get wrong on a
+// screen whose whole interaction is "Got it". An exercise counts only when it
+// was answered right on the FIRST check. Retrying until it is right is still
+// how the lab advances — nobody closes a topic without arriving at the answer
+// — so a plain "exercises solved" count would be N of N for everyone and would
+// carry no information at all.
+//
+// Because explanations are always earned, a perfect run still means exactly
+// what it says: every exercise right on the first try. Theory can never hand
+// one out.
 
 /// The plain-language tier a [LabScore] falls into.
 ///
 /// It decides which message closes the lab, so the thresholds are a product
 /// rule and live here rather than next to the colors that render them.
 enum LabScoreBand {
-  /// Every scored challenge right on the first try.
+  /// Every step earned, which means every exercise right on the first try.
   perfect,
 
   /// At least [LabScore.strongThreshold] — one slip on a long section.
@@ -33,26 +39,24 @@ enum LabScoreBand {
 
 class LabScore {
   const LabScore({
-    required this.correct,
-    required this.total,
+    this.exercisesCorrect = 0,
+    this.exercisesTotal = 0,
     this.concepts = 0,
   });
 
-  /// A lab with nothing to score, e.g. one made entirely of explanations.
-  const LabScore.empty() : correct = 0, total = 0, concepts = 0;
+  /// A lab with no steps at all.
+  const LabScore.empty()
+    : exercisesCorrect = 0,
+      exercisesTotal = 0,
+      concepts = 0;
 
-  /// Answered right on the first check.
-  final int correct;
+  /// Exercises answered right on the first check.
+  final int exercisesCorrect;
 
-  /// Challenges that could be got wrong. Explanations are excluded.
-  final int total;
+  /// Exercises in the lab — the steps that could be got wrong.
+  final int exercisesTotal;
 
-  /// Explanations read on the way through.
-  ///
-  /// They are not scored, but they are counted: a learner who walked through
-  /// five screens and is shown "0 / 2" has no way to tell whether the number
-  /// is wrong or the explanations simply do not count. Saying how many were
-  /// read is what closes that gap.
+  /// Explanations read on the way through. Always earned, never gradable.
   final int concepts;
 
   /// Accuracy at or above which a run reads as [LabScoreBand.strong].
@@ -61,25 +65,38 @@ class LabScore {
   /// Accuracy at or above which a run reads as [LabScoreBand.gettingThere].
   static const double gettingThereThreshold = 0.5;
 
-  /// False when there was nothing to score, and the screen should show no
-  /// number at all rather than a misleading `0 / 0`.
-  bool get isScored => total > 0;
+  /// Steps of the lesson that went well: every explanation read, plus the
+  /// exercises answered right on the first try. This is the numerator shown.
+  int get completedSteps => exercisesCorrect + concepts;
 
-  /// Share of scored challenges answered right on the first try, 0.0 to 1.0.
-  /// Zero when there is nothing to score.
-  double get accuracy => isScored ? correct / total : 0.0;
+  /// Every step of the lesson. This is the denominator shown, and it matches
+  /// the number of screens the learner walked through.
+  int get totalSteps => exercisesTotal + concepts;
+
+  /// Whether anything in this lab could be got wrong.
+  ///
+  /// A section made only of explanations has no performance to report: it
+  /// would score a full house for reading, and calling that a perfect run
+  /// would congratulate something that was never at stake.
+  bool get hasExercises => exercisesTotal > 0;
+
+  /// Exercises that took more than one try.
+  int get missed => exercisesTotal - exercisesCorrect;
+
+  /// Share of the lesson's steps that went well, 0.0 to 1.0.
+  double get accuracy => totalSteps == 0 ? 0.0 : completedSteps / totalSteps;
 
   /// [accuracy] as a whole percentage, for display.
   int get percentage => (accuracy * 100).round();
 
-  /// How many were not answered right on the first try.
-  int get missed => total - correct;
-
   LabScoreBand get band {
-    // Perfect is its own tier and not just "high accuracy": on a two-challenge
-    // section 1 of 2 is already 50%, and no rounding should ever let an
-    // imperfect run congratulate itself as a clean one.
-    if (isScored && correct == total) return LabScoreBand.perfect;
+    // Perfect is its own tier and not just "high accuracy": no rounding should
+    // ever let a run with a retry in it congratulate itself as a clean one.
+    // Since explanations are always earned, this holds iff every exercise was
+    // right on the first try.
+    if (totalSteps > 0 && completedSteps == totalSteps) {
+      return LabScoreBand.perfect;
+    }
     if (accuracy >= strongThreshold) return LabScoreBand.strong;
     if (accuracy >= gettingThereThreshold) return LabScoreBand.gettingThere;
     return LabScoreBand.needsReview;

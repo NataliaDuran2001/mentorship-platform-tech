@@ -1,88 +1,155 @@
-// Tests of how a finished lab is graded: the tier each accuracy lands in, and
-// the two readings that must never be confused —a perfect run, and a lab that
-// had nothing to grade in the first place.
+// Tests of how a finished lab is graded: the two kinds of step and how each
+// is earned, the tier each result lands in, and the reading that must never
+// be confused —a perfect run, and a lab that had nothing at stake.
 
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aspire_app/domain/entities/lab_score.dart';
 
 void main() {
-  group('what there is to score', () {
-    test('a lab with no gradable challenges is not scored', () {
-      const score = LabScore.empty();
+  group('the steps of a lesson', () {
+    test('counts explanations and exercises alike in the total', () {
+      // What the learner lived: three screens.
+      const score = LabScore(
+        exercisesCorrect: 2,
+        exercisesTotal: 2,
+        concepts: 1,
+      );
 
-      expect(score.isScored, isFalse);
-      expect(score.accuracy, 0.0);
-      // Nothing was got wrong, because nothing was ever asked.
-      expect(score.missed, 0);
+      expect(score.totalSteps, 3);
+      expect(score.completedSteps, 3);
     });
 
-    test('a lab with gradable challenges is scored', () {
-      const score = LabScore(correct: 0, total: 3);
+    test('an explanation is earned by reading it', () {
+      // Both exercises retried, the explanation still counts.
+      const score = LabScore(
+        exercisesCorrect: 0,
+        exercisesTotal: 2,
+        concepts: 1,
+      );
 
-      expect(score.isScored, isTrue);
-      expect(score.missed, 3);
+      expect(score.completedSteps, 1);
+      expect(score.totalSteps, 3);
+      expect(score.missed, 2);
+    });
+
+    test('a lab with no steps at all is empty', () {
+      const score = LabScore.empty();
+
+      expect(score.totalSteps, 0);
+      expect(score.completedSteps, 0);
+      expect(score.hasExercises, isFalse);
+    });
+
+    test('a section that only explains has nothing at stake', () {
+      const score = LabScore(concepts: 3);
+
+      expect(score.totalSteps, 3);
+      expect(score.completedSteps, 3);
+      // Every step earned, but nothing could have been got wrong.
+      expect(score.hasExercises, isFalse);
     });
   });
 
   group('accuracy', () {
-    test('is the share answered right on the first try', () {
-      expect(const LabScore(correct: 4, total: 5).accuracy, 0.8);
-      expect(const LabScore(correct: 1, total: 4).accuracy, 0.25);
+    test('is the share of the lesson steps that went well', () {
+      expect(
+        const LabScore(
+          exercisesCorrect: 3,
+          exercisesTotal: 4,
+          concepts: 1,
+        ).accuracy,
+        0.8,
+      );
     });
 
     test('rounds to a whole percentage for display', () {
-      expect(const LabScore(correct: 2, total: 3).percentage, 67);
-      expect(const LabScore(correct: 1, total: 3).percentage, 33);
+      expect(
+        const LabScore(
+          exercisesCorrect: 0,
+          exercisesTotal: 2,
+          concepts: 1,
+        ).percentage,
+        33,
+      );
     });
 
-    test('is zero rather than a division by zero when nothing is scored', () {
+    test('is zero rather than a division by zero on an empty lab', () {
       expect(const LabScore.empty().accuracy, 0.0);
       expect(const LabScore.empty().percentage, 0);
     });
   });
 
   group('bands', () {
-    test('every scored challenge right on the first try is perfect', () {
-      expect(const LabScore(correct: 5, total: 5).band, LabScoreBand.perfect);
-      // Perfect is about missing none, not about being a long section.
-      expect(const LabScore(correct: 2, total: 2).band, LabScoreBand.perfect);
+    test('every step earned is a perfect run', () {
+      expect(
+        const LabScore(
+          exercisesCorrect: 2,
+          exercisesTotal: 2,
+          concepts: 1,
+        ).band,
+        LabScoreBand.perfect,
+      );
+    });
+
+    test('theory can never hand out a perfect run', () {
+      // Reading three explanations does not make up for a retried exercise:
+      // as long as one exercise was missed, a step is missing.
+      const score = LabScore(
+        exercisesCorrect: 1,
+        exercisesTotal: 2,
+        concepts: 3,
+      );
+
+      expect(score.completedSteps, 4);
+      expect(score.totalSteps, 5);
+      expect(score.band, isNot(LabScoreBand.perfect));
     });
 
     test('one slip on a long section still reads as strong', () {
-      expect(const LabScore(correct: 4, total: 5).band, LabScoreBand.strong);
+      expect(
+        const LabScore(
+          exercisesCorrect: 3,
+          exercisesTotal: 4,
+          concepts: 1,
+        ).band,
+        LabScoreBand.strong,
+      );
     });
 
     test('half or better, but not strong, is getting there', () {
       expect(
-        const LabScore(correct: 3, total: 5).band,
-        LabScoreBand.gettingThere,
-      );
-      // Exactly on the threshold.
-      expect(
-        const LabScore(correct: 1, total: 2).band,
+        const LabScore(
+          exercisesCorrect: 1,
+          exercisesTotal: 3,
+          concepts: 1,
+        ).band,
         LabScoreBand.gettingThere,
       );
     });
 
     test('below half is worth a replay', () {
       expect(
-        const LabScore(correct: 2, total: 5).band,
-        LabScoreBand.needsReview,
-      );
-      expect(
-        const LabScore(correct: 0, total: 3).band,
+        const LabScore(
+          exercisesCorrect: 0,
+          exercisesTotal: 4,
+          concepts: 1,
+        ).band,
         LabScoreBand.needsReview,
       );
     });
 
-    test('a short section cannot round its way into a perfect run', () {
-      // 1 of 2 is 50%: half the section was retried. Whatever else it is, it
-      // is not the clean run that `perfect` congratulates.
-      const half = LabScore(correct: 1, total: 2);
+    test('missing every exercise no longer reads as a total defeat', () {
+      // The learner read the explanation and pushed through both exercises.
+      // The number says 1 of 3, not 0 of 2: the reading was real progress.
+      const score = LabScore(
+        exercisesCorrect: 0,
+        exercisesTotal: 2,
+        concepts: 1,
+      );
 
-      expect(half.band, isNot(LabScoreBand.perfect));
-      expect(half.band, isNot(LabScoreBand.strong));
+      expect(score.completedSteps, 1);
+      expect(score.band, LabScoreBand.needsReview);
     });
   });
 }

@@ -53,26 +53,32 @@ final labCheckedIndices = signal<Set<int>>(<int>{});
 /// the learner had to retry.
 final labFirstTryCorrectIndices = signal<Set<int>>(<int>{});
 
-/// How well the open lab was solved.
+/// How the open lab went, counted in the steps the learner walked through.
 ///
-/// Explanations are skipped, so `total` counts only what could be got wrong.
+/// Explanations are counted apart from exercises because they are earned
+/// differently —read versus answered right first time— but both are steps of
+/// the lesson and both end up in the number that closes it.
 final labScore = computed<LabScore>(() {
   final challenges = labChallenges.value;
   final firstTry = labFirstTryCorrectIndices.value;
 
-  var total = 0;
-  var correct = 0;
+  var exercisesTotal = 0;
+  var exercisesCorrect = 0;
   var concepts = 0;
   for (var i = 0; i < challenges.length; i++) {
     if (challenges[i] is TheoryChallenge) {
       concepts++;
       continue;
     }
-    total++;
-    if (firstTry.contains(i)) correct++;
+    exercisesTotal++;
+    if (firstTry.contains(i)) exercisesCorrect++;
   }
 
-  return LabScore(correct: correct, total: total, concepts: concepts);
+  return LabScore(
+    exercisesCorrect: exercisesCorrect,
+    exercisesTotal: exercisesTotal,
+    concepts: concepts,
+  );
 });
 
 /// The questions that took more than one try, in the order they were met.
