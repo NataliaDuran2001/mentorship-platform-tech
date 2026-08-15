@@ -4,8 +4,9 @@
 //
 // Collapsed by default: with 5 questions on screen at once, showing every
 // summary and every bullet list up front reads as a wall of text. The
-// header (category, question, score) is always visible so the results are
-// still scannable at a glance; the written feedback only shows once tapped.
+// header (category, band, question, score) is always visible so the results
+// are still scannable at a glance; the written feedback only shows once
+// tapped.
 
 import 'package:flutter/material.dart';
 
@@ -14,6 +15,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/interview_score_bands.dart';
 import '../../utils/translate.dart';
+import '../atoms/interview_category_tag.dart';
 
 class InterviewFeedbackCard extends StatefulWidget {
   const InterviewFeedbackCard({
@@ -64,7 +66,14 @@ class _InterviewFeedbackCardState extends State<InterviewFeedbackCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _CategoryTag(category: widget.category),
+                          Wrap(
+                            spacing: AppConstants.spacingXs,
+                            runSpacing: AppConstants.spacingXs,
+                            children: [
+                              InterviewCategoryTag(category: widget.category),
+                              ScoreBandBadge(band: band),
+                            ],
+                          ),
                           const SizedBox(height: AppConstants.spacingSm),
                           Text(
                             widget.questionPrompt,
@@ -74,23 +83,20 @@ class _InterviewFeedbackCardState extends State<InterviewFeedbackCard> {
                       ),
                     ),
                     const SizedBox(width: AppConstants.spacingMd),
-                    ScoreGauge(
-                      score: widget.feedback.score,
-                      size: AppConstants.iconSizeLg,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppConstants.spacingSm),
-                Row(
-                  children: [
-                    _BandBadge(band: band),
-                    const Spacer(),
-                    Icon(
-                      _expanded ? Icons.expand_less : Icons.expand_more,
-                      color: AppColors.onSurfaceVariant,
-                      semanticLabel: _expanded
-                          ? tr('Show less', 'Mostrar menos')
-                          : tr('Show feedback', 'Mostrar feedback'),
+                    Column(
+                      children: [
+                        ScoreGauge(
+                          score: widget.feedback.score,
+                          size: AppConstants.iconSizeLg,
+                        ),
+                        Icon(
+                          _expanded ? Icons.expand_less : Icons.expand_more,
+                          color: AppColors.onSurfaceVariant,
+                          semanticLabel: _expanded
+                              ? tr('Show less', 'Mostrar menos')
+                              : tr('Show feedback', 'Mostrar feedback'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -183,13 +189,25 @@ class ScoreGauge extends StatelessWidget {
   }
 }
 
-class _BandBadge extends StatelessWidget {
-  const _BandBadge({required this.band});
+/// The friendly-label pill for a score's band (e.g. "Good"). Shared by the
+/// feedback card and the history list, so a score reads the same way
+/// wherever it shows up instead of getting a bespoke pill per screen.
+///
+/// [score] is optional: the feedback card already shows the number in its
+/// [ScoreGauge] right next to this badge, so repeating it here would just
+/// be noise — it only passes the band. The history list has no gauge next
+/// to its row, so it passes [score] too, and the badge is the only place
+/// the number shows there.
+class ScoreBandBadge extends StatelessWidget {
+  const ScoreBandBadge({super.key, required this.band, this.score});
 
   final InterviewScoreBand band;
+  final int? score;
 
   @override
   Widget build(BuildContext context) {
+    final text = score == null ? band.label : '$score · ${band.label}';
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppConstants.spacingSm,
@@ -200,40 +218,9 @@ class _BandBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusFull),
       ),
       child: Text(
-        band.label,
+        text,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: band.color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
-  }
-}
-
-class _CategoryTag extends StatelessWidget {
-  const _CategoryTag({required this.category});
-
-  final String category;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = category == 'behavioral'
-        ? tr('About you', 'Sobre ti')
-        : tr('About the job', 'Sobre el puesto');
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.spacingSm,
-        vertical: AppConstants.spacingXs,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.primaryFixed,
-        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.onPrimaryFixed,
               fontWeight: FontWeight.w600,
             ),
       ),
