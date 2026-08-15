@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aspire_app/core/di/injection.dart';
+import 'package:aspire_app/domain/entities/lab_score.dart';
 import 'package:aspire_app/domain/entities/roadmap_track.dart';
 import 'package:aspire_app/domain/entities/topic_node.dart';
 import 'package:aspire_app/domain/entities/track.dart';
@@ -29,7 +30,6 @@ import 'package:aspire_app/domain/entities/track_recommendation.dart';
 import 'package:aspire_app/domain/repositories/ai_repository.dart';
 import 'package:aspire_app/presentation/state/ai_state.dart';
 
-
 /// In-memory repository. It returns the **flat** list, as per the contract.
 class FakeRoadmapRepository implements RoadmapRepository {
   FakeRoadmapRepository({this.topics = const [], this.failure});
@@ -41,6 +41,10 @@ class FakeRoadmapRepository implements RoadmapRepository {
   /// Topics marked as completed, in order, so a test can tell "it recorded it"
   /// from "it recorded it twice".
   final List<String> completed = <String>[];
+
+  /// Score on record per topic, so a test can tell what actually got stored
+  /// from what was merely sent.
+  final Map<String, LabScore> scores = <String, LabScore>{};
 
   /// Failure for [markTopicCompleted] only: the challenges did load fine and
   /// only saving the progress fails (issue #47).
@@ -57,9 +61,17 @@ class FakeRoadmapRepository implements RoadmapRepository {
   Future<List<Track>> listTracks() async => const <Track>[];
 
   @override
-  Future<void> markTopicCompleted(String topicId) async {
+  Future<void> markTopicCompleted(String topicId, {LabScore? score}) async {
     if (completionFailure != null) throw completionFailure!;
     completed.add(topicId);
+    // Mirrors the real repository, which keeps the better of the two runs so
+    // that replaying a section to review it cannot damage the record.
+    if (score != null) {
+      final stored = scores[topicId];
+      if (stored == null || score.accuracy >= stored.accuracy) {
+        scores[topicId] = score;
+      }
+    }
     // Mirrors the upsert: the row is one per topic, however many times it is
     // completed.
     topics = [
@@ -164,8 +176,9 @@ void main() {
   });
 
   group('Tree display', () {
-    testWidgets('it shows the hierarchy and the sort_order ordering',
-        (tester) async {
+    testWidgets('it shows the hierarchy and the sort_order ordering', (
+      tester,
+    ) async {
       repo.topics = _placeholders;
       await _mount(tester);
 
@@ -203,8 +216,9 @@ void main() {
       expect(find.text('0 of 1'), findsOneWidget);
     });
 
-    testWidgets('the three states are visually distinguishable',
-        (tester) async {
+    testWidgets('the three states are visually distinguishable', (
+      tester,
+    ) async {
       repo.topics = _placeholders;
       await _mount(tester);
 
@@ -278,8 +292,9 @@ void main() {
   });
 
   group('Empty state', () {
-    testWidgets('with no topics it shows neither a blank screen nor an error',
-        (tester) async {
+    testWidgets('with no topics it shows neither a blank screen nor an error', (
+      tester,
+    ) async {
       // It is the real case today for backend and infrastructure.
       repo.topics = const [];
       await _mount(tester);
@@ -297,8 +312,9 @@ void main() {
   });
 
   group('Load error', () {
-    testWidgets('it shows the translated message and allows retrying',
-        (tester) async {
+    testWidgets('it shows the translated message and allows retrying', (
+      tester,
+    ) async {
       repo.failure = const AuthFailure(
         AuthFailureKind.network,
         technicalDetail: 'SocketException: Failed host lookup',
@@ -324,8 +340,9 @@ void main() {
   });
 
   group('Without a track', () {
-    testWidgets('a profile without a track does not break the screen',
-        (tester) async {
+    testWidgets('a profile without a track does not break the screen', (
+      tester,
+    ) async {
       currentProfile.value = const UserProfile(
         id: 'u1',
         email: 'ana@example.com',

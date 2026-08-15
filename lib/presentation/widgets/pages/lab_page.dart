@@ -13,6 +13,7 @@ import '../../utils/translate.dart';
 import '../organisms/lab_fill_blank.dart';
 import '../organisms/lab_multiple_choice.dart';
 import '../organisms/lab_order_logic.dart';
+import '../organisms/lab_score_card.dart';
 import '../organisms/lab_theory.dart';
 
 class LabPage extends StatefulWidget {
@@ -39,94 +40,110 @@ class _LabPageState extends State<LabPage> {
     return SignalBuilder(
       builder: (context) {
         return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.go('/path'),
-          tooltip: tr('Exit Lab', 'Salir del laboratorio'),
-        ),
-        title: Text(tr('Interactive Lab', 'Laboratorio interactivo')),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
-          child: SignalBuilder(
-            builder: (context) {
-              if (labChallenges.value.isEmpty) return const SizedBox.shrink();
-              final progress = (labCurrentIndex.value) / labChallenges.value.length;
-              return LinearProgressIndicator(
-                value: progress,
-                backgroundColor: AppColors.surfaceContainerHigh,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-              );
-            },
-          ),
-        ),
-      ),
-      body: SignalBuilder(
-        builder: (context) {
-          if (labLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (labError.value != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-                  const SizedBox(height: AppConstants.spacingMd),
-                  Text(labError.value!, style: Theme.of(context).textTheme.bodyLarge),
-                  const SizedBox(height: AppConstants.spacingMd),
-                  ElevatedButton(
-                    onPressed: () => loadLabs(widget.topicId),
-                    child: Text(tr('Retry', 'Reintentar')),
-                  ),
-                ],
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => context.go('/path'),
+              tooltip: tr('Exit Lab', 'Salir del laboratorio'),
+            ),
+            title: Text(tr('Interactive Lab', 'Laboratorio interactivo')),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(4.0),
+              child: SignalBuilder(
+                builder: (context) {
+                  if (labChallenges.value.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final progress =
+                      (labCurrentIndex.value) / labChallenges.value.length;
+                  return LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: AppColors.surfaceContainerHigh,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  );
+                },
               ),
-            );
-          }
+            ),
+          ),
+          body: SignalBuilder(
+            builder: (context) {
+              if (labLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (labIsCompleted.value) {
-            return _CompletedView();
-          }
+              if (labError.value != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 48,
+                      ),
+                      const SizedBox(height: AppConstants.spacingMd),
+                      Text(
+                        labError.value!,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: AppConstants.spacingMd),
+                      ElevatedButton(
+                        onPressed: () => loadLabs(widget.topicId),
+                        child: Text(tr('Retry', 'Reintentar')),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-          final challenge = labCurrentChallenge.value;
-          if (challenge == null) {
-            return Center(
-              child: Text(tr('No challenges available.', 'No hay retos disponibles.')),
-            );
-          }
+              if (labIsCompleted.value) {
+                return _CompletedView();
+              }
 
-          return Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppConstants.spacingLg),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: AppConstants.maxReadableWidth),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildChallengeWidget(challenge),
-                          // There is nothing to hint at on an explanation:
-                          // the answer is the text the learner is reading.
-                          if (challenge is! TheoryChallenge)
-                            _AiHintSection(
-                              topicId: widget.topicId,
-                              challenge: challenge,
-                            ),
-                        ],
+              final challenge = labCurrentChallenge.value;
+              if (challenge == null) {
+                return Center(
+                  child: Text(
+                    tr('No challenges available.', 'No hay retos disponibles.'),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(AppConstants.spacingLg),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: AppConstants.maxReadableWidth,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildChallengeWidget(challenge),
+                              // There is nothing to hint at on an explanation:
+                              // the answer is the text the learner is reading.
+                              if (challenge is! TheoryChallenge)
+                                _AiHintSection(
+                                  topicId: widget.topicId,
+                                  challenge: challenge,
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              _BottomValidationBar(),
-            ],
-          );
-        },
-      ),
+                  _BottomValidationBar(),
+                ],
+              );
+            },
+          ),
         );
       },
     );
@@ -196,29 +213,27 @@ class _BottomValidationBar extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: Row(
-          children: [
-            Expanded(
-              child: _FeedbackMessage(isValid: isValid),
+              children: [
+                Expanded(child: _FeedbackMessage(isValid: isValid)),
+                const SizedBox(width: AppConstants.spacingMd),
+                if (isValid == true)
+                  ElevatedButton(
+                    onPressed: nextLabChallenge,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: AppColors.onSuccess,
+                    ),
+                    child: Text(tr('Continue', 'Continuar')),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: hasSelection ? submitLabAnswer : null,
+                    child: Text(tr('Check Answer', 'Verificar respuesta')),
+                  ),
+              ],
             ),
-            const SizedBox(width: AppConstants.spacingMd),
-            if (isValid == true)
-              ElevatedButton(
-                onPressed: nextLabChallenge,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: AppColors.onSuccess,
-                ),
-                child: Text(tr('Continue', 'Continuar')),
-              )
-            else
-              ElevatedButton(
-                onPressed: hasSelection ? submitLabAnswer : null,
-                child: Text(tr('Check Answer', 'Verificar respuesta')),
-              ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
       },
     );
   }
@@ -231,11 +246,11 @@ class _FeedbackMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    
+
     if (isValid == null) {
       return const SizedBox.shrink();
     }
-    
+
     if (isValid == true) {
       return Row(
         children: [
@@ -253,21 +268,24 @@ class _FeedbackMessage extends StatelessWidget {
         ],
       );
     }
-    
+
     return Row(
-        children: [
-          const Icon(Icons.cancel, color: AppColors.onErrorContainer),
-          const SizedBox(width: AppConstants.spacingSm),
-          Expanded(
-            child: Text(
-              tr('Not quite right. Try again.', 'No es del todo correcto. Intenta de nuevo.'),
-              style: textTheme.bodyLarge?.copyWith(
-                color: AppColors.onErrorContainer,
-                fontWeight: FontWeight.w600,
-              ),
+      children: [
+        const Icon(Icons.cancel, color: AppColors.onErrorContainer),
+        const SizedBox(width: AppConstants.spacingSm),
+        Expanded(
+          child: Text(
+            tr(
+              'Not quite right. Try again.',
+              'No es del todo correcto. Intenta de nuevo.',
+            ),
+            style: textTheme.bodyLarge?.copyWith(
+              color: AppColors.onErrorContainer,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ],
+        ),
+      ],
     );
   }
 }
@@ -280,68 +298,95 @@ class _CompletedView extends StatelessWidget {
     return SignalBuilder(
       builder: (context) {
         final saveError = labSaveError.value;
+        final score = labScore.value;
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.emoji_events,
-                size: AppConstants.iconSizeCelebration,
-                color: AppColors.tertiary,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppConstants.spacingLg),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppConstants.maxReadableWidth,
               ),
-              const SizedBox(height: AppConstants.spacingLg),
-              Text(tr('Lab Completed!', '¡Laboratorio completado!'), style: textTheme.headlineLarge),
-              const SizedBox(height: AppConstants.spacingMd),
-              Text(
-                tr(
-                  'You finished every challenge here. Nice work!',
-                  '¡Terminaste todos los retos de aquí. Buen trabajo!',
-                ),
-                style: textTheme.bodyLarge
-                    ?.copyWith(color: AppColors.onSurfaceVariant),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.emoji_events,
+                    size: AppConstants.iconSizeCelebration,
+                    color: AppColors.tertiary,
+                  ),
+                  const SizedBox(height: AppConstants.spacingLg),
+                  Text(
+                    tr('Lab Completed!', '¡Laboratorio completado!'),
+                    style: textTheme.headlineLarge,
+                  ),
+                  const SizedBox(height: AppConstants.spacingLg),
+                  // A section made only of explanations would score a full
+                  // house for reading, and calling that a perfect run would
+                  // congratulate something that was never at stake.
+                  if (score.hasExercises)
+                    LabScoreCard(
+                      score: score,
+                      missedQuestions: labMissedQuestions.value,
+                    )
+                  else
+                    Text(
+                      tr(
+                        'You worked through every step here. Nice work!',
+                        '¡Recorriste todos los pasos de aquí. Buen trabajo!',
+                      ),
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  // The topic is closed here, so the path is left up to date
+                  // before going back to it. While it is being recorded the way
+                  // out is held, otherwise the tree would be reached still
+                  // showing the topic as pending.
+                  if (labSavingProgress.value) ...[
+                    const SizedBox(height: AppConstants.spacingXl),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: AppConstants.spacingMd),
+                    Text(
+                      tr('Saving your progress…', 'Guardando tu progreso…'),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ] else if (saveError != null) ...[
+                    const SizedBox(height: AppConstants.spacingLg),
+                    Text(
+                      '$saveError ${tr("Your answers are safe, but the topic wasn't marked as completed.", 'Tus respuestas están a salvo, pero el tema no quedó marcado como completado.')}',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.error,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppConstants.spacingMd),
+                    ElevatedButton(
+                      onPressed: completeCurrentTopic,
+                      child: Text(tr('Retry', 'Reintentar')),
+                    ),
+                    const SizedBox(height: AppConstants.spacingSm),
+                    TextButton(
+                      onPressed: () => context.go('/path'),
+                      child: Text(
+                        tr('Return to my path', 'Volver a mi camino'),
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: AppConstants.spacingXl),
+                    ElevatedButton(
+                      onPressed: () => context.go('/path'),
+                      child: Text(
+                        tr('Return to my path', 'Volver a mi camino'),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              // The topic is closed here, so the path is left up to date before
-              // going back to it. While it is being recorded the way out is
-              // held, otherwise the tree would be reached still showing the
-              // topic as pending.
-              if (labSavingProgress.value) ...[
-                const SizedBox(height: AppConstants.spacingXl),
-                const CircularProgressIndicator(),
-                const SizedBox(height: AppConstants.spacingMd),
-                Text(
-                  tr('Saving your progress…', 'Guardando tu progreso…'),
-                  style: textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.onSurfaceVariant),
-                ),
-              ] else if (saveError != null) ...[
-                const SizedBox(height: AppConstants.spacingLg),
-                Text(
-                  '$saveError ${tr(
-                    "Your answers are safe, but the topic wasn't marked as completed.",
-                    'Tus respuestas están a salvo, pero el tema no quedó marcado como completado.',
-                  )}',
-                  style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppConstants.spacingMd),
-                ElevatedButton(
-                  onPressed: completeCurrentTopic,
-                  child: Text(tr('Retry', 'Reintentar')),
-                ),
-                const SizedBox(height: AppConstants.spacingSm),
-                TextButton(
-                  onPressed: () => context.go('/path'),
-                  child: Text(tr('Return to my path', 'Volver a mi camino')),
-                ),
-              ] else ...[
-                const SizedBox(height: AppConstants.spacingXl),
-                ElevatedButton(
-                  onPressed: () => context.go('/path'),
-                  child: Text(tr('Return to my path', 'Volver a mi camino')),
-                ),
-              ],
-            ],
+            ),
           ),
         );
       },
@@ -380,7 +425,11 @@ class _AiHintSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
                       tr('Need a Hint?', '¿Necesitas una pista?'),
@@ -407,16 +456,21 @@ class _AiHintSection extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.lightbulb_outline, size: 16),
-                    label: Text(hintsList.isEmpty
-                        ? tr('Get Hint', 'Obtener pista')
-                        : tr('Get Another Hint', 'Obtener otra pista')),
+                    label: Text(
+                      hintsList.isEmpty
+                          ? tr('Get Hint', 'Obtener pista')
+                          : tr('Get Another Hint', 'Obtener otra pista'),
+                    ),
                   ),
               ],
             ),
             if (labHintError.value != null) ...[
               const SizedBox(height: AppConstants.spacingSm),
               Text(
-                tr('Could not load hint. Try again.', 'No pudimos cargar la pista. Intenta de nuevo.'),
+                tr(
+                  'Could not load hint. Try again.',
+                  'No pudimos cargar la pista. Intenta de nuevo.',
+                ),
                 style: textTheme.bodySmall?.copyWith(color: AppColors.error),
               ),
             ],
@@ -427,7 +481,9 @@ class _AiHintSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,10 +494,7 @@ class _AiHintSection extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '💡 ',
-                              style: textTheme.bodyMedium,
-                            ),
+                            Text('💡 ', style: textTheme.bodyMedium),
                             Expanded(
                               child: Text(
                                 hintsList[i],

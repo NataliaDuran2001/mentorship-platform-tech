@@ -6,6 +6,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
+import '../../domain/entities/lab_score.dart';
 import '../../domain/entities/roadmap_track.dart';
 import '../../domain/entities/topic_node.dart';
 import '../../domain/entities/track.dart';
@@ -62,9 +63,9 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
 
       return rows
           .map(
-            (row) => TopicModel.fromJson(row).toEntity(
-              isCompleted: completed.contains(row['id'] as String),
-            ),
+            (row) => TopicModel.fromJson(
+              row,
+            ).toEntity(isCompleted: completed.contains(row['id'] as String)),
           )
           .whereType<TopicNode>()
           .toList(growable: false);
@@ -72,13 +73,28 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
   }
 
   @override
-  Future<void> markTopicCompleted(String topicId) {
+  Future<void> markTopicCompleted(String topicId, {LabScore? score}) {
     return _translate(() async {
       final userId = _client.auth.currentUser?.id;
       // Without a session there is nobody to record progress for. The route
       // guards already prevent it; failing loudly here would turn a signed-out
       // race into an error dialog on a finished lab.
       if (userId == null) return;
+
+      final now = DateTime.now().toUtc().toIso8601String();
+      final row = <String, dynamic>{
+        'user_id': userId,
+        'topic_id': topicId,
+        'status': 'completed',
+        'completed_at': now,
+        'updated_at': now,
+      };
+
+      if (score != null) {
+        final best = await _bestScore(userId, topicId, score);
+        row['score_exercises_correct'] = best.exercisesCorrect;
+        row['score_exercises_total'] = best.exercisesTotal;
+      }
 
       // Upsert against `user_progress_una_fila_por_topico (user_id, topic_id)`
       // and not a select-then-insert: replaying a lab is a normal thing to do,
@@ -87,17 +103,51 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
       // `completed_at` travels with the status because of the
       // `user_progress_completado_con_fecha` check: `completed` without a date
       // is rejected.
-      await _client.from(_progressTable).upsert(
-        <String, dynamic>{
-          'user_id': userId,
-          'topic_id': topicId,
-          'status': 'completed',
-          'completed_at': DateTime.now().toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        },
-        onConflict: 'user_id,topic_id',
-      );
+      await _client
+          .from(_progressTable)
+          .upsert(row, onConflict: 'user_id,topic_id');
     });
+  }
+
+  /// The better of [candidate] and whatever is already on record.
+  ///
+  /// Replaying a section to review it must never be able to damage the record
+  /// of having once known it, and PostgREST's upsert has no way to express
+  /// "update only if greater" — so the comparison happens here, on an action
+  /// that runs once per finished lab and is nowhere near a hot path.
+  ///
+  /// Two devices closing the SAME lab at the same instant could still have the
+  /// worse one land last. That race is left standing knowingly: it needs one
+  /// person finishing one section twice simultaneously, and the damage is a
+  /// stale number on a record that is already marked completed.
+  Future<LabScore> _bestScore(
+    String userId,
+    String topicId,
+    LabScore candidate,
+  ) async {
+    final rows = await _client
+        .from(_progressTable)
+        .select('score_exercises_correct, score_exercises_total')
+        .eq('user_id', userId)
+        .eq('topic_id', topicId)
+        .limit(1);
+
+    if (rows.isEmpty) return candidate;
+
+    final stored = rows.first;
+    final storedCorrect = stored['score_exercises_correct'] as int?;
+    final storedTotal = stored['score_exercises_total'] as int?;
+    if (storedCorrect == null || storedTotal == null) return candidate;
+
+    // Compared as a share and not as a raw count: a section can gain or lose
+    // an exercise between two runs, and 3 of 3 beats 4 of 6.
+    final storedShare = storedTotal == 0 ? 0.0 : storedCorrect / storedTotal;
+    return candidate.accuracy >= storedShare
+        ? candidate
+        : LabScore(
+            exercisesCorrect: storedCorrect,
+            exercisesTotal: storedTotal,
+          );
   }
 
   Future<Set<String>> _completedIds() async {
@@ -122,7 +172,8 @@ class RoadmapRepositoryImpl implements RoadmapRepository {
       throw AuthFailure(AuthFailureKind.unknown, technicalDetail: e.message);
     } catch (e) {
       final text = e.toString().toLowerCase();
-      final isNetwork = text.contains('socketexception') ||
+      final isNetwork =
+          text.contains('socketexception') ||
           text.contains('clientexception') ||
           text.contains('failed host lookup') ||
           text.contains('connection') ||

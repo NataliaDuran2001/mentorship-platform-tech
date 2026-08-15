@@ -16,6 +16,8 @@ Future<void> loadLabs(String topicId) async {
   labCurrentIndex.value = 0;
   labSelectedAnswers.value = {};
   labIsCurrentValid.value = null;
+  labCheckedIndices.value = <int>{};
+  labFirstTryCorrectIndices.value = <int>{};
 
   // Clear AI hints on starting a new lab topic
   clearLabHintsForTopic(topicId);
@@ -32,9 +34,16 @@ Future<void> loadLabs(String topicId) async {
 }
 
 /// Validates the current answers against the current challenge.
+///
+/// The first check of each challenge is also what the score is made of, so it
+/// is recorded here and never revised afterwards (see [labCheckedIndices]).
 void submitLabAnswer() {
   final challenge = labCurrentChallenge.value;
   if (challenge == null) return;
+
+  // An explanation is acknowledged, not answered: it has no validation to run
+  // and must not reach the score, or it would inflate every denominator.
+  if (challenge is TheoryChallenge) return;
 
   final answers = labSelectedAnswers.value;
 
@@ -66,6 +75,25 @@ void submitLabAnswer() {
       isValid = false;
     }
     labIsCurrentValid.value = isValid;
+  }
+
+  _recordFirstAttempt();
+}
+
+/// Writes down how the current challenge went, but only on its first check.
+///
+/// Every later check is a retry on the way to the right answer, and retrying
+/// is how the lab is meant to work — it just does not count as knowing it.
+void _recordFirstAttempt() {
+  final index = labCurrentIndex.value;
+  if (labCheckedIndices.value.contains(index)) return;
+
+  labCheckedIndices.value = {...labCheckedIndices.value, index};
+  if (labIsCurrentValid.value == true) {
+    labFirstTryCorrectIndices.value = {
+      ...labFirstTryCorrectIndices.value,
+      index,
+    };
   }
 }
 
@@ -100,7 +128,7 @@ Future<void> completeCurrentTopic() async {
   labSaveError.value = null;
 
   try {
-    await getIt<CompleteTopicUseCase>()(topicId);
+    await getIt<CompleteTopicUseCase>()(topicId, score: labScore.value);
     await loadRoadmap();
   } catch (e) {
     labSaveError.value = errorMessage(e);
