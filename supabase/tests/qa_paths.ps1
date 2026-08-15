@@ -162,6 +162,29 @@ foreach ($acct in $accounts) {
   }
   Write-Host "  CU5 teoria primero + densidad: $($dens -join ' | ')"
 
+  # --- CU5b: ninguna seccion explica dos veces seguidas -------------------
+  #
+  # La regla que arreglo la migracion 20260815000002: cada concepto va seguido
+  # de la practica que lo ejercita, no de otra explicacion. Se revisa aca y no
+  # solo en la migracion porque el contenido se edita despues de aplicarla, y
+  # una regresion en el orden no rompe nada visible: el lab sigue funcionando,
+  # solo deja de ensenar bien.
+  $seguidas = @()
+  foreach ($lf in $leaves) {
+    if (-not $byTopic.ContainsKey($lf.id)) { continue }
+    $secuencia = @($byTopic[$lf.id] | Sort-Object sort_order)
+    for ($i = 1; $i -lt $secuencia.Count; $i++) {
+      if ($secuencia[$i].challenge_type -eq 'theory' -and
+          $secuencia[$i - 1].challenge_type -eq 'theory') {
+        $seguidas += "$($lf.title) (pasos $i y $($i + 1))"
+      }
+    }
+  }
+  if ($seguidas.Count -gt 0) {
+    Fail $tr 'CU5b intercalado' "explica dos veces antes de pedir nada: $($seguidas -join '; ')"
+  }
+  Write-Host "  CU5b concepto y practica intercalados: $($leaves.Count) secciones sin teoria doble"
+
   # --- CU6: completar el primer topic y verificar el avance ---------------
   #
   # Reproduce lo que hace markTopicCompleted: upsert declarando el conflicto
