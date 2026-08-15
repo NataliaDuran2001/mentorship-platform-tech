@@ -59,6 +59,10 @@ class AppConstants {
   static const double radioSize = 24.0;
   static const double radioDotSize = 12.0;
 
+  /// Stroke width for the circular score gauges on the interview results
+  /// screen (per-question and overall).
+  static const double gaugeStrokeWidth = 6.0;
+
   /// Width below which the onboarding footer stacks instead of putting its
   /// three buttons in a row. It is not a screen breakpoint: it is the width of
   /// the footer itself, which on mobile ends up much narrower than the window.

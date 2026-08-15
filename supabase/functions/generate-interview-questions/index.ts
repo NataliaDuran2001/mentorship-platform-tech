@@ -13,6 +13,7 @@
 //   "trackSlug": "frontend" | "backend" | "infrastructure",
 //   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
+//   "desiredRole": string | null (free text, e.g. "Frontend Developer"),
 //   "count": number (optional, default 5)
 // }
 //
@@ -27,17 +28,23 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 const KIMI_MODEL = 'kimi-k3';
 
+const TOPIC_ANGLES: Record<string, string[]> = {
+  frontend: ['layout/CSS', 'state management', 'accessibility', 'API integration', 'performance', 'testing', 'debugging a bug report'],
+  backend: ['data modeling', 'API design', 'authentication/authorization', 'error handling', 'performance', 'testing', 'debugging a production issue'],
+  infrastructure: ['CI/CD', 'monitoring/alerting', 'containers', 'networking basics', 'cost/scaling trade-offs', 'incident response', 'infrastructure as code'],
+};
+
 const SYSTEM_PROMPT = `You are a friendly interview coach helping someone new to tech practice for a job interview.
 
-Your task is to write a set of interview-practice questions tailored to the student's track, level and goal.
+Your task is to write a set of interview-practice questions tailored to the student's track, level, goal, and — when given — the specific role they are practicing for.
 
 The questions must:
 1. Mix "behavioral" questions (about teamwork, problem-solving, motivation) and "technical" questions (about concepts from the student's track), roughly half and half.
 2. Match the student's experience level: simpler, foundational questions for a student/self-taught learner; more specific ones for someone with some professional experience.
-3. Be phrased in plain, beginner-friendly language. Avoid unexplained technical jargon; write as if explaining to someone new to tech.
+3. When a target role is given, write questions a real interviewer for that specific role would ask, not generic track questions.
 4. Be realistic questions a real interviewer would ask, not trick questions.
-5. Vary from one request to the next: do not always default to the most generic/obvious questions for a track.
-6. Speak in English.
+5. Vary from one request to the next — this matters a lot: do not always reach for the most common/textbook question for the track. Use the "topic angles" and "variety seed" given below to spread the technical questions across different subtopics instead of repeating the same one or two obvious questions every time.
+6. Use plain, simple English at an A2/B1 level: short sentences, common everyday words, no idioms, no unexplained technical jargon. Write as if explaining to someone new to tech.
 
 Format the output strictly as a JSON object:
 {
@@ -52,13 +59,21 @@ function buildUserPrompt(
   trackSlug: string,
   experienceLevelSlug: string | null,
   learningGoalSlug: string | null,
+  desiredRole: string | null,
   count: number,
 ): string {
+  const angles = TOPIC_ANGLES[trackSlug] ?? [];
+  const varietySeed = crypto.randomUUID();
+
   return `
 Student context:
 - Specialization Track: ${trackSlug}
 - Current Level: ${experienceLevelSlug ?? 'not specified'}
 - Focus/Goal: ${learningGoalSlug ?? 'not specified'}
+- Target role: ${desiredRole ?? 'not specified — use the track in general'}
+
+Topic angles to pick from for the technical questions (spread across different ones, do not use them all): ${angles.join(', ') || 'use your judgement for this track'}.
+Variety seed for this request: ${varietySeed} — treat this as a new, independent session. Do not default to the same questions you would normally give first; pick a different mix of angles than the most obvious one.
 
 Please write ${count} interview-practice questions for this student, following the rules.`.trim();
 }
@@ -98,6 +113,7 @@ serve(async (req: Request) => {
       trackSlug,
       experienceLevelSlug = null,
       learningGoalSlug = null,
+      desiredRole = null,
       count = 5,
     } = body;
 
@@ -126,7 +142,7 @@ serve(async (req: Request) => {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: buildUserPrompt(trackSlug, experienceLevelSlug, learningGoalSlug, count),
+            content: buildUserPrompt(trackSlug, experienceLevelSlug, learningGoalSlug, desiredRole, count),
           },
         ],
         response_format: { type: 'json_object' },

@@ -1,29 +1,32 @@
-// Atomic Design (Organism): Feedback for one answered interview-practice
-// question. Context-free: takes the feedback entity and a callback, reads no
-// signals.
+// Atomic Design (Organism): One question's graded feedback on the
+// interview-practice results screen. Context-free: takes the question text,
+// category and feedback entity, reads no signals. Static — the session is
+// already over by the time this renders, there is no "continue" action here
+// anymore, feedback for every question shows at once.
 
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/interview_answer_feedback.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
-import '../atoms/custom_button.dart';
+import '../../utils/interview_score_bands.dart';
 
 class InterviewFeedbackCard extends StatelessWidget {
   const InterviewFeedbackCard({
     super.key,
+    required this.questionPrompt,
+    required this.category,
     required this.feedback,
-    required this.onContinue,
-    required this.isLastQuestion,
   });
 
+  final String questionPrompt;
+  final String category;
   final InterviewAnswerFeedback feedback;
-  final VoidCallback onContinue;
-  final bool isLastQuestion;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final band = interviewScoreBand(feedback.score);
 
     return Container(
       padding: const EdgeInsets.all(AppConstants.spacingMd),
@@ -38,21 +41,24 @@ class InterviewFeedbackCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
-              const SizedBox(width: AppConstants.spacingSm),
               Expanded(
-                child: Text(
-                  'Coach feedback',
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _CategoryTag(category: category),
+                    const SizedBox(height: AppConstants.spacingSm),
+                    Text(questionPrompt, style: textTheme.titleMedium),
+                  ],
                 ),
               ),
-              _ScoreBadge(score: feedback.score),
+              const SizedBox(width: AppConstants.spacingMd),
+              ScoreGauge(score: feedback.score, size: AppConstants.iconSizeLg),
             ],
           ),
+          const SizedBox(height: AppConstants.spacingMd),
+          _BandBadge(band: band),
           const SizedBox(height: AppConstants.spacingSm),
           Text(feedback.summary, style: textTheme.bodyMedium),
           if (feedback.strengths.isNotEmpty) ...[
@@ -73,10 +79,44 @@ class InterviewFeedbackCard extends StatelessWidget {
               items: feedback.improvements,
             ),
           ],
-          const SizedBox(height: AppConstants.spacingLg),
-          CustomButton(
-            text: isLastQuestion ? 'Finish practice' : 'Next question',
-            onPressed: onContinue,
+        ],
+      ),
+    );
+  }
+}
+
+/// A circular score-out-of-100 gauge with the number in the middle, colored
+/// by [interviewScoreBand]. Shared by the per-question cards and the
+/// session-overall summary, so a 22/100 reads as a shape and a color, not
+/// just a bare number.
+class ScoreGauge extends StatelessWidget {
+  const ScoreGauge({super.key, required this.score, required this.size});
+
+  final int score;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final band = interviewScoreBand(score);
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: score / 100,
+            strokeWidth: AppConstants.gaugeStrokeWidth,
+            backgroundColor: AppColors.surfaceContainerHigh,
+            valueColor: AlwaysStoppedAnimation<Color>(band.color),
+          ),
+          Text(
+            '$score',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: band.color,
+                ),
           ),
         ],
       ),
@@ -84,10 +124,10 @@ class InterviewFeedbackCard extends StatelessWidget {
   }
 }
 
-class _ScoreBadge extends StatelessWidget {
-  const _ScoreBadge({required this.score});
+class _BandBadge extends StatelessWidget {
+  const _BandBadge({required this.band});
 
-  final int score;
+  final InterviewScoreBand band;
 
   @override
   Widget build(BuildContext context) {
@@ -97,13 +137,42 @@ class _ScoreBadge extends StatelessWidget {
         vertical: AppConstants.spacingXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.successContainer,
+        color: band.containerColor,
         borderRadius: BorderRadius.circular(AppConstants.radiusFull),
       ),
       child: Text(
-        '$score/100',
+        band.label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppColors.onSuccessContainer,
+              color: band.color,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _CategoryTag extends StatelessWidget {
+  const _CategoryTag({required this.category});
+
+  final String category;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = category == 'behavioral' ? 'About you' : 'About the job';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.spacingSm,
+        vertical: AppConstants.spacingXs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primaryFixed,
+        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.onPrimaryFixed,
               fontWeight: FontWeight.w600,
             ),
       ),

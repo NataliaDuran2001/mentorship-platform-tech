@@ -10,6 +10,8 @@ import '../../state/interview_actions.dart';
 import '../../state/interview_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../atoms/app_progress_bar.dart';
+import '../atoms/custom_button.dart';
 import '../organisms/interview_feedback_card.dart';
 import '../organisms/interview_question_card.dart';
 
@@ -41,16 +43,18 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
         ),
         title: const Text('Interview Practice'),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(4.0),
+          preferredSize: const Size.fromHeight(AppConstants.progressBarHeight),
           child: SignalBuilder(
             builder: (context) {
               final total = interviewQuestions.value.length;
               if (total == 0) return const SizedBox.shrink();
-              final progress = interviewCurrentIndex.value / total;
-              return LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
-                backgroundColor: AppColors.surfaceContainerHigh,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              final progress = interviewSessionCompleted.value
+                  ? 1.0
+                  : interviewAnswers.value.length / total;
+              return AppProgressBar(
+                value: progress,
+                semanticsLabel:
+                    'Answered ${interviewAnswers.value.length} of $total questions',
               );
             },
           ),
@@ -59,48 +63,53 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
       body: SignalBuilder(
         builder: (context) {
           if (interviewQuestionsLoading.value) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: AppConstants.spacingMd),
-                  Text('Getting your questions ready…'),
-                ],
-              ),
+            return const _CenteredMessage(
+              message: 'Getting your questions ready…',
+              child: CircularProgressIndicator(),
             );
           }
 
           final error = interviewQuestionsError.value;
           if (error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-                  const SizedBox(height: AppConstants.spacingMd),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.spacingLg,
-                    ),
-                    child: Text(
-                      error,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.spacingMd),
-                  const ElevatedButton(
-                    onPressed: startInterviewSession,
-                    child: Text('Try again'),
-                  ),
-                ],
+            return _CenteredMessage(
+              message: error,
+              action: const ElevatedButton(
+                onPressed: startInterviewSession,
+                child: Text('Try again'),
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: AppConstants.iconSizeLg,
               ),
             );
           }
 
           if (interviewSessionCompleted.value) {
             return const _CompletedView();
+          }
+
+          if (interviewSessionAnalyzing.value) {
+            return const _CenteredMessage(
+              message: 'Checking your answers…',
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          final sessionError = interviewSessionError.value;
+          if (sessionError != null) {
+            return _CenteredMessage(
+              message: sessionError,
+              action: const ElevatedButton(
+                onPressed: finishInterviewSession,
+                child: Text('Try again'),
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                color: AppColors.error,
+                size: AppConstants.iconSizeLg,
+              ),
+            );
           }
 
           final questions = interviewQuestions.value;
@@ -110,7 +119,6 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
           }
 
           final question = questions[index];
-          final feedback = interviewFeedback.value[question.id];
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -119,35 +127,52 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
                 constraints: const BoxConstraints(
                   maxWidth: AppConstants.maxReadableWidth,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    InterviewQuestionCard(
-                      question: question,
-                      questionNumber: index + 1,
-                      totalQuestions: questions.length,
-                      answerText: interviewAnswerDraft.value,
-                      onAnswerChanged: (value) =>
-                          interviewAnswerDraft.value = value,
-                      onSubmit: submitInterviewAnswer,
-                      isSubmitting: interviewAnswerLoading.value,
-                      errorMessage: interviewAnswerError.value,
-                      answerLocked: feedback != null,
-                    ),
-                    if (feedback != null) ...[
-                      const SizedBox(height: AppConstants.spacingLg),
-                      InterviewFeedbackCard(
-                        feedback: feedback,
-                        onContinue: nextInterviewQuestion,
-                        isLastQuestion: index == questions.length - 1,
-                      ),
-                    ],
-                  ],
+                child: InterviewQuestionCard(
+                  question: question,
+                  questionNumber: index + 1,
+                  totalQuestions: questions.length,
+                  answerText: interviewAnswerDraft.value,
+                  onAnswerChanged: (value) => interviewAnswerDraft.value = value,
+                  onSubmit: answerCurrentQuestion,
+                  isSubmitting: interviewSessionAnalyzing.value,
                 ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _CenteredMessage extends StatelessWidget {
+  const _CenteredMessage({required this.child, required this.message, this.action});
+
+  final Widget child;
+  final String message;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingLg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            child,
+            const SizedBox(height: AppConstants.spacingMd),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            if (action != null) ...[
+              const SizedBox(height: AppConstants.spacingMd),
+              action!,
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -162,43 +187,66 @@ class _CompletedView extends StatelessWidget {
 
     return SignalBuilder(
       builder: (context) {
-        final feedback = interviewFeedback.value.values.toList();
-        final averageScore = feedback.isEmpty
+        final questions = interviewQuestions.value;
+        final feedback = interviewFeedback.value;
+        final scores = feedback.values.map((f) => f.score).toList();
+        final averageScore = scores.isEmpty
             ? 0
-            : (feedback.map((f) => f.score).reduce((a, b) => a + b) /
-                    feedback.length)
-                .round();
+            : (scores.reduce((a, b) => a + b) / scores.length).round();
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.emoji_events,
-                size: AppConstants.iconSizeCelebration,
-                color: AppColors.tertiary,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppConstants.spacingLg),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppConstants.maxReadableWidth,
               ),
-              const SizedBox(height: AppConstants.spacingLg),
-              Text('Practice complete!', style: textTheme.headlineLarge),
-              const SizedBox(height: AppConstants.spacingSm),
-              Text(
-                'You answered every question. Average score: $averageScore/100. '
-                'Come back anytime for a new set of questions.',
-                style: textTheme.bodyLarge
-                    ?.copyWith(color: AppColors.onSurfaceVariant),
-                textAlign: TextAlign.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: ScoreGauge(
+                      score: averageScore,
+                      size: AppConstants.iconSizeCelebration,
+                    ),
+                  ),
+                  const SizedBox(height: AppConstants.spacingLg),
+                  Text(
+                    'Practice complete!',
+                    style: textTheme.headlineLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppConstants.spacingSm),
+                  Text(
+                    interviewOverallSummary.value ??
+                        'You answered every question. Come back anytime for a new set of questions.',
+                    style: textTheme.bodyLarge
+                        ?.copyWith(color: AppColors.onSurfaceVariant),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppConstants.spacingXl),
+                  for (final question in questions)
+                    if (feedback[question.id] case final questionFeedback?) ...[
+                      InterviewFeedbackCard(
+                        questionPrompt: question.prompt,
+                        category: question.category,
+                        feedback: questionFeedback,
+                      ),
+                      const SizedBox(height: AppConstants.spacingMd),
+                    ],
+                  const SizedBox(height: AppConstants.spacingMd),
+                  const CustomButton(
+                    text: 'Practice again',
+                    onPressed: startInterviewSession,
+                  ),
+                  const SizedBox(height: AppConstants.spacingSm),
+                  TextButton(
+                    onPressed: () => context.go('/interviews'),
+                    child: const Text('Back to Interviews'),
+                  ),
+                ],
               ),
-              const SizedBox(height: AppConstants.spacingXl),
-              const ElevatedButton(
-                onPressed: startInterviewSession,
-                child: Text('Practice again'),
-              ),
-              const SizedBox(height: AppConstants.spacingSm),
-              TextButton(
-                onPressed: () => context.go('/interviews'),
-                child: const Text('Back to Interviews'),
-              ),
-            ],
+            ),
           ),
         );
       },

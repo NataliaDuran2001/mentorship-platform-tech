@@ -10,12 +10,14 @@ import 'auth_state.dart';
 import 'interview_state.dart';
 
 /// Starts a fresh interview-practice session, personalized to the
-/// authenticated user's track, level and goal.
+/// authenticated user's track, level and goal, and to [interviewDesiredRole]
+/// when the student filled it in.
 Future<void> startInterviewSession() async {
   final profile = currentProfile.value;
   final track = profile?.track;
   if (profile == null || track == null) return;
 
+  final desiredRole = interviewDesiredRole.value.trim();
   resetInterviewState();
   interviewQuestionsLoading.value = true;
 
@@ -24,6 +26,7 @@ Future<void> startInterviewSession() async {
       track: track,
       experienceLevel: profile.experienceLevel,
       learningGoal: profile.learningGoal,
+      desiredRole: desiredRole.isEmpty ? null : desiredRole,
     );
     interviewQuestions.value = questions;
   } catch (e) {
@@ -33,47 +36,57 @@ Future<void> startInterviewSession() async {
   }
 }
 
-/// Sends the currently typed answer ([interviewAnswerDraft]) for the
-/// question at [interviewCurrentIndex] to Kimi3 and stores the resulting
-/// feedback.
-Future<void> submitInterviewAnswer() async {
-  final profile = currentProfile.value;
-  final track = profile?.track;
+/// Confirms the currently typed answer for the question at
+/// [interviewCurrentIndex], stores it locally, and moves on — no AI call
+/// happens here. On the last question it triggers [finishInterviewSession]
+/// instead of just advancing.
+void answerCurrentQuestion() {
   final answerText = interviewAnswerDraft.value.trim();
-  if (profile == null || track == null || answerText.isEmpty) return;
+  if (answerText.isEmpty) return;
 
   final index = interviewCurrentIndex.value;
   final questions = interviewQuestions.value;
   if (index < 0 || index >= questions.length) return;
   final question = questions[index];
 
-  interviewAnswerLoading.value = true;
-  interviewAnswerError.value = null;
+  interviewAnswers.value = {
+    ...interviewAnswers.value,
+    question.id: answerText,
+  };
+  interviewAnswerDraft.value = '';
+
+  if (index == questions.length - 1) {
+    finishInterviewSession();
+  } else {
+    interviewCurrentIndex.value = index + 1;
+  }
+}
+
+/// Sends every collected answer to Kimi3 in a single call and stores the
+/// resulting session feedback. Answers stay in [interviewAnswers] on
+/// failure so a retry doesn't lose what the student already wrote.
+Future<void> finishInterviewSession() async {
+  final profile = currentProfile.value;
+  final track = profile?.track;
+  if (profile == null || track == null) return;
+
+  interviewSessionAnalyzing.value = true;
+  interviewSessionError.value = null;
 
   try {
-    final feedback = await getIt<InterviewRepository>().analyzeAnswer(
-      question: question,
-      answerText: answerText,
+    final result = await getIt<InterviewRepository>().analyzeSession(
+      questions: interviewQuestions.value,
+      answers: interviewAnswers.value,
       track: track,
       experienceLevel: profile.experienceLevel,
     );
     interviewFeedback.value = {
-      ...interviewFeedback.value,
-      question.id: feedback,
+      for (final feedback in result.results) feedback.questionId: feedback,
     };
+    interviewOverallSummary.value = result.overallSummary;
   } catch (e) {
-    interviewAnswerError.value = errorMessage(e);
+    interviewSessionError.value = errorMessage(e);
   } finally {
-    interviewAnswerLoading.value = false;
+    interviewSessionAnalyzing.value = false;
   }
-}
-
-/// Moves on to the next question, if there is one, and clears the answer
-/// draft so it doesn't leak into the next question's field.
-void nextInterviewQuestion() {
-  final next = interviewCurrentIndex.value + 1;
-  interviewCurrentIndex.value = next < interviewQuestions.value.length
-      ? next
-      : interviewQuestions.value.length;
-  interviewAnswerDraft.value = '';
 }
