@@ -19,7 +19,6 @@ import '../../state/ai_state.dart';
 import '../../state/ai_actions.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
-import '../../utils/onboarding_labels.dart';
 import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
 
@@ -51,8 +50,6 @@ class DashboardPage extends StatelessWidget {
         }
 
         final profile = currentProfile.value;
-        final trackNameStr =
-            trackName(profile?.track) ?? tr('your focus area', 'tu área de enfoque');
         final textTheme = Theme.of(context).textTheme;
 
         return SingleChildScrollView(
@@ -85,8 +82,8 @@ class DashboardPage extends StatelessWidget {
               _buildAiBriefCard(context),
               const SizedBox(height: AppConstants.spacingLg),
 
-              // Progress Section & Next Action side-by-side or stacked
-              _buildProgressAndActionSection(context, trackNameStr),
+              // Numeric progress, then the single next action.
+              _buildProgressAndActionSection(context),
             ],
           ),
         );
@@ -235,8 +232,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressAndActionSection(BuildContext context, String trackName) {
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildProgressAndActionSection(BuildContext context) {
     final total = roadmapLeaves.value.length;
     final completed = roadmapCompletedCount.value;
     final progress = roadmapProgress.value;
@@ -252,145 +248,133 @@ class DashboardPage extends StatelessWidget {
       ),
     );
 
-    final width = MediaQuery.sizeOf(context).width;
-    final isCompact = width <= AppConstants.breakpointTablet;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (total > 0) ...[
+          _buildStatStrip(context, progress, completed, total),
+          const SizedBox(height: AppConstants.spacingLg),
+        ],
+        _buildNextActionCard(context, nextTopic),
+      ],
+    );
+  }
 
-    final metricsCard = Card(
-      elevation: 0,
-      color: AppColors.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+  /// The numeric read of the path — separate from the AI brief above (which
+  /// stays a plain point of view, no figures) and no longer its own bordered
+  /// card either (that was the same number said twice). Just a slim,
+  /// unboxed line.
+  Widget _buildStatStrip(
+    BuildContext context,
+    double progress,
+    int completed,
+    int total,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        Text(
+          '${(progress * 100).round()}%',
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: AppConstants.spacingSm),
+        Text(
+          tr('· $completed of $total topics', '· $completed de $total temas'),
+          style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
+        ),
+        const SizedBox(width: AppConstants.spacingMd),
+        Expanded(child: AppProgressBar(value: progress)),
+      ],
+    );
+  }
+
+  /// The one action that matters right now — the only primary-colored,
+  /// full-width block on the page, so it doesn't compete in size with a
+  /// purely informational card the way it used to.
+  Widget _buildNextActionCard(BuildContext context, TopicNode nextTopic) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.spacingLg),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppConstants.radiusLg),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingLg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            tr('NEXT UP', 'LO QUE SIGUE'),
+            style: textTheme.labelMedium?.copyWith(
+              color: AppColors.onPrimary.withValues(alpha: 0.85),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingSm),
+          if (nextTopic.title.isNotEmpty) ...[
             Text(
-              tr('Your Track Progress', 'El progreso de tu ruta'),
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              nextTopic.title,
+              style: textTheme.headlineSmall?.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (nextTopic.description != null) ...[
+              const SizedBox(height: AppConstants.spacingXs),
+              Text(
+                nextTopic.description!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onPrimary.withValues(alpha: 0.75),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppConstants.spacingLg),
+            Material(
+              color: AppColors.onPrimary.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                onTap: () => context.go('/lab/${nextTopic.id}'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.spacingLg,
+                    vertical: AppConstants.spacingSm + 2,
+                  ),
+                  child: Text(
+                    tr('Start Lab Challenge ▸', 'Comenzar el reto ▸'),
+                    style: textTheme.labelLarge?.copyWith(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ] else ...[
+            Text(
+              tr('All caught up!', '¡Ya estás al día!'),
+              style: textTheme.headlineSmall?.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: AppConstants.spacingXs),
             Text(
-              trackName,
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: AppConstants.spacingLg),
-            if (total > 0) ...[
-              AppProgressBar(value: progress),
-              const SizedBox(height: AppConstants.spacingMd),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    tr(
-                      '${(progress * 100).round()}% Completed',
-                      '${(progress * 100).round()}% completado',
-                    ),
-                    style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    tr('$completed of $total topics', '$completed de $total temas'),
-                    style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
-                  ),
-                ],
+              tr(
+                'You have completed all available topics on your current path.',
+                'Completaste todos los temas disponibles en tu ruta actual.',
               ),
-            ] else
-              Text(
-                tr('No progress to track yet.', 'Todavía no hay progreso que mostrar.'),
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
-              ),
-          ],
-        ),
-      ),
-    );
-
-    final nextActionCard = Card(
-      elevation: 0,
-      color: AppColors.primary.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppConstants.spacingLg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              tr('Next Up', 'Lo que sigue'),
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.onPrimary.withValues(alpha: 0.75),
               ),
             ),
-            const SizedBox(height: AppConstants.spacingMd),
-            if (nextTopic.title.isNotEmpty) ...[
-              Text(
-                nextTopic.title,
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: AppConstants.spacingSm),
-              if (nextTopic.description != null)
-                Text(
-                  nextTopic.description!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
-                ),
-              const SizedBox(height: AppConstants.spacingLg),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Direct the user to the lab for the next topic
-                  context.go('/lab/${nextTopic.id}');
-                },
-                icon: const Icon(Icons.play_circle_outline),
-                label: Text(tr('Start Lab Challenge', 'Comenzar el reto del laboratorio')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
-                  ),
-                ),
-              ),
-            ] else ...[
-              Text(
-                tr('All caught up!', '¡Ya estás al día!'),
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: AppConstants.spacingSm),
-              Text(
-                tr(
-                  'You have completed all available topics on your current path.',
-                  'Completaste todos los temas disponibles en tu ruta actual.',
-                ),
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
-              ),
-            ],
           ],
-        ),
-      ),
-    );
-
-    if (isCompact) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          metricsCard,
-          const SizedBox(height: AppConstants.spacingMd),
-          nextActionCard,
         ],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: metricsCard),
-        const SizedBox(width: AppConstants.spacingMd),
-        Expanded(child: nextActionCard),
-      ],
+      ),
     );
   }
 }

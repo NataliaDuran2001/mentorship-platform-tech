@@ -136,6 +136,22 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     });
   }
 
+  @override
+  Future<UserProfile> updateLearningGoal({required LearningGoal goal}) async {
+    final id = _requiredUserId;
+
+    return _translate(() async {
+      final row = await _client
+          .from(_profilesTable)
+          .update(<String, dynamic>{'learning_goal': goal.slug})
+          .eq('id', id)
+          .select(UserModel.columns)
+          .single();
+
+      return UserModel.fromJson(row).toEntity();
+    });
+  }
+
   // ---------------------------------------------------------------------------
 
   String? get _userId => _client.auth.currentUser?.id;

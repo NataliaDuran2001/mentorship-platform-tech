@@ -171,6 +171,11 @@ class FakeOnboardingRepository implements OnboardingRepository {
   Future<UserProfile> updateLanguage({required AppLanguage language}) async {
     throw UnimplementedError();
   }
+
+  @override
+  Future<UserProfile> updateLearningGoal({required LearningGoal goal}) async {
+    throw UnimplementedError();
+  }
 }
 
 // ---------------------------------------------------------------------------

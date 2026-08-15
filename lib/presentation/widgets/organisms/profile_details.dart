@@ -83,23 +83,6 @@ class ProfileDetails extends StatelessWidget {
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.tonal(
-                onPressed: null, // Disabled in MVP
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-                  disabledForegroundColor: AppColors.onPrimary.withValues(alpha: 0.8),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: Text(tr('Edit profile', 'Editar perfil')),
-              ),
-            ),
           ],
         ),
       ),

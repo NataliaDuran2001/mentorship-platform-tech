@@ -62,6 +62,11 @@ class SpyOnboardingRepository implements OnboardingRepository {
   Future<UserProfile> updateLanguage({required AppLanguage language}) async {
     return UserProfile(id: 'u1', email: 'ana@example.com', language: language);
   }
+
+  @override
+  Future<UserProfile> updateLearningGoal({required LearningGoal goal}) async {
+    return UserProfile(id: 'u1', email: 'ana@example.com', learningGoal: goal);
+  }
 }
 
 /// AiRepository stub for the quiz test: always throws so the fake use case

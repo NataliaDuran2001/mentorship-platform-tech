@@ -43,4 +43,9 @@ abstract class OnboardingRepository {
   /// Updates the Settings language for the authenticated user and returns
   /// the resulting profile.
   Future<UserProfile> updateLanguage({required AppLanguage language});
+
+  /// Updates the learning goal from the Profile page (as opposed to
+  /// [completeOnboarding], which sets it during the flow) and returns the
+  /// resulting profile.
+  Future<UserProfile> updateLearningGoal({required LearningGoal goal});
 }
