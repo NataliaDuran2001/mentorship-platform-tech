@@ -1,6 +1,7 @@
 // Domain layer: Contract (interface) of the onboarding repository.
 // It defines WHAT can be done, not HOW. The implementation lives in `data`.
 
+import '../entities/app_language.dart';
 import '../entities/experience_level.dart';
 import '../entities/learning_goal.dart';
 import '../entities/onboarding_answer.dart';
@@ -38,4 +39,8 @@ abstract class OnboardingRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
   });
+
+  /// Updates the Settings language for the authenticated user and returns
+  /// the resulting profile.
+  Future<UserProfile> updateLanguage({required AppLanguage language});
 }

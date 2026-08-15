@@ -21,6 +21,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 import '../../state/auth_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 import '../organisms/auth_layout.dart';
 
@@ -39,11 +40,19 @@ String? _linkErrorMessage() {
   if (code == null || code.isEmpty) return null;
 
   if (code.contains('expired')) {
-    return 'That confirmation link expired. Sign up again or ask for a new '
-        'email from the sign-in screen.';
+    return tr(
+      'That confirmation link expired. Sign up again or ask for a new '
+          'email from the sign-in screen.',
+      'Ese enlace de confirmación expiró. Regístrate de nuevo o pide un '
+          'correo nuevo desde la pantalla de inicio de sesión.',
+    );
   }
-  return 'We could not confirm your account with that link. It may have been '
-      'used already. Try signing in.';
+  return tr(
+    'We could not confirm your account with that link. It may have been '
+        'used already. Try signing in.',
+    'No pudimos confirmar tu cuenta con ese enlace. Es posible que ya se '
+        'haya usado. Intenta iniciar sesión.',
+  );
 }
 
 class AuthConfirmedPage extends StatelessWidget {
@@ -58,11 +67,11 @@ class AuthConfirmedPage extends StatelessWidget {
 
         if (error != null) {
           return _Outcome(
-            title: 'Something went wrong',
+            title: tr('Something went wrong', 'Algo salió mal'),
             icon: Icons.error_outline,
             iconColor: AppColors.error,
             message: error,
-            actionLabel: 'Go to sign in',
+            actionLabel: tr('Go to sign in', 'Ir a iniciar sesión'),
             onAction: () {
               clearAuthForms();
               context.go('/login');
@@ -71,14 +80,24 @@ class AuthConfirmedPage extends StatelessWidget {
         }
 
         return _Outcome(
-          title: 'Email confirmed',
+          title: tr('Email confirmed', 'Correo confirmado'),
           icon: Icons.mark_email_read_outlined,
           iconColor: AppColors.primary,
           message: hasSession
-              ? 'Your account is ready. Continue to pick your learning path.'
-              : 'Your account is ready. Sign in and we pick up where you '
-                  'left off.',
-          actionLabel: hasSession ? 'Continue' : 'Sign in',
+              ? tr(
+                  'Your account is ready. Continue to pick your learning path.',
+                  'Tu cuenta está lista. Continúa para elegir tu ruta de '
+                      'aprendizaje.',
+                )
+              : tr(
+                  'Your account is ready. Sign in and we pick up where you '
+                      'left off.',
+                  'Tu cuenta está lista. Inicia sesión y seguimos justo '
+                      'donde lo dejaste.',
+                ),
+          actionLabel: hasSession
+              ? tr('Continue', 'Continuar')
+              : tr('Sign in', 'Iniciar sesión'),
           onAction: () {
             if (hasSession) {
               // Going to the root lets the route guards decide between the

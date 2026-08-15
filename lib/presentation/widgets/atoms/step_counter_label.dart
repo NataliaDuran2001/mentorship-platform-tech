@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/app_colors.dart';
+import '../../utils/translate.dart';
 
 class StepCounterLabel extends StatelessWidget {
   const StepCounterLabel({
@@ -27,7 +28,10 @@ class StepCounterLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Step $currentStep of $totalSteps'.toUpperCase(),
+      tr(
+        'Step $currentStep of $totalSteps',
+        'Paso $currentStep de $totalSteps',
+      ).toUpperCase(),
       style: Theme.of(context).textTheme.labelMedium?.copyWith(
             color: AppColors.onSurfaceVariant,
             letterSpacing: _tracking,

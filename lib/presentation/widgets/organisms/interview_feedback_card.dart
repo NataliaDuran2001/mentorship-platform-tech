@@ -10,6 +10,7 @@ import '../../../domain/entities/interview_answer_feedback.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/interview_score_bands.dart';
+import '../../utils/translate.dart';
 
 class InterviewFeedbackCard extends StatelessWidget {
   const InterviewFeedbackCard({
@@ -66,7 +67,7 @@ class InterviewFeedbackCard extends StatelessWidget {
             _FeedbackList(
               icon: Icons.check_circle_outline,
               iconColor: AppColors.success,
-              title: 'What went well',
+              title: tr('What went well', 'Lo que hiciste bien'),
               items: feedback.strengths,
             ),
           ],
@@ -75,7 +76,7 @@ class InterviewFeedbackCard extends StatelessWidget {
             _FeedbackList(
               icon: Icons.lightbulb_outline,
               iconColor: AppColors.tertiary,
-              title: 'Try this next time',
+              title: tr('Try this next time', 'Para la próxima'),
               items: feedback.improvements,
             ),
           ],
@@ -158,7 +159,9 @@ class _CategoryTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = category == 'behavioral' ? 'About you' : 'About the job';
+    final label = category == 'behavioral'
+        ? tr('About you', 'Sobre ti')
+        : tr('About the job', 'Sobre el puesto');
 
     return Container(
       padding: const EdgeInsets.symmetric(

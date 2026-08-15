@@ -17,6 +17,7 @@ import '../../../domain/entities/roadmap_track.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
+import '../../utils/translate.dart';
 import '../molecules/goal_radio_row.dart';
 import '../molecules/option_card_tile.dart';
 import '../molecules/track_card.dart';
@@ -201,13 +202,17 @@ class OnboardingSummary extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.spacingLg),
         Text(
-          "You're all set!",
+          tr("You're all set!", '¡Ya está todo listo!'),
           style: textTheme.headlineMedium,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppConstants.spacingSm),
         Text(
-          'Your profile is ready. You can jump into your learning path now.',
+          tr(
+            'Your profile is ready. You can jump into your learning path now.',
+            'Tu perfil está listo. Ya puedes empezar tu camino de '
+                'aprendizaje.',
+          ),
           style: textTheme.bodyMedium?.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -228,15 +233,25 @@ class OnboardingSummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Your profile summary'.toUpperCase(),
+                tr('Your profile summary', 'Resumen de tu perfil')
+                    .toUpperCase(),
                 style: textTheme.labelMedium?.copyWith(
                   color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: AppConstants.spacingMd),
-              _SummaryRow(label: 'Your level', value: levelName(level)),
-              _SummaryRow(label: 'Your focus', value: trackName(track)),
-              _SummaryRow(label: 'Your goal', value: goalName(goal)),
+              _SummaryRow(
+                label: tr('Your level', 'Tu nivel'),
+                value: levelName(level),
+              ),
+              _SummaryRow(
+                label: tr('Your focus', 'Tu enfoque'),
+                value: trackName(track),
+              ),
+              _SummaryRow(
+                label: tr('Your goal', 'Tu meta'),
+                value: goalName(goal),
+              ),
             ],
           ),
         ),
@@ -271,7 +286,7 @@ class _SummaryRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              value ?? 'Not set',
+              value ?? tr('Not set', 'Sin definir'),
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: value == null

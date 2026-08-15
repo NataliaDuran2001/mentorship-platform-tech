@@ -7,6 +7,7 @@
 // All methods return the rich domain entity directly: the data layer is
 // responsible for mapping the raw JSON from the Edge Function to these types.
 
+import '../entities/app_language.dart';
 import '../entities/onboarding_answer.dart';
 import '../entities/experience_level.dart';
 import '../entities/learning_goal.dart';
@@ -14,7 +15,8 @@ import '../entities/track_recommendation.dart';
 
 abstract interface class AiRepository {
   /// Sends the user's onboarding answers to Kimi3 and returns a full
-  /// track recommendation with natural-language reasoning.
+  /// track recommendation with natural-language reasoning, written in
+  /// [language].
   ///
   /// Throws a [AiFailure] if the Edge Function is unreachable or the model
   /// returns an unusable response.
@@ -25,12 +27,16 @@ abstract interface class AiRepository {
     required List<OnboardingAnswer> answers,
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    required AppLanguage language,
   });
 
-  /// Generates a personalized daily brief for the dashboard.
+  /// Generates a personalized daily brief for the dashboard, written in
+  /// [language].
   ///
   /// The result is cached for 24 hours in `ai_profile_insights` to avoid
-  /// calling the LLM on every dashboard navigation.
+  /// calling the LLM on every dashboard navigation. Cached separately per
+  /// language, so switching Settings language does not surface a stale
+  /// brief in the old one.
   Future<String> generateDailyBrief({
     required String userId,
     required String trackSlug,
@@ -38,9 +44,11 @@ abstract interface class AiRepository {
     required String? learningGoalSlug,
     required int completedTopics,
     required int totalTopics,
+    required AppLanguage language,
   });
 
-  /// Generates a Socratic hint for a lab challenge without revealing the answer.
+  /// Generates a Socratic hint for a lab challenge without revealing the
+  /// answer, written in [language].
   ///
   /// [attemptCount] controls the verbosity of the hint: after 3 failed
   /// attempts the hint becomes more explicit, but still never gives the answer.
@@ -49,14 +57,17 @@ abstract interface class AiRepository {
     required String challengeType,
     required int attemptCount,
     required String? userContext,
+    required AppLanguage language,
   });
 
   /// Generates a short motivational coaching message for the roadmap header,
-  /// personalized to the user's current progress and goal.
+  /// personalized to the user's current progress and goal, written in
+  /// [language].
   Future<String> generateRoadmapCoachMessage({
     required String trackSlug,
     required String? learningGoalSlug,
     required double progressFraction,
     required String? nextTopicTitle,
+    required AppLanguage language,
   });
 }

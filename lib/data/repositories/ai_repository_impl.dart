@@ -12,6 +12,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/onboarding_answer.dart';
@@ -34,6 +35,7 @@ class AiRepositoryImpl implements AiRepository {
     required List<OnboardingAnswer> answers,
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    required AppLanguage language,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -44,6 +46,7 @@ class AiRepositoryImpl implements AiRepository {
               .toList(),
           'experienceLevel': experienceLevel?.slug,
           'learningGoal': learningGoal?.slug,
+          'language': language.slug,
         },
       );
 
@@ -118,6 +121,7 @@ class AiRepositoryImpl implements AiRepository {
     required String? learningGoalSlug,
     required int completedTopics,
     required int totalTopics,
+    required AppLanguage language,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -128,6 +132,7 @@ class AiRepositoryImpl implements AiRepository {
           'learningGoalSlug': learningGoalSlug,
           'completedTopics': completedTopics,
           'totalTopics': totalTopics,
+          'language': language.slug,
         },
       );
 
@@ -164,6 +169,7 @@ class AiRepositoryImpl implements AiRepository {
     required String challengeType,
     required int attemptCount,
     required String? userContext,
+    required AppLanguage language,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -173,6 +179,7 @@ class AiRepositoryImpl implements AiRepository {
           'challengeType': challengeType,
           'attemptCount': attemptCount,
           'userContext': userContext,
+          'language': language.slug,
         },
       );
 
@@ -209,6 +216,7 @@ class AiRepositoryImpl implements AiRepository {
     required String? learningGoalSlug,
     required double progressFraction,
     required String? nextTopicTitle,
+    required AppLanguage language,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -218,6 +226,7 @@ class AiRepositoryImpl implements AiRepository {
           'learningGoalSlug': learningGoalSlug,
           'progressPercent': (progressFraction * 100).round(),
           'nextTopicTitle': nextTopicTitle,
+          'language': language.slug,
         },
       );
 

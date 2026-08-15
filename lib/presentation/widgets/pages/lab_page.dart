@@ -9,6 +9,7 @@ import '../../state/ai_state.dart';
 import '../../state/ai_actions.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../organisms/lab_fill_blank.dart';
 import '../organisms/lab_multiple_choice.dart';
 import '../organisms/lab_order_logic.dart';
@@ -35,15 +36,17 @@ class _LabPageState extends State<LabPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SignalBuilder(
+      builder: (context) {
+        return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.go('/path'),
-          tooltip: 'Exit Lab',
+          tooltip: tr('Exit Lab', 'Salir del laboratorio'),
         ),
-        title: const Text('Interactive Lab'),
+        title: Text(tr('Interactive Lab', 'Laboratorio interactivo')),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4.0),
           child: SignalBuilder(
@@ -76,7 +79,7 @@ class _LabPageState extends State<LabPage> {
                   const SizedBox(height: AppConstants.spacingMd),
                   ElevatedButton(
                     onPressed: () => loadLabs(widget.topicId),
-                    child: const Text('Retry'),
+                    child: Text(tr('Retry', 'Reintentar')),
                   ),
                 ],
               ),
@@ -89,7 +92,9 @@ class _LabPageState extends State<LabPage> {
 
           final challenge = labCurrentChallenge.value;
           if (challenge == null) {
-            return const Center(child: Text('No challenges available.'));
+            return Center(
+              child: Text(tr('No challenges available.', 'No hay retos disponibles.')),
+            );
           }
 
           return Column(
@@ -122,6 +127,8 @@ class _LabPageState extends State<LabPage> {
           );
         },
       ),
+        );
+      },
     );
   }
 
@@ -135,7 +142,7 @@ class _LabPageState extends State<LabPage> {
     } else if (challenge is OrderLogicChallenge) {
       return LabOrderLogic(challenge: challenge);
     }
-    return const Text('Unknown challenge type');
+    return Text(tr('Unknown challenge type', 'Tipo de reto desconocido'));
   }
 }
 
@@ -170,7 +177,7 @@ class _BottomValidationBar extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: nextLabChallenge,
                     icon: const Icon(Icons.check),
-                    label: const Text('Got it'),
+                    label: Text(tr('Got it', 'Entendido')),
                   ),
                 ],
               ),
@@ -201,12 +208,12 @@ class _BottomValidationBar extends StatelessWidget {
                   backgroundColor: AppColors.success,
                   foregroundColor: AppColors.onSuccess,
                 ),
-                child: const Text('Continue'),
+                child: Text(tr('Continue', 'Continuar')),
               )
             else
               ElevatedButton(
                 onPressed: hasSelection ? submitLabAnswer : null,
-                child: const Text('Check Answer'),
+                child: Text(tr('Check Answer', 'Verificar respuesta')),
               ),
           ],
         ),
@@ -236,7 +243,7 @@ class _FeedbackMessage extends StatelessWidget {
           const SizedBox(width: AppConstants.spacingSm),
           Expanded(
             child: Text(
-              'Excellent! That is correct.',
+              tr('Excellent! That is correct.', '¡Excelente! Es correcto.'),
               style: textTheme.bodyLarge?.copyWith(
                 color: AppColors.onSuccessContainer,
                 fontWeight: FontWeight.w600,
@@ -253,7 +260,7 @@ class _FeedbackMessage extends StatelessWidget {
           const SizedBox(width: AppConstants.spacingSm),
           Expanded(
             child: Text(
-              'Not quite right. Try again.',
+              tr('Not quite right. Try again.', 'No es del todo correcto. Intenta de nuevo.'),
               style: textTheme.bodyLarge?.copyWith(
                 color: AppColors.onErrorContainer,
                 fontWeight: FontWeight.w600,
@@ -284,10 +291,13 @@ class _CompletedView extends StatelessWidget {
                 color: AppColors.tertiary,
               ),
               const SizedBox(height: AppConstants.spacingLg),
-              Text('Lab Completed!', style: textTheme.headlineLarge),
+              Text(tr('Lab Completed!', '¡Laboratorio completado!'), style: textTheme.headlineLarge),
               const SizedBox(height: AppConstants.spacingMd),
               Text(
-                'You finished every challenge here. Nice work!',
+                tr(
+                  'You finished every challenge here. Nice work!',
+                  '¡Terminaste todos los retos de aquí. Buen trabajo!',
+                ),
                 style: textTheme.bodyLarge
                     ?.copyWith(color: AppColors.onSurfaceVariant),
               ),
@@ -300,33 +310,35 @@ class _CompletedView extends StatelessWidget {
                 const CircularProgressIndicator(),
                 const SizedBox(height: AppConstants.spacingMd),
                 Text(
-                  'Saving your progress…',
+                  tr('Saving your progress…', 'Guardando tu progreso…'),
                   style: textTheme.bodyMedium
                       ?.copyWith(color: AppColors.onSurfaceVariant),
                 ),
               ] else if (saveError != null) ...[
                 const SizedBox(height: AppConstants.spacingLg),
                 Text(
-                  "$saveError Your answers are safe, but the topic wasn't "
-                  'marked as completed.',
+                  '$saveError ${tr(
+                    "Your answers are safe, but the topic wasn't marked as completed.",
+                    'Tus respuestas están a salvo, pero el tema no quedó marcado como completado.',
+                  )}',
                   style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppConstants.spacingMd),
-                const ElevatedButton(
+                ElevatedButton(
                   onPressed: completeCurrentTopic,
-                  child: Text('Retry'),
+                  child: Text(tr('Retry', 'Reintentar')),
                 ),
                 const SizedBox(height: AppConstants.spacingSm),
                 TextButton(
                   onPressed: () => context.go('/path'),
-                  child: const Text('Return to my path'),
+                  child: Text(tr('Return to my path', 'Volver a mi camino')),
                 ),
               ] else ...[
                 const SizedBox(height: AppConstants.spacingXl),
                 ElevatedButton(
                   onPressed: () => context.go('/path'),
-                  child: const Text('Return to my path'),
+                  child: Text(tr('Return to my path', 'Volver a mi camino')),
                 ),
               ],
             ],
@@ -371,7 +383,7 @@ class _AiHintSection extends StatelessWidget {
                     const Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
-                      'Need a Hint?',
+                      tr('Need a Hint?', '¿Necesitas una pista?'),
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -395,14 +407,16 @@ class _AiHintSection extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.lightbulb_outline, size: 16),
-                    label: Text(hintsList.isEmpty ? 'Get Hint' : 'Get Another Hint'),
+                    label: Text(hintsList.isEmpty
+                        ? tr('Get Hint', 'Obtener pista')
+                        : tr('Get Another Hint', 'Obtener otra pista')),
                   ),
               ],
             ),
             if (labHintError.value != null) ...[
               const SizedBox(height: AppConstants.spacingSm),
               Text(
-                'Could not load hint. Try again.',
+                tr('Could not load hint. Try again.', 'No pudimos cargar la pista. Intenta de nuevo.'),
                 style: textTheme.bodySmall?.copyWith(color: AppColors.error),
               ),
             ],

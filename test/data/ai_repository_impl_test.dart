@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:aspire_app/data/repositories/ai_repository_impl.dart';
+import 'package:aspire_app/domain/entities/app_language.dart';
 import 'package:aspire_app/domain/entities/experience_level.dart';
 import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/onboarding_answer.dart';
@@ -89,11 +90,13 @@ void main() {
         answers: answers,
         experienceLevel: ExperienceLevel.student,
         learningGoal: LearningGoal.firstJob,
+        language: AppLanguage.es,
       );
 
       expect(fakeFunctions.lastFunctionName, 'analyze-profile');
       expect(fakeFunctions.lastBody?['experienceLevel'], 'student');
       expect(fakeFunctions.lastBody?['learningGoal'], 'first_job');
+      expect(fakeFunctions.lastBody?['language'], 'es');
       expect(result.track, RoadmapTrack.frontend);
       expect(result.reasoning, 'You enjoy visual design and UI.');
       expect(result.confidence, 0.9);
@@ -107,7 +110,7 @@ void main() {
       fakeFunctions.responseData = {'error': 'AI service unavailable'};
 
       expect(
-        () => repository.analyzeProfile(answers: []),
+        () => repository.analyzeProfile(answers: [], language: AppLanguage.en),
         throwsA(
           isA<AiFailure>().having(
             (f) => f.kind,
@@ -125,7 +128,7 @@ void main() {
       };
 
       expect(
-        () => repository.analyzeProfile(answers: []),
+        () => repository.analyzeProfile(answers: [], language: AppLanguage.en),
         throwsA(
           isA<AiFailure>().having(
             (f) => f.kind,
@@ -151,6 +154,7 @@ void main() {
         learningGoalSlug: 'first_job',
         completedTopics: 1,
         totalTopics: 3,
+        language: AppLanguage.en,
       );
 
       expect(fakeFunctions.lastFunctionName, 'daily-brief');
@@ -169,6 +173,7 @@ void main() {
           learningGoalSlug: null,
           completedTopics: 0,
           totalTopics: 3,
+          language: AppLanguage.en,
         ),
         throwsA(
           isA<AiFailure>().having(
@@ -193,6 +198,7 @@ void main() {
         challengeType: 'multiple_choice',
         attemptCount: 2,
         userContext: null,
+        language: AppLanguage.en,
       );
 
       expect(fakeFunctions.lastFunctionName, 'lab-hint');
@@ -212,6 +218,7 @@ void main() {
         learningGoalSlug: 'first_job',
         progressFraction: 0.33,
         nextTopicTitle: 'CSS Basics',
+        language: AppLanguage.en,
       );
 
       expect(fakeFunctions.lastFunctionName, 'roadmap-coach');

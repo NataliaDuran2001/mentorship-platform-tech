@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/interview_question.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
 import '../atoms/step_counter_label.dart';
@@ -62,7 +63,10 @@ class InterviewQuestionCard extends StatelessWidget {
         const SizedBox(height: AppConstants.spacingLg),
         CustomInput(
           key: ValueKey(question.id),
-          hintText: 'Write your answer here. There is no wrong way to start.',
+          hintText: tr(
+            'Write your answer here. There is no wrong way to start.',
+            'Escribe tu respuesta aquí. No hay una forma incorrecta de empezar.',
+          ),
           maxLines: 6,
           enabled: !isSubmitting,
           onChanged: onAnswerChanged,
@@ -77,8 +81,10 @@ class InterviewQuestionCard extends StatelessWidget {
         const SizedBox(height: AppConstants.spacingMd),
         CustomButton(
           text: isSubmitting
-              ? 'Checking your answers…'
-              : (_isLastQuestion ? 'Finish practice' : 'Next question'),
+              ? tr('Checking your answers…', 'Revisando tus respuestas…')
+              : (_isLastQuestion
+                  ? tr('Finish practice', 'Terminar práctica')
+                  : tr('Next question', 'Siguiente pregunta')),
           onPressed:
               (isSubmitting || answerText.trim().isEmpty) ? null : onSubmit,
         ),
@@ -94,7 +100,9 @@ class _CategoryTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = category == 'behavioral' ? 'About you' : 'About the job';
+    final label = category == 'behavioral'
+        ? tr('About you', 'Sobre ti')
+        : tr('About the job', 'Sobre el puesto');
 
     return Container(
       padding: const EdgeInsets.symmetric(

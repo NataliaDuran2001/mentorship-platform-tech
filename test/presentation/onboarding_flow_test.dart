@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aspire_app/core/di/injection.dart';
+import 'package:aspire_app/domain/entities/app_language.dart';
 import 'package:aspire_app/domain/entities/experience_level.dart';
 import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/onboarding_answer.dart';
@@ -65,6 +66,11 @@ class SpyOnboardingRepository implements OnboardingRepository {
 
   @override
   Future<void> saveAnswer(OnboardingAnswer answer) async {}
+
+  @override
+  Future<UserProfile> updateLanguage({required AppLanguage language}) async {
+    return UserProfile(id: 'u1', email: 'ana@example.com', language: language);
+  }
 }
 
 /// Mounts the page on its own, with the default theme and a wide window.

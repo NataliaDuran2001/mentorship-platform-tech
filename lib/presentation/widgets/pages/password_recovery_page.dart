@@ -24,6 +24,7 @@ import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
 import '../organisms/auth_layout.dart';
@@ -60,13 +61,18 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
 
     // Client-side checks mirror the sign-up rules; the backend re-validates.
     if (newPassword.length < 6) {
-      passwordUpdateError.value =
-          'That password is too weak. Use at least 6 characters.';
+      passwordUpdateError.value = tr(
+        'That password is too weak. Use at least 6 characters.',
+        'Esa contraseña es muy débil. Usa al menos 6 caracteres.',
+      );
       return;
     }
     if (newPassword != confirm) {
-      passwordUpdateError.value = "The passwords don't match. Check them "
-          'and try again.';
+      passwordUpdateError.value = tr(
+        "The passwords don't match. Check them "
+            'and try again.',
+        'Las contraseñas no coinciden. Revísalas e inténtalo de nuevo.',
+      );
       return;
     }
     submitRecoveredPassword(newPassword);
@@ -78,17 +84,21 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
       builder: (context) {
         if (passwordUpdateDone.value) {
           return AuthLayout(
-            title: 'Password updated',
+            title: tr('Password updated', 'Contraseña actualizada'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const AuthMessage(
+                AuthMessage(
                   tone: AuthMessageTone.info,
-                  message: 'Your new password is set and you are signed in.',
+                  message: tr(
+                    'Your new password is set and you are signed in.',
+                    'Tu nueva contraseña quedó configurada y ya iniciaste '
+                        'sesión.',
+                  ),
                 ),
                 const SizedBox(height: AppConstants.defaultPadding * 1.5),
                 CustomButton(
-                  text: 'Go to my path',
+                  text: tr('Go to my path', 'Ir a mi ruta'),
                   onPressed: () {
                     resetPasswordFlows();
                     context.go('/path');
@@ -106,7 +116,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
             passwordUpdateErrorKind.value == AuthFailureKind.sessionExpired;
 
         return AuthLayout(
-          title: 'Set a new password',
+          title: tr('Set a new password', 'Crea una nueva contraseña'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -116,7 +126,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
               ],
               if (expired)
                 CustomButton(
-                  text: 'Request a new link',
+                  text: tr('Request a new link', 'Solicitar un enlace nuevo'),
                   onPressed: () {
                     resetPasswordFlows();
                     context.go('/forgot-password');
@@ -124,7 +134,11 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 )
               else ...[
                 Text(
-                  'Choose the password you will sign in with from now on.',
+                  tr(
+                    'Choose the password you will sign in with from now on.',
+                    'Elige la contraseña con la que iniciarás sesión de '
+                        'ahora en adelante.',
+                  ),
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
@@ -132,7 +146,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 ),
                 const SizedBox(height: AppConstants.defaultPadding * 1.5),
                 CustomInput(
-                  hintText: 'New password',
+                  hintText: tr('New password', 'Nueva contraseña'),
                   prefixIcon: Icons.lock,
                   obscureText: !passwordFormVisible.value,
                   onToggleObscure: () =>
@@ -143,7 +157,7 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 ),
                 const SizedBox(height: AppConstants.defaultPadding),
                 CustomInput(
-                  hintText: 'Confirm new password',
+                  hintText: tr('Confirm new password', 'Confirma la nueva contraseña'),
                   prefixIcon: Icons.lock_outline,
                   obscureText: !passwordFormVisible.value,
                   textInputAction: TextInputAction.done,
@@ -155,7 +169,10 @@ class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
                 if (passwordUpdateLoading.value)
                   const Center(child: CircularProgressIndicator())
                 else
-                  CustomButton(text: 'Save new password', onPressed: _submit),
+                  CustomButton(
+                    text: tr('Save new password', 'Guardar nueva contraseña'),
+                    onPressed: _submit,
+                  ),
               ],
             ],
           ),

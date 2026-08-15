@@ -15,6 +15,7 @@ import '../atoms/custom_input.dart';
 import '../molecules/google_login_button.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import 'auth_message.dart';
 
 class LoginForm extends StatelessWidget {
@@ -63,13 +64,15 @@ class LoginForm extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: TextButton(
                 onPressed: onResendConfirmation,
-                child: const Text('Resend confirmation email'),
+                child: Text(
+                  tr('Resend confirmation email', 'Reenviar correo de confirmación'),
+                ),
               ),
             ),
           const SizedBox(height: AppConstants.defaultPadding),
         ],
         CustomInput(
-          hintText: 'Email',
+          hintText: tr('Email', 'Correo electrónico'),
           prefixIcon: Icons.email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -78,7 +81,7 @@ class LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding),
         CustomInput(
-          hintText: 'Password',
+          hintText: tr('Password', 'Contraseña'),
           prefixIcon: Icons.lock,
           obscureText: obscurePassword,
           onToggleObscure: onToggleObscurePassword,
@@ -92,11 +95,11 @@ class LoginForm extends StatelessWidget {
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: onForgotPassword,
-            child: const Text('Forgot your password?'),
+            child: Text(tr('Forgot your password?', '¿Olvidaste tu contraseña?')),
           ),
         ),
         const SizedBox(height: AppConstants.defaultPadding / 2),
-        CustomButton(text: 'Sign in', onPressed: onSubmit),
+        CustomButton(text: tr('Sign in', 'Iniciar sesión'), onPressed: onSubmit),
         const SizedBox(height: AppConstants.defaultPadding),
         // Wrap and not Row: on narrow screens the question and the link do not
         // fit in one line and a Row would overflow.
@@ -105,7 +108,7 @@ class LoginForm extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              "Don't have an account yet?",
+              tr("Don't have an account yet?", '¿Aún no tienes una cuenta?'),
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -113,30 +116,34 @@ class LoginForm extends StatelessWidget {
             ),
             TextButton(
               onPressed: onGoToSignUp,
-              child: const Text('Sign up'),
+              child: Text(tr('Sign up', 'Regístrate')),
             ),
           ],
         ),
         const SizedBox(height: AppConstants.defaultPadding),
-        const Row(
+        Row(
           children: [
-            Expanded(child: Divider()),
+            const Expanded(child: Divider()),
             Padding(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: AppConstants.defaultPadding,
               ),
               child: Text(
-                'OR',
-                style: TextStyle(color: AppColors.onSurfaceVariant),
+                tr('OR', 'O'),
+                style: const TextStyle(color: AppColors.onSurfaceVariant),
               ),
             ),
-            Expanded(child: Divider()),
+            const Expanded(child: Divider()),
           ],
         ),
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        const GoogleLoginButton(
-          disabledHint: 'Coming a bit later. For now, sign in with your email '
-              'and password.',
+        GoogleLoginButton(
+          disabledHint: tr(
+            'Coming a bit later. For now, sign in with your email '
+                'and password.',
+            'Estará disponible un poco más adelante. Por ahora, inicia '
+                'sesión con tu correo y contraseña.',
+          ),
         ),
       ],
     );

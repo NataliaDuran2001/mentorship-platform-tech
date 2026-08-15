@@ -63,6 +63,11 @@ class AppConstants {
   /// screen (per-question and overall).
   static const double gaugeStrokeWidth = 6.0;
 
+  /// Diameter of a done/upcoming dot in StepDotsIndicator, and of the
+  /// current one (larger, so the active step stands out at a glance).
+  static const double stepDotSize = 20.0;
+  static const double stepDotSizeCurrent = 28.0;
+
   /// Width below which the onboarding footer stacks instead of putting its
   /// three buttons in a row. It is not a screen breakpoint: it is the width of
   /// the footer itself, which on mobile ends up much narrower than the window.
