@@ -10,6 +10,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
+import '../atoms/step_counter_label.dart';
 
 class InterviewQuestionCard extends StatelessWidget {
   const InterviewQuestionCard({
@@ -22,7 +23,6 @@ class InterviewQuestionCard extends StatelessWidget {
     required this.onSubmit,
     required this.isSubmitting,
     this.errorMessage,
-    this.answerLocked = false,
   });
 
   final InterviewQuestion question;
@@ -31,12 +31,14 @@ class InterviewQuestionCard extends StatelessWidget {
   final String answerText;
   final ValueChanged<String> onAnswerChanged;
   final VoidCallback onSubmit;
+
+  /// True only while the end-of-session grading call is in flight, which can
+  /// only happen right after confirming the last question's answer.
   final bool isSubmitting;
+
   final String? errorMessage;
 
-  /// True once feedback for this question already came back: the answer is
-  /// no longer editable, so the student reads their own answer next to it.
-  final bool answerLocked;
+  bool get _isLastQuestion => questionNumber == totalQuestions;
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +51,9 @@ class InterviewQuestionCard extends StatelessWidget {
           children: [
             _CategoryTag(category: question.category),
             const Spacer(),
-            Text(
-              'Question $questionNumber of $totalQuestions',
-              style: textTheme.bodySmall
-                  ?.copyWith(color: AppColors.onSurfaceVariant),
+            StepCounterLabel(
+              currentStep: questionNumber,
+              totalSteps: totalQuestions,
             ),
           ],
         ),
@@ -60,9 +61,10 @@ class InterviewQuestionCard extends StatelessWidget {
         Text(question.prompt, style: textTheme.headlineSmall),
         const SizedBox(height: AppConstants.spacingLg),
         CustomInput(
-          hintText: 'Type your answer here. There is no wrong way to start.',
+          key: ValueKey(question.id),
+          hintText: 'Write your answer here. There is no wrong way to start.',
           maxLines: 6,
-          enabled: !answerLocked && !isSubmitting,
+          enabled: !isSubmitting,
           onChanged: onAnswerChanged,
         ),
         if (errorMessage != null) ...[
@@ -72,15 +74,14 @@ class InterviewQuestionCard extends StatelessWidget {
             style: textTheme.bodySmall?.copyWith(color: AppColors.error),
           ),
         ],
-        if (!answerLocked) ...[
-          const SizedBox(height: AppConstants.spacingMd),
-          CustomButton(
-            text: isSubmitting ? 'Reading your answer…' : 'Get feedback',
-            onPressed: (isSubmitting || answerText.trim().isEmpty)
-                ? null
-                : onSubmit,
-          ),
-        ],
+        const SizedBox(height: AppConstants.spacingMd),
+        CustomButton(
+          text: isSubmitting
+              ? 'Checking your answers…'
+              : (_isLastQuestion ? 'Finish practice' : 'Next question'),
+          onPressed:
+              (isSubmitting || answerText.trim().isEmpty) ? null : onSubmit,
+        ),
       ],
     );
   }

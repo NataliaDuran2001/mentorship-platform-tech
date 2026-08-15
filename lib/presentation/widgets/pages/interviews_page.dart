@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../state/auth_state.dart';
+import '../../state/interview_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
+import '../atoms/custom_input.dart';
 
 class InterviewsPage extends StatelessWidget {
   const InterviewsPage({super.key});
@@ -44,9 +46,9 @@ class InterviewsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: AppConstants.spacingSm),
                   Text(
-                    "We'll ask you a few interview questions picked for "
-                    'your path, and give you friendly feedback after each '
-                    'answer. Take your time — this is just practice.',
+                    "We'll ask you a few interview questions for your path. "
+                    "At the end, you get friendly feedback on all your "
+                    'answers. Take your time — this is just practice.',
                     style: textTheme.bodyMedium
                         ?.copyWith(color: AppColors.onSurfaceVariant),
                     textAlign: TextAlign.center,
@@ -67,12 +69,26 @@ class InterviewsPage extends StatelessWidget {
                           ?.copyWith(color: AppColors.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     )
-                  else
+                  else ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'What role are you practicing for? (optional)',
+                        style: textTheme.labelLarge,
+                      ),
+                    ),
+                    const SizedBox(height: AppConstants.spacingSm),
+                    CustomInput(
+                      hintText: 'e.g. Frontend Developer, QA Tester',
+                      onChanged: (value) => interviewDesiredRole.value = value,
+                    ),
+                    const SizedBox(height: AppConstants.spacingLg),
                     ElevatedButton.icon(
                       onPressed: () => context.go('/interviews/session'),
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Start practice'),
                     ),
+                  ],
                 ],
               );
             },

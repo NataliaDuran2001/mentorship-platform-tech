@@ -3,14 +3,15 @@
 // Both calls go through Supabase Edge Functions, which proxy to the Kimi3
 // API (kimi-k3 by Moonshot AI), the same way AiRepositoryImpl does. Neither
 // call is cached: generate-interview-questions must vary between calls by
-// design, and analyze-interview-answer grades a unique piece of text every
-// time.
+// design, and analyze-interview-session grades a unique set of answers
+// every time.
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/interview_answer_feedback.dart';
 import '../../domain/entities/interview_question.dart';
+import '../../domain/entities/interview_session_feedback.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
 import '../../domain/failures/ai_failure.dart';
@@ -30,6 +31,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
     required RoadmapTrack track,
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    String? desiredRole,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -38,6 +40,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
           'trackSlug': track.slug,
           'experienceLevelSlug': experienceLevel?.slug,
           'learningGoalSlug': learningGoal?.slug,
+          'desiredRole': desiredRole,
         },
       );
 
@@ -86,24 +89,31 @@ class InterviewRepositoryImpl implements InterviewRepository {
   }
 
   // ---------------------------------------------------------------------------
-  // analyzeAnswer
+  // analyzeSession
   // ---------------------------------------------------------------------------
 
   @override
-  Future<InterviewAnswerFeedback> analyzeAnswer({
-    required InterviewQuestion question,
-    required String answerText,
+  Future<InterviewSessionFeedback> analyzeSession({
+    required List<InterviewQuestion> questions,
+    required Map<String, String> answers,
     required RoadmapTrack track,
     ExperienceLevel? experienceLevel,
   }) async {
     try {
       final response = await _client.functions.invoke(
-        'analyze-interview-answer',
+        'analyze-interview-session',
         body: {
           'trackSlug': track.slug,
           'experienceLevelSlug': experienceLevel?.slug,
-          'questionPrompt': question.prompt,
-          'answerText': answerText,
+          'items': [
+            for (final question in questions)
+              {
+                'questionId': question.id,
+                'questionPrompt': question.prompt,
+                'category': question.category,
+                'answerText': answers[question.id],
+              },
+          ],
         },
       );
 
@@ -111,12 +121,12 @@ class InterviewRepositoryImpl implements InterviewRepository {
         throw AiFailure(
           AiFailureKind.serviceUnavailable,
           technicalDetail:
-              'analyze-interview-answer returned ${response.status}',
+              'analyze-interview-session returned ${response.status}',
         );
       }
 
       final data = response.data as Map<String, dynamic>;
-      return _parseFeedback(data);
+      return _parseSessionFeedback(data, questions);
     } on AiFailure {
       rethrow;
     } catch (e) {
@@ -124,13 +134,49 @@ class InterviewRepositoryImpl implements InterviewRepository {
     }
   }
 
-  InterviewAnswerFeedback _parseFeedback(Map<String, dynamic> data) {
-    final summary = data['summary'] as String?;
-    final score = (data['score'] as num?)?.toInt();
-    if (summary == null || summary.isEmpty || score == null) {
+  InterviewSessionFeedback _parseSessionFeedback(
+    Map<String, dynamic> data,
+    List<InterviewQuestion> questions,
+  ) {
+    final overallSummary = data['overallSummary'] as String?;
+    final rawResults = data['results'] as List<dynamic>?;
+    if (overallSummary == null ||
+        overallSummary.isEmpty ||
+        rawResults == null ||
+        rawResults.length != questions.length) {
       throw const AiFailure(
         AiFailureKind.invalidResponse,
-        technicalDetail: 'summary or score is missing',
+        technicalDetail: 'overallSummary or results is missing/incomplete',
+      );
+    }
+
+    final questionIds = questions.map((q) => q.id).toSet();
+    final results = [
+      for (final raw in rawResults)
+        _parseAnswerFeedback(raw as Map<String, dynamic>, questionIds),
+    ];
+
+    return InterviewSessionFeedback(
+      overallSummary: overallSummary,
+      results: results,
+    );
+  }
+
+  InterviewAnswerFeedback _parseAnswerFeedback(
+    Map<String, dynamic> data,
+    Set<String> questionIds,
+  ) {
+    final questionId = data['questionId'] as String?;
+    final summary = data['summary'] as String?;
+    final score = (data['score'] as num?)?.toInt();
+    if (questionId == null ||
+        !questionIds.contains(questionId) ||
+        summary == null ||
+        summary.isEmpty ||
+        score == null) {
+      throw const AiFailure(
+        AiFailureKind.invalidResponse,
+        technicalDetail: 'questionId, summary or score is missing/invalid',
       );
     }
 
@@ -142,6 +188,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
         .toList();
 
     return InterviewAnswerFeedback(
+      questionId: questionId,
       summary: summary,
       strengths: strengths,
       improvements: improvements,
