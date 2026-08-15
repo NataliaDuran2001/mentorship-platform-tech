@@ -18,6 +18,16 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
+import '../atoms/wave_header.dart';
+
+/// One color per level, cycling if there are ever more than 3 roots. Purple
+/// for the first level (unchanged from before this round), then the
+/// secondary violet, then the tertiary mustard — the only currently-unused
+/// accent in the palette — so each section reads as its own place on the
+/// path rather than a repeat of the same purple card.
+const _levelColors = [AppColors.primary, AppColors.secondary, AppColors.tertiary];
+
+Color _levelColor(int index) => _levelColors[index % _levelColors.length];
 
 class RoadmapTree extends StatelessWidget {
   const RoadmapTree({super.key, required this.roots, this.onTopicTap});
@@ -32,12 +42,61 @@ class RoadmapTree extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final root in roots)
+        for (final (index, root) in roots.indexed) ...[
+          if (index > 0)
+            _LevelConnector(
+              color: _levelColor(index - 1),
+              completed: roots[index - 1].status == TopicStatus.completed,
+            ),
           Padding(
             padding: const EdgeInsets.only(bottom: AppConstants.spacingMd),
-            child: _Module(node: root, onTopicTap: onTopicTap),
+            child: _Module(
+              node: root,
+              levelColor: _levelColor(index),
+              onTopicTap: onTopicTap,
+            ),
           ),
+        ],
       ],
+    );
+  }
+}
+
+/// The thread tying two level sections into one path: a short line with a
+/// dot, solid in the color of the section just finished, muted otherwise.
+class _LevelConnector extends StatelessWidget {
+  const _LevelConnector({required this.color, required this.completed});
+
+  final Color color;
+  final bool completed;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedColor = completed ? color : AppColors.outlineVariant;
+
+    return Center(
+      child: Column(
+        children: [
+          Container(
+            width: AppConstants.borderWidthThick,
+            height: AppConstants.levelConnectorHeight / 2,
+            color: resolvedColor,
+          ),
+          Container(
+            width: AppConstants.levelConnectorDotSize,
+            height: AppConstants.levelConnectorDotSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: resolvedColor,
+            ),
+          ),
+          Container(
+            width: AppConstants.borderWidthThick,
+            height: AppConstants.levelConnectorHeight / 2,
+            color: resolvedColor,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -50,9 +109,10 @@ class RoadmapTree extends StatelessWidget {
 /// path reads as a few reachable stretches instead of one long list where
 /// everything past the current topic looks equally far away.
 class _Module extends StatelessWidget {
-  const _Module({required this.node, this.onTopicTap});
+  const _Module({required this.node, required this.levelColor, this.onTopicTap});
 
   final TopicNode node;
+  final Color levelColor;
   final ValueChanged<TopicNode>? onTopicTap;
 
   @override
@@ -67,60 +127,84 @@ class _Module extends StatelessWidget {
     final done = leaves.where((n) => n.isCompleted).length;
     final isCurrent = node.status == TopicStatus.available;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusLg),
-        border: Border.all(
-          // The section being worked on is the only one outlined in purple, so
-          // where you are is findable without reading a single row.
-          color: isCurrent ? AppColors.primary : AppColors.outlineVariant,
-          width: AppConstants.borderWidth,
-        ),
-      ),
-      padding: const EdgeInsets.all(AppConstants.spacingMd),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              _LevelBadge(title: node.title, status: node.status),
-              const Spacer(),
-              Text(
-                tr('$done of ${leaves.length}', '$done de ${leaves.length}'),
-                style: textTheme.labelMedium?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+          border: Border.all(
+            // The section being worked on is the only one outlined, so where
+            // you are is findable without reading a single row — now in the
+            // section's own color instead of always purple.
+            color: isCurrent ? levelColor : AppColors.outlineVariant,
+            width: AppConstants.borderWidth,
           ),
-          if (leaves.isNotEmpty) ...[
-            const SizedBox(height: AppConstants.spacingSm),
-            AppProgressBar(
-              value: done / leaves.length,
-              semanticsLabel:
-                  tr('${node.title} progress', 'Progreso de ${node.title}'),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            WaveHeader(
+              color: levelColor.withValues(alpha: 0.15),
+              height: AppConstants.waveHeaderHeight,
             ),
-          ],
-          if (node.description != null) ...[
-            const SizedBox(height: AppConstants.spacingSm),
-            Text(
-              node.description!,
-              style: textTheme.bodyMedium?.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(height: AppConstants.spacingSm),
-          for (final child in node.children)
             Padding(
-              padding: const EdgeInsets.only(
-                left: AppConstants.spacingSm,
-                top: AppConstants.spacingXs,
+              padding: const EdgeInsets.all(AppConstants.spacingMd),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      _LevelBadge(
+                        title: node.title,
+                        status: node.status,
+                        color: levelColor,
+                      ),
+                      const Spacer(),
+                      Text(
+                        tr(
+                          '$done of ${leaves.length}',
+                          '$done de ${leaves.length}',
+                        ),
+                        style: textTheme.labelMedium?.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (leaves.isNotEmpty) ...[
+                    const SizedBox(height: AppConstants.spacingSm),
+                    AppProgressBar(
+                      value: done / leaves.length,
+                      semanticsLabel: tr(
+                        '${node.title} progress',
+                        'Progreso de ${node.title}',
+                      ),
+                    ),
+                  ],
+                  if (node.description != null) ...[
+                    const SizedBox(height: AppConstants.spacingSm),
+                    Text(
+                      node.description!,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: AppConstants.spacingSm),
+                  for (final child in node.children)
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        left: AppConstants.spacingSm,
+                        top: AppConstants.spacingXs,
+                      ),
+                      child: _TopicRow(node: child, onTap: onTopicTap),
+                    ),
+                ],
               ),
-              child: _TopicRow(node: child, onTap: onTopicTap),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -128,14 +212,24 @@ class _Module extends StatelessWidget {
 
 /// Name of the section, told apart by icon and color as well as by text.
 class _LevelBadge extends StatelessWidget {
-  const _LevelBadge({required this.title, required this.status});
+  const _LevelBadge({
+    required this.title,
+    required this.status,
+    required this.color,
+  });
 
   final String title;
   final TopicStatus status;
 
+  /// The section's level color, when it isn't locked. Locked stays gray
+  /// regardless of level — that distinction matters more than the color
+  /// identity.
+  final Color color;
+
   @override
   Widget build(BuildContext context) {
-    final color = _colorFor(status);
+    final resolvedColor =
+        status == TopicStatus.locked ? AppColors.onSurfaceVariant : color;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -143,19 +237,23 @@ class _LevelBadge extends StatelessWidget {
         vertical: AppConstants.spacingXs,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: resolvedColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(color: resolvedColor.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_iconFor(status), size: AppConstants.iconSizeSm, color: color),
+          Icon(
+            _iconFor(status),
+            size: AppConstants.iconSizeSm,
+            color: resolvedColor,
+          ),
           const SizedBox(width: AppConstants.spacingXs),
           Text(
             title.toUpperCase(),
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
+                  color: resolvedColor,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.1,
                 ),

@@ -108,6 +108,14 @@ class InterviewsPage extends StatelessWidget {
                       icon: const Icon(Icons.play_arrow),
                       label: Text(tr('Start practice', 'Empezar práctica')),
                     ),
+                    const SizedBox(height: AppConstants.spacingSm),
+                    TextButton.icon(
+                      onPressed: () => context.go('/interviews/history'),
+                      icon: const Icon(Icons.history),
+                      label: Text(
+                        tr('Practice history', 'Historial de práctica'),
+                      ),
+                    ),
                   ],
                 ],
               );

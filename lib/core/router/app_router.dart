@@ -16,6 +16,8 @@ import '../../presentation/widgets/pages/auth_confirmed_page.dart';
 import '../../presentation/widgets/pages/dashboard_page.dart';
 import '../../presentation/widgets/pages/forgot_password_page.dart';
 import '../../presentation/widgets/pages/password_recovery_page.dart';
+import '../../presentation/widgets/pages/interview_history_detail_page.dart';
+import '../../presentation/widgets/pages/interview_history_page.dart';
 import '../../presentation/widgets/pages/interview_session_page.dart';
 import '../../presentation/widgets/pages/interviews_page.dart';
 import '../../presentation/widgets/pages/login_page.dart';
@@ -189,6 +191,16 @@ class AppRouter {
       GoRoute(
         path: '/interviews/session',
         builder: (_, __) => const InterviewSessionPage(),
+      ),
+      GoRoute(
+        path: '/interviews/history',
+        builder: (_, __) => const InterviewHistoryPage(),
+      ),
+      GoRoute(
+        path: '/interviews/history/:sessionId',
+        builder: (_, state) => InterviewHistoryDetailPage(
+          sessionId: state.pathParameters['sessionId']!,
+        ),
       ),
 
       ShellRoute(

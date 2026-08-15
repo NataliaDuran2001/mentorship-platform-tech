@@ -20,6 +20,7 @@ Future<void> startInterviewSession() async {
 
   final desiredRole = interviewDesiredRole.value.trim();
   resetInterviewState();
+  interviewSessionRole.value = desiredRole.isEmpty ? null : desiredRole;
   interviewQuestionsLoading.value = true;
 
   try {
@@ -27,7 +28,7 @@ Future<void> startInterviewSession() async {
       track: track,
       experienceLevel: profile.experienceLevel,
       learningGoal: profile.learningGoal,
-      desiredRole: desiredRole.isEmpty ? null : desiredRole,
+      desiredRole: interviewSessionRole.value,
       language: appLanguage.value,
     );
     interviewQuestions.value = questions;
@@ -87,6 +88,24 @@ Future<void> finishInterviewSession() async {
       for (final feedback in result.results) feedback.questionId: feedback,
     };
     interviewOverallSummary.value = result.overallSummary;
+
+    // Best-effort: a save failure must never hide the results the student
+    // already earned, so it is swallowed rather than surfaced as an error.
+    try {
+      await getIt<InterviewRepository>().saveSession(
+        track: track,
+        desiredRole: interviewSessionRole.value,
+        questions: interviewQuestions.value,
+        answers: interviewAnswers.value,
+        feedback: result,
+      );
+    } catch (e) {
+      assert(() {
+        // ignore: avoid_print
+        print('Could not save interview session to history: $e');
+        return true;
+      }());
+    }
   } catch (e) {
     interviewSessionError.value = errorMessage(e);
   } finally {

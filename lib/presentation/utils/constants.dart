@@ -68,6 +68,14 @@ class AppConstants {
   static const double stepDotSize = 20.0;
   static const double stepDotSizeCurrent = 28.0;
 
+  /// Height of the WaveHeader band painted behind each roadmap level card's
+  /// title row.
+  static const double waveHeaderHeight = 28.0;
+
+  /// Height/width of the vertical connector between roadmap level cards.
+  static const double levelConnectorHeight = 20.0;
+  static const double levelConnectorDotSize = 10.0;
+
   /// Width below which the onboarding footer stacks instead of putting its
   /// three buttons in a row. It is not a screen breakpoint: it is the width of
   /// the footer itself, which on mobile ends up much narrower than the window.
