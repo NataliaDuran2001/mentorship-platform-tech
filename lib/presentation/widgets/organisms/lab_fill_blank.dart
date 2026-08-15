@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import '../../../domain/entities/content_translation.dart';
 import '../../../domain/entities/lab_challenge.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../state/lab_state.dart';
@@ -9,23 +10,31 @@ import '../../utils/constants.dart';
 import '../../utils/translate.dart';
 
 class LabFillBlank extends StatelessWidget {
-  const LabFillBlank({super.key, required this.challenge});
+  const LabFillBlank({super.key, required this.challenge, this.translation});
 
   final FillBlankChallenge challenge;
+
+  /// AI-translated overlay for [challenge]'s question/description only.
+  /// `codeSnippet`, `correctAnswers` and `availableOptions` are literal
+  /// code, never language, and are never translated — always rendered from
+  /// [challenge] itself.
+  final ExerciseTranslation? translation;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final parts = _parseSnippet(challenge.codeSnippet);
+    final question = translation?.question ?? challenge.question;
+    final description = translation?.description ?? challenge.description;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(challenge.question, style: textTheme.headlineMedium),
-        if (challenge.description != null) ...[
+        Text(question, style: textTheme.headlineMedium),
+        if (description != null) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            challenge.description!,
+            description,
             style: textTheme.bodyLarge?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),

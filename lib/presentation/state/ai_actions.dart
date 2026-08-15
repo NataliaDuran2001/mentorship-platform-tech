@@ -8,6 +8,7 @@ import '../../domain/repositories/ai_repository.dart';
 import '../../domain/entities/topic_node.dart';
 import '../../domain/entities/roadmap_track.dart';
 import '../utils/auth_error_messages.dart';
+import '../utils/translate.dart';
 import 'auth_state.dart';
 import 'language_state.dart';
 import 'roadmap_state.dart';
@@ -41,6 +42,7 @@ Future<void> loadDailyBrief() async {
     final completed = roadmapCompletedCount.value;
 
     // 2. Fetch the brief from Kimi3 (or cache)
+    final requestedLanguage = appLanguage.value;
     final briefText = await getIt<AiRepository>().generateDailyBrief(
       userId: profile.id,
       trackSlug: profile.track?.slug ?? 'frontend',
@@ -48,10 +50,11 @@ Future<void> loadDailyBrief() async {
       learningGoalSlug: profile.learningGoal?.slug,
       completedTopics: completed,
       totalTopics: total,
-      language: appLanguage.value,
+      language: requestedLanguage,
     );
 
     dailyBrief.value = briefText;
+    dailyBriefLanguage.value = requestedLanguage;
   } catch (e) {
     dailyBriefError.value = errorMessage(e);
   } finally {
@@ -88,19 +91,62 @@ Future<void> loadRoadmapCoachMessage() async {
     );
     final nextTopicTitle = nextTopic.title.isNotEmpty ? nextTopic.title : null;
 
+    final requestedLanguage = appLanguage.value;
     final messageText = await getIt<AiRepository>().generateRoadmapCoachMessage(
       trackSlug: profile.track?.slug ?? 'frontend',
       learningGoalSlug: profile.learningGoal?.slug,
       progressFraction: progressFraction,
       nextTopicTitle: nextTopicTitle,
-      language: appLanguage.value,
+      language: requestedLanguage,
     );
 
     roadmapCoachMessage.value = messageText;
+    roadmapCoachLanguage.value = requestedLanguage;
   } catch (e) {
     roadmapCoachError.value = errorMessage(e);
   } finally {
     roadmapCoachLoading.value = false;
+  }
+}
+
+/// Loads the personalized welcome-back headline for the dashboard header.
+Future<void> loadWelcomeMessage() async {
+  final profile = currentProfile.value;
+  if (profile == null || welcomeMessageLoading.value) return;
+
+  welcomeMessageLoading.value = true;
+  welcomeMessageError.value = null;
+
+  try {
+    if (!roadmapLoaded.value) {
+      await loadRoadmap();
+    }
+
+    if (roadmapError.value != null) {
+      welcomeMessageError.value = roadmapError.value;
+      return;
+    }
+
+    final total = roadmapLeaves.value.length;
+    final completed = roadmapCompletedCount.value;
+    final progressFraction = total > 0 ? (completed / total) : 0.0;
+
+    final requestedLanguage = appLanguage.value;
+    final messageText = await getIt<AiRepository>().generateWelcomeMessage(
+      displayName:
+          profile.displayName ?? tr('Learner', 'Estudiante'),
+      trackSlug: profile.track?.slug,
+      learningGoalSlug: profile.learningGoal?.slug,
+      progressFraction: progressFraction,
+      language: requestedLanguage,
+    );
+
+    welcomeMessage.value = messageText;
+    welcomeMessageLanguage.value = requestedLanguage;
+  } catch (e) {
+    welcomeMessageError.value = errorMessage(e);
+  } finally {
+    welcomeMessageLoading.value = false;
   }
 }
 

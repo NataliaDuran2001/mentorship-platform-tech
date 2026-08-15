@@ -3,6 +3,8 @@ import '../../domain/entities/lab_challenge.dart';
 import '../../domain/repositories/lab_repository.dart';
 import '../../domain/usecases/complete_topic_usecase.dart';
 import '../utils/auth_error_messages.dart';
+import 'content_translation_actions.dart';
+import 'content_translation_state.dart';
 import 'lab_state.dart';
 import 'roadmap_actions.dart';
 import 'ai_actions.dart';
@@ -18,6 +20,8 @@ Future<void> loadLabs(String topicId) async {
   labIsCurrentValid.value = null;
   labCheckedIndices.value = <int>{};
   labFirstTryCorrectIndices.value = <int>{};
+  labTheoryTranslations.value = const {};
+  labExerciseTranslations.value = const {};
 
   // Clear AI hints on starting a new lab topic
   clearLabHintsForTopic(topicId);
@@ -26,6 +30,19 @@ Future<void> loadLabs(String topicId) async {
     final repo = getIt<LabRepository>();
     final challenges = await repo.getChallengesForTopic(topicId);
     labChallenges.value = challenges;
+
+    final theoryIds = [
+      for (final challenge in challenges)
+        if (challenge is TheoryChallenge) challenge.id,
+    ];
+    final exerciseIds = [
+      for (final challenge in challenges)
+        if (challenge is! TheoryChallenge) challenge.id,
+    ];
+    await Future.wait([
+      ensureLabTheoryTranslations(theoryIds),
+      ensureLabExerciseTranslations(exerciseIds),
+    ]);
   } catch (e) {
     labError.value = errorMessage(e);
   } finally {

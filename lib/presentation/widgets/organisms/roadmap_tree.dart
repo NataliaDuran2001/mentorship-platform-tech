@@ -13,12 +13,31 @@ import 'package:flutter/material.dart';
 
 import 'package:go_router/go_router.dart';
 
+import '../../../domain/entities/content_translation.dart';
 import '../../../domain/entities/topic_node.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
 import '../atoms/wave_header.dart';
+
+/// Title of [node] in the learner's Settings language: the AI-translated
+/// overlay if there is one cached for it, English otherwise. English is
+/// never missing — it is the seeded source of truth — so this never falls
+/// back to a placeholder.
+String _titleFor(TopicNode node, Map<String, TopicTranslation> translations) {
+  return translations[node.id]?.title ?? node.title;
+}
+
+/// Description of [node] the same way as [_titleFor].
+String? _descriptionFor(TopicNode node, Map<String, TopicTranslation> translations) {
+  final translated = translations[node.id];
+  if (translated == null) return node.description;
+  // A translation always carries its own description slot (possibly null),
+  // so an explicitly-null translated description must not fall back to the
+  // English one — that would silently mix languages on the same card.
+  return translated.description;
+}
 
 /// One color per level, cycling if there are ever more than 3 roots. Purple
 /// for the first level (unchanged from before this round), then the
@@ -30,12 +49,22 @@ const _levelColors = [AppColors.primary, AppColors.secondary, AppColors.tertiary
 Color _levelColor(int index) => _levelColors[index % _levelColors.length];
 
 class RoadmapTree extends StatelessWidget {
-  const RoadmapTree({super.key, required this.roots, this.onTopicTap});
+  const RoadmapTree({
+    super.key,
+    required this.roots,
+    this.onTopicTap,
+    this.translations = const {},
+  });
 
   final List<TopicNode> roots;
 
   /// Called only for actionable topics. Locked ones stay silent.
   final ValueChanged<TopicNode>? onTopicTap;
+
+  /// AI-translated title/description overlay, keyed by topic id. Empty when
+  /// the Settings language is English, since English is the seeded content
+  /// itself and needs no overlay.
+  final Map<String, TopicTranslation> translations;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +83,7 @@ class RoadmapTree extends StatelessWidget {
               node: root,
               levelColor: _levelColor(index),
               onTopicTap: onTopicTap,
+              translations: translations,
             ),
           ),
         ],
@@ -109,17 +139,27 @@ class _LevelConnector extends StatelessWidget {
 /// path reads as a few reachable stretches instead of one long list where
 /// everything past the current topic looks equally far away.
 class _Module extends StatelessWidget {
-  const _Module({required this.node, required this.levelColor, this.onTopicTap});
+  const _Module({
+    required this.node,
+    required this.levelColor,
+    this.onTopicTap,
+    this.translations = const {},
+  });
 
   final TopicNode node;
   final Color levelColor;
   final ValueChanged<TopicNode>? onTopicTap;
+  final Map<String, TopicTranslation> translations;
 
   @override
   Widget build(BuildContext context) {
-    if (node.isLeaf) return _TopicRow(node: node, onTap: onTopicTap);
+    if (node.isLeaf) {
+      return _TopicRow(node: node, onTap: onTopicTap, translations: translations);
+    }
 
     final textTheme = Theme.of(context).textTheme;
+    final title = _titleFor(node, translations);
+    final description = _descriptionFor(node, translations);
 
     // Counted over leaves, the same unit the overall progress uses: a section
     // is the set of its topics, not a further thing to complete.
@@ -156,7 +196,7 @@ class _Module extends StatelessWidget {
                   Row(
                     children: [
                       _LevelBadge(
-                        title: node.title,
+                        title: title,
                         status: node.status,
                         color: levelColor,
                       ),
@@ -176,16 +216,13 @@ class _Module extends StatelessWidget {
                     const SizedBox(height: AppConstants.spacingSm),
                     AppProgressBar(
                       value: done / leaves.length,
-                      semanticsLabel: tr(
-                        '${node.title} progress',
-                        'Progreso de ${node.title}',
-                      ),
+                      semanticsLabel: tr('$title progress', 'Progreso de $title'),
                     ),
                   ],
-                  if (node.description != null) ...[
+                  if (description != null) ...[
                     const SizedBox(height: AppConstants.spacingSm),
                     Text(
-                      node.description!,
+                      description,
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -198,7 +235,11 @@ class _Module extends StatelessWidget {
                         left: AppConstants.spacingSm,
                         top: AppConstants.spacingXs,
                       ),
-                      child: _TopicRow(node: child, onTap: onTopicTap),
+                      child: _TopicRow(
+                        node: child,
+                        onTap: onTopicTap,
+                        translations: translations,
+                      ),
                     ),
                 ],
               ),
@@ -270,16 +311,18 @@ class _LevelBadge extends StatelessWidget {
 /// even by accident: that is what makes the path deterministic instead of a
 /// free menu.
 class _TopicRow extends StatelessWidget {
-  const _TopicRow({required this.node, this.onTap});
+  const _TopicRow({required this.node, this.onTap, this.translations = const {}});
 
   final TopicNode node;
   final ValueChanged<TopicNode>? onTap;
+  final Map<String, TopicTranslation> translations;
 
   @override
   Widget build(BuildContext context) {
     final isLocked = node.status == TopicStatus.locked;
     final isAvailable = node.status == TopicStatus.available;
     final textTheme = Theme.of(context).textTheme;
+    final title = _titleFor(node, translations);
 
     final content = Padding(
       padding: const EdgeInsets.all(AppConstants.spacingSm),
@@ -289,7 +332,7 @@ class _TopicRow extends StatelessWidget {
           const SizedBox(width: AppConstants.spacingSm),
           Expanded(
             child: Text(
-              node.title,
+              title,
               style: textTheme.bodyMedium?.copyWith(
                 color: isLocked
                     ? AppColors.onSurfaceVariant
@@ -313,7 +356,7 @@ class _TopicRow extends StatelessWidget {
     return Semantics(
       enabled: !isLocked,
       button: !isLocked,
-      label: '${node.title}. ${_labelFor(node.status)}',
+      label: '$title. ${_labelFor(node.status)}',
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: isAvailable

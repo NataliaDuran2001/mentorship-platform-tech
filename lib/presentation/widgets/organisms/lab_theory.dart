@@ -10,19 +10,28 @@
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/content_translation.dart';
 import '../../../domain/entities/lab_challenge.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/translate.dart';
 
 class LabTheory extends StatelessWidget {
-  const LabTheory({super.key, required this.challenge});
+  const LabTheory({super.key, required this.challenge, this.translation});
 
   final TheoryChallenge challenge;
+
+  /// AI-translated overlay for [challenge], or `null` when the Settings
+  /// language is English (the seeded source) or no translation is cached
+  /// yet — in both cases the English content below is shown as-is.
+  final TheoryTranslation? translation;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final question = translation?.question ?? challenge.question;
+    final blocks = translation?.blocks ?? challenge.blocks;
+    final keyTakeaway = translation?.keyTakeaway ?? challenge.keyTakeaway;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,7 +58,10 @@ class LabTheory extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppConstants.spacingSm),
-        Text(challenge.question, style: textTheme.headlineMedium),
+        Text(question, style: textTheme.headlineMedium),
+        // The optional `description` (a hint shown on exercises) is never
+        // used by theory challenges — see the seed data — so it is not
+        // translated and stays untouched here.
         if (challenge.description != null) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
@@ -60,14 +72,14 @@ class LabTheory extends StatelessWidget {
           ),
         ],
         const SizedBox(height: AppConstants.spacingLg),
-        for (final block in challenge.blocks)
+        for (final block in blocks)
           Padding(
             padding: const EdgeInsets.only(bottom: AppConstants.spacingMd),
             child: _Block(block: block),
           ),
-        if (challenge.keyTakeaway != null) ...[
+        if (keyTakeaway != null) ...[
           const SizedBox(height: AppConstants.spacingSm),
-          _KeyTakeaway(text: challenge.keyTakeaway!),
+          _KeyTakeaway(text: keyTakeaway),
         ],
       ],
     );

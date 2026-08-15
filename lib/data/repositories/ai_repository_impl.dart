@@ -13,7 +13,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/app_language.dart';
+import '../../domain/entities/content_translation.dart';
 import '../../domain/entities/experience_level.dart';
+import '../../domain/entities/lab_challenge.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/onboarding_answer.dart';
 import '../../domain/entities/roadmap_track.dart';
@@ -251,5 +253,192 @@ class AiRepositoryImpl implements AiRepository {
     } catch (e) {
       throw AiFailure(AiFailureKind.unknown, technicalDetail: e.toString());
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // generateWelcomeMessage
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<String> generateWelcomeMessage({
+    required String displayName,
+    required String? trackSlug,
+    required String? learningGoalSlug,
+    required double progressFraction,
+    required AppLanguage language,
+  }) async {
+    try {
+      final response = await _client.functions.invoke(
+        'welcome-message',
+        body: {
+          'displayName': displayName,
+          'trackSlug': trackSlug,
+          'learningGoalSlug': learningGoalSlug,
+          'progressPercent': (progressFraction * 100).round(),
+          'language': language.slug,
+        },
+      );
+
+      if (response.status != 200) {
+        throw AiFailure(
+          AiFailureKind.serviceUnavailable,
+          technicalDetail: 'welcome-message returned ${response.status}',
+        );
+      }
+
+      final data = (response.data as Map).cast<String, dynamic>();
+      final message = data['message'] as String?;
+      if (message == null || message.isEmpty) {
+        throw const AiFailure(
+          AiFailureKind.invalidResponse,
+          technicalDetail: 'message field is missing',
+        );
+      }
+      return message;
+    } on AiFailure {
+      rethrow;
+    } catch (e) {
+      throw AiFailure(AiFailureKind.unknown, technicalDetail: e.toString());
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // translateTopics / translateTheoryChallenges
+  // ---------------------------------------------------------------------------
+
+  /// Shared call to the `translate-content` Edge Function.
+  ///
+  /// Returns raw `sourceId -> content` JSON. Items that failed to translate
+  /// server-side are simply absent — not an error, since the caller degrades
+  /// to the English content it already holds.
+  Future<Map<String, Map<String, dynamic>>> _translateContent({
+    required String sourceTable,
+    required List<String> sourceIds,
+    required AppLanguage language,
+  }) async {
+    if (sourceIds.isEmpty) return const {};
+
+    try {
+      final response = await _client.functions.invoke(
+        'translate-content',
+        body: {
+          'items': [
+            for (final id in sourceIds) {'sourceTable': sourceTable, 'sourceId': id},
+          ],
+          'language': language.slug,
+        },
+      );
+
+      if (response.status != 200) {
+        throw AiFailure(
+          AiFailureKind.serviceUnavailable,
+          technicalDetail: 'translate-content returned ${response.status}',
+        );
+      }
+
+      final data = (response.data as Map).cast<String, dynamic>();
+      final rawTranslations = (data['translations'] as List?) ?? const [];
+
+      return {
+        for (final entry in rawTranslations)
+          (entry as Map)['sourceId'] as String:
+              (entry['content'] as Map).cast<String, dynamic>(),
+      };
+    } on AiFailure {
+      rethrow;
+    } catch (e) {
+      throw AiFailure(AiFailureKind.unknown, technicalDetail: e.toString());
+    }
+  }
+
+  @override
+  Future<Map<String, TopicTranslation>> translateTopics({
+    required List<String> topicIds,
+    required AppLanguage language,
+  }) async {
+    final raw = await _translateContent(
+      sourceTable: 'topics',
+      sourceIds: topicIds,
+      language: language,
+    );
+
+    return {
+      for (final entry in raw.entries)
+        entry.key: TopicTranslation(
+          title: entry.value['title'] as String,
+          description: entry.value['description'] as String?,
+        ),
+    };
+  }
+
+  @override
+  Future<Map<String, TheoryTranslation>> translateTheoryChallenges({
+    required List<String> challengeIds,
+    required AppLanguage language,
+  }) async {
+    final raw = await _translateContent(
+      sourceTable: 'lab_challenges',
+      sourceIds: challengeIds,
+      language: language,
+    );
+
+    return {
+      for (final entry in raw.entries)
+        entry.key: TheoryTranslation(
+          question: entry.value['question'] as String,
+          blocks: _theoryBlocks(entry.value['blocks'] as List?),
+          keyTakeaway: entry.value['keyTakeaway'] as String?,
+        ),
+    };
+  }
+
+  @override
+  Future<Map<String, ExerciseTranslation>> translateExerciseChallenges({
+    required List<String> challengeIds,
+    required AppLanguage language,
+  }) async {
+    final raw = await _translateContent(
+      sourceTable: 'lab_challenges',
+      sourceIds: challengeIds,
+      language: language,
+    );
+
+    return {
+      for (final entry in raw.entries)
+        entry.key: ExerciseTranslation(
+          question: entry.value['question'] as String,
+          description: entry.value['description'] as String?,
+          items: (entry.value['items'] as Map?)?.cast<String, String>(),
+        ),
+    };
+  }
+
+  /// Mirrors `LabRepositoryImpl._theoryBlocks`: an unrecognized block `type`
+  /// is dropped instead of throwing, since this content is model-generated
+  /// and a missing paragraph is better than an unreadable topic.
+  static List<TheoryBlock> _theoryBlocks(List? raw) {
+    if (raw == null) return const <TheoryBlock>[];
+
+    final blocks = <TheoryBlock>[];
+    for (final entry in raw) {
+      final map = (entry as Map).cast<String, dynamic>();
+      final type = switch (map['type'] as String?) {
+        'paragraph' => TheoryBlockType.paragraph,
+        'code' => TheoryBlockType.code,
+        'list' => TheoryBlockType.list,
+        _ => null,
+      };
+      if (type == null) continue;
+
+      blocks.add(
+        TheoryBlock(
+          type: type,
+          text: map['text'] as String?,
+          items: (map['items'] as List?)?.cast<String>() ?? const <String>[],
+          language: map['language'] as String?,
+        ),
+      );
+    }
+    return List<TheoryBlock>.unmodifiable(blocks);
   }
 }

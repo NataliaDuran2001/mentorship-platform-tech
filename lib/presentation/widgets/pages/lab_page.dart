@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../../domain/entities/lab_challenge.dart';
+import '../../state/content_translation_state.dart';
 import '../../state/lab_actions.dart';
 import '../../state/lab_state.dart';
 import '../../state/ai_state.dart';
@@ -151,13 +152,25 @@ class _LabPageState extends State<LabPage> {
 
   Widget _buildChallengeWidget(LabChallenge challenge) {
     if (challenge is TheoryChallenge) {
-      return LabTheory(challenge: challenge);
+      return LabTheory(
+        challenge: challenge,
+        translation: labTheoryTranslations.value[challenge.id],
+      );
     } else if (challenge is MultipleChoiceChallenge) {
-      return LabMultipleChoice(challenge: challenge);
+      return LabMultipleChoice(
+        challenge: challenge,
+        translation: labExerciseTranslations.value[challenge.id],
+      );
     } else if (challenge is FillBlankChallenge) {
-      return LabFillBlank(challenge: challenge);
+      return LabFillBlank(
+        challenge: challenge,
+        translation: labExerciseTranslations.value[challenge.id],
+      );
     } else if (challenge is OrderLogicChallenge) {
-      return LabOrderLogic(challenge: challenge);
+      return LabOrderLogic(
+        challenge: challenge,
+        translation: labExerciseTranslations.value[challenge.id],
+      );
     }
     return Text(tr('Unknown challenge type', 'Tipo de reto desconocido'));
   }

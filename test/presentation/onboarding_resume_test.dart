@@ -18,6 +18,7 @@ import 'package:aspire_app/domain/entities/user_profile.dart';
 import 'package:aspire_app/domain/repositories/onboarding_repository.dart';
 import 'package:aspire_app/domain/usecases/recommend_track_usecase.dart';
 import 'package:aspire_app/domain/usecases/submit_onboarding_usecase.dart';
+import 'package:aspire_app/domain/entities/content_translation.dart';
 import 'package:aspire_app/domain/repositories/ai_repository.dart';
 import 'package:aspire_app/domain/failures/ai_failure.dart';
 import 'package:aspire_app/domain/entities/track_recommendation.dart';
@@ -72,6 +73,34 @@ class _OfflineAiRepository implements AiRepository {
     required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
+
+  @override
+  Future<String> generateWelcomeMessage({
+    required String displayName,
+    required String? trackSlug,
+    required String? learningGoalSlug,
+    required double progressFraction,
+    required AppLanguage language,
+  }) async =>
+      throw const AiFailure(AiFailureKind.network);
+
+  @override
+  Future<Map<String, TopicTranslation>> translateTopics({
+    required List<String> topicIds,
+    required AppLanguage language,
+  }) async => const {};
+
+  @override
+  Future<Map<String, TheoryTranslation>> translateTheoryChallenges({
+    required List<String> challengeIds,
+    required AppLanguage language,
+  }) async => const {};
+
+  @override
+  Future<Map<String, ExerciseTranslation>> translateExerciseChallenges({
+    required List<String> challengeIds,
+    required AppLanguage language,
+  }) async => const {};
 }
 
 /// In-memory repository with the same upsert semantics as the table.

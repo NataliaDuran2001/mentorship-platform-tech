@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/topic_node.dart';
 import '../../../domain/entities/roadmap_track.dart';
 import '../../state/auth_state.dart';
+import '../../state/language_state.dart';
 import '../../state/roadmap_state.dart';
 import '../../state/roadmap_actions.dart';
 import '../../state/ai_state.dart';
@@ -36,10 +37,17 @@ class DashboardPage extends StatelessWidget {
         if (!roadmapLoaded.value && !roadmapLoading.value && roadmapError.value == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) => loadRoadmap());
         }
-        if (dailyBrief.value == null &&
+        if ((dailyBrief.value == null || dailyBriefLanguage.value != appLanguage.value) &&
             !dailyBriefLoading.value &&
             dailyBriefError.value == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) => loadDailyBrief());
+        }
+        // The welcome headline is this page's own AI piece, same reasoning as
+        // the daily brief above — including the language-mismatch refetch.
+        if ((welcomeMessage.value == null || welcomeMessageLanguage.value != appLanguage.value) &&
+            !welcomeMessageLoading.value &&
+            welcomeMessageError.value == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => loadWelcomeMessage());
         }
 
         final profile = currentProfile.value;
@@ -52,9 +60,12 @@ class DashboardPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
+              // Header. AI-generated when available; falls back to the
+              // static label while loading or if the request fails, same
+              // degradation as the daily brief card below.
               Text(
-                tr('WELCOME BACK', 'BIENVENIDA DE NUEVO'),
+                (welcomeMessage.value ?? tr('WELCOME BACK', 'BIENVENIDA DE NUEVO'))
+                    .toUpperCase(),
                 style: textTheme.labelMedium?.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
