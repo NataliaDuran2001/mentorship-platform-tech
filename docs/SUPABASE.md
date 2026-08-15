@@ -24,7 +24,7 @@ contraseñas se comparten por fuera del repositorio.
 | `disable_signup` | `false` | La app tiene registro propio (`/registro`) |
 | `mailer_autoconfirm` | **`false`** | Un `signUp` **no** devuelve sesión hasta que se confirme el correo |
 | Site URL | `http://localhost:5000` | Correr siempre con `--web-port 5000` o el enlace del correo no vuelve a la app |
-| Redirects | `http://localhost:5000/**` | idem |
+| Redirects | `http://localhost:5000/**`, `https://kora-dev-1.web.app/**`, `https://kora-dev-1.firebaseapp.com/**` | El sitio desplegado (Firebase Hosting, proyecto `kora-dev-1`) también necesita estar en la allow-list — si un `redirectTo` no está en esta lista, Supabase lo ignora en silencio y cae al Site URL, lo que hace que el enlace de recuperación de contraseña o de confirmación de correo termine apuntando a `localhost` aunque el usuario esté en producción |
 
 Las plantillas de correo están en inglés (default de Supabase), por decisión de
 producto. Las traducciones quedaron en el comentario de cierre del issue #3.

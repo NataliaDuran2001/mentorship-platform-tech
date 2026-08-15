@@ -10,8 +10,11 @@
 
 import 'dart:async';
 
+import 'package:signals_flutter/signals_flutter.dart' show batch;
+
 import '../../core/di/injection.dart';
 import '../../domain/entities/auth_session.dart';
+import '../../domain/entities/user_profile.dart';
 import '../../domain/failures/auth_failure.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/onboarding_repository.dart';
@@ -47,41 +50,70 @@ Future<void> bootstrapAuth() async {
   _sessionSubscription?.cancel();
   _sessionSubscription = repository.sessionChanges.listen((session) async {
     final hadSession = currentSession.value != null;
-    currentSession.value = session;
 
     if (session == null) {
-      currentProfile.value = null;
+      batch(() {
+        currentSession.value = null;
+        currentProfile.value = null;
+      });
       return;
     }
-    // On sign-in it fetches the profile; on a token refresh it already has it.
-    if (!hadSession || currentProfile.value == null) {
-      await refreshProfile();
-    }
+
+    // On sign-in it fetches the profile; on a token refresh it already has
+    // it. Fetched before either signal is written (see the comment on
+    // _setSessionAndProfile) so the guard never sees a session with no
+    // profile yet and bounces to onboarding for an instant.
+    final profile = (!hadSession || currentProfile.value == null)
+        ? await _fetchProfile()
+        : currentProfile.value;
+    await _setSessionAndProfile(session, profile);
   });
 }
 
 /// Reads the authenticated user's profile again.
 ///
-/// It is called after signing in and every time the onboarding changes the
-/// profile, so the route guards decide with fresh data.
+/// It is called every time the onboarding changes the profile, so the route
+/// guards decide with fresh data. Session sign-in/sign-up paths do not call
+/// this directly — they use [_setSessionAndProfile] instead, so the session
+/// and the profile it fetches always land on the signals together.
 Future<void> refreshProfile() async {
-  try {
-    final profile = await getIt<OnboardingRepository>().loadProfile();
-    currentProfile.value = profile;
+  final profile = await _fetchProfile();
+  currentProfile.value = profile;
+  if (profile != null && !profile.hasCompletedOnboarding) {
+    await restoreOnboarding();
+  }
+}
 
-    // Half-finished onboarding: the partial state is rebuilt before the screen
-    // is mounted, so we land on the first unanswered step instead of the
-    // previous one already marked (issue #14). Here and not in the page because
-    // the route guard decides where to go before any widget exists.
-    if (profile != null && !profile.hasCompletedOnboarding) {
-      await restoreOnboarding();
-    }
+/// Fetches the profile without writing it to [currentProfile]. Errors are
+/// swallowed the same way [refreshProfile] always has: the profile is read
+/// in the background and a failure here must not paint an error on the
+/// login screen — the guard will see a null profile and send the user to
+/// onboarding, which retries it.
+Future<UserProfile?> _fetchProfile() async {
+  try {
+    return await getIt<OnboardingRepository>().loadProfile();
   } catch (e) {
-    // It is not translated into authError: the profile is read in the
-    // background and a failure here must not paint an error on the login
-    // screen. The guard will see a null profile and send the user to the
-    // onboarding, which retries it.
-    currentProfile.value = null;
+    return null;
+  }
+}
+
+/// Writes [session] and [profile] to their signals in the same `batch`, so
+/// the router's guard — which reacts to both — only ever sees the two
+/// together: either "no session" or "session with its profile (or a
+/// deliberate null if the fetch failed)", never a session whose profile
+/// hasn't loaded yet. That gap is what used to send a freshly signed-in
+/// user to `/onboarding` for one frame before correcting to `/path`,
+/// because `hasCompletedOnboarding` reads `false` for a null profile.
+Future<void> _setSessionAndProfile(
+  AuthSession? session,
+  UserProfile? profile,
+) async {
+  batch(() {
+    currentSession.value = session;
+    currentProfile.value = profile;
+  });
+  if (profile != null && !profile.hasCompletedOnboarding) {
+    await restoreOnboarding();
   }
 }
 
@@ -106,8 +138,9 @@ Future<bool> signInWithEmail() async {
       email: email,
       password: password,
     );
-    currentSession.value = result.session;
-    if (result.session != null) await refreshProfile();
+    final profile =
+        result.session != null ? await _fetchProfile() : null;
+    await _setSessionAndProfile(result.session, profile);
 
     // The password does not stay in memory longer than needed.
     loginPassword.value = '';
@@ -148,8 +181,8 @@ Future<bool> signUpWithEmail() async {
     if (result.requiresEmailConfirmation) {
       pendingConfirmationEmail.value = email;
     } else {
-      currentSession.value = result.session;
-      await refreshProfile();
+      final profile = await _fetchProfile();
+      await _setSessionAndProfile(result.session, profile);
     }
 
     signUpPassword.value = '';

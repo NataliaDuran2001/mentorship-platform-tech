@@ -217,23 +217,7 @@ class _HistoryRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppConstants.spacingMd),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.spacingSm,
-                  vertical: AppConstants.spacingXs,
-                ),
-                decoration: BoxDecoration(
-                  color: band.containerColor,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-                ),
-                child: Text(
-                  '${session.averageScore}/100',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: band.color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              ScoreBandBadge(band: band, score: session.averageScore),
               const SizedBox(width: AppConstants.spacingSm),
               const Icon(
                 Icons.chevron_right,

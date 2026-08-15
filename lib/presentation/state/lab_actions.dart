@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../core/di/injection.dart';
 import '../../domain/entities/lab_challenge.dart';
 import '../../domain/repositories/lab_repository.dart';
@@ -39,10 +41,13 @@ Future<void> loadLabs(String topicId) async {
       for (final challenge in challenges)
         if (challenge is! TheoryChallenge) challenge.id,
     ];
-    await Future.wait([
-      ensureLabTheoryTranslations(theoryIds),
-      ensureLabExerciseTranslations(exerciseIds),
-    ]);
+    // Not awaited on purpose, same reasoning as ensureRoadmapTranslations:
+    // the lab must show its (already-available) English content right away
+    // and let the Spanish overlay fill in over it once Kimi answers, instead
+    // of leaving the whole topic blocked behind a spinner for as long as the
+    // slowest translation call takes.
+    unawaited(ensureLabTheoryTranslations(theoryIds));
+    unawaited(ensureLabExerciseTranslations(exerciseIds));
   } catch (e) {
     labError.value = errorMessage(e);
   } finally {

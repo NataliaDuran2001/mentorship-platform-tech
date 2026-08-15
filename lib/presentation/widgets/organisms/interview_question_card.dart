@@ -11,7 +11,7 @@ import '../../utils/constants.dart';
 import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
-import '../atoms/step_counter_label.dart';
+import '../atoms/interview_category_tag.dart';
 
 class InterviewQuestionCard extends StatelessWidget {
   const InterviewQuestionCard({
@@ -48,16 +48,10 @@ class InterviewQuestionCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            _CategoryTag(category: question.category),
-            const Spacer(),
-            StepCounterLabel(
-              currentStep: questionNumber,
-              totalSteps: totalQuestions,
-            ),
-          ],
-        ),
+        // Which question this is stays on the AppBar's step dots only — a
+        // second "STEP n OF m" text here just repeated the same fact in a
+        // different style.
+        InterviewCategoryTag(category: question.category),
         const SizedBox(height: AppConstants.spacingMd),
         Text(question.prompt, style: textTheme.headlineSmall),
         const SizedBox(height: AppConstants.spacingLg),
@@ -89,37 +83,6 @@ class InterviewQuestionCard extends StatelessWidget {
               (isSubmitting || answerText.trim().isEmpty) ? null : onSubmit,
         ),
       ],
-    );
-  }
-}
-
-class _CategoryTag extends StatelessWidget {
-  const _CategoryTag({required this.category});
-
-  final String category;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = category == 'behavioral'
-        ? tr('About you', 'Sobre ti')
-        : tr('About the job', 'Sobre el puesto');
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.spacingSm,
-        vertical: AppConstants.spacingXs,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.primaryFixed,
-        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.onPrimaryFixed,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
     );
   }
 }
