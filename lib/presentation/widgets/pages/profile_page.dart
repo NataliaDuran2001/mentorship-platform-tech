@@ -12,6 +12,7 @@ import '../../state/language_state.dart';
 import '../../state/roadmap_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/translate.dart';
+import '../molecules/feedback_cta_card.dart';
 import '../molecules/goal_picker_sheet.dart';
 import '../organisms/change_password_card.dart';
 import '../organisms/language_settings_card.dart';
@@ -102,6 +103,10 @@ class ProfilePage extends StatelessWidget {
                   totalCount: roadmapLeaves.value.length,
                   goal: profile.learningGoal,
                   onEditGoal: () => _openGoalPicker(context),
+                ),
+                const SizedBox(height: 16),
+                const FeedbackCtaCard(
+                  formUrl: 'https://forms.gle/MhhuKMqibCzMDh6m9',
                 ),
                 const SizedBox(height: 16),
                 ChangePasswordCard(
