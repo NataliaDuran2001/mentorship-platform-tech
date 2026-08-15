@@ -52,9 +52,29 @@ void main() {
   testWidgets('a weak run is encouraged, not failed', (tester) async {
     await _pump(tester, const LabScore(correct: 1, total: 5));
 
-    expect(find.text('Worth a replay'), findsOneWidget);
-    // Reaching this card at all means the section was finished.
-    expect(find.textContaining('You finished it'), findsOneWidget);
+    // Reaching this card at all means the section was finished, and the copy
+    // has to lead with that rather than with the deficit.
+    expect(find.text('You made it through'), findsOneWidget);
+    expect(find.textContaining('finished it anyway'), findsOneWidget);
+  });
+
+  testWidgets('the explanations are counted so the denominator adds up', (
+    tester,
+  ) async {
+    // What the learner lived: three screens. What is scored: two of them.
+    await _pump(tester, const LabScore(correct: 0, total: 2, concepts: 1));
+
+    expect(find.text(' / 2'), findsOneWidget);
+    expect(find.textContaining('1 concept read'), findsOneWidget);
+    expect(find.textContaining('not scored'), findsOneWidget);
+  });
+
+  testWidgets('a lab with no explanations does not mention them', (
+    tester,
+  ) async {
+    await _pump(tester, const LabScore(correct: 2, total: 3));
+
+    expect(find.textContaining('concept'), findsNothing);
   });
 
   testWidgets('the retried challenges are named', (tester) async {

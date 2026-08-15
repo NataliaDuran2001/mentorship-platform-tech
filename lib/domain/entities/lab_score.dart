@@ -32,16 +32,28 @@ enum LabScoreBand {
 }
 
 class LabScore {
-  const LabScore({required this.correct, required this.total});
+  const LabScore({
+    required this.correct,
+    required this.total,
+    this.concepts = 0,
+  });
 
   /// A lab with nothing to score, e.g. one made entirely of explanations.
-  const LabScore.empty() : correct = 0, total = 0;
+  const LabScore.empty() : correct = 0, total = 0, concepts = 0;
 
   /// Answered right on the first check.
   final int correct;
 
   /// Challenges that could be got wrong. Explanations are excluded.
   final int total;
+
+  /// Explanations read on the way through.
+  ///
+  /// They are not scored, but they are counted: a learner who walked through
+  /// five screens and is shown "0 / 2" has no way to tell whether the number
+  /// is wrong or the explanations simply do not count. Saying how many were
+  /// read is what closes that gap.
+  final int concepts;
 
   /// Accuracy at or above which a run reads as [LabScoreBand.strong].
   static const double strongThreshold = 0.8;

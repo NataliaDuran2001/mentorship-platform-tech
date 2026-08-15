@@ -15,6 +15,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 import '../../state/onboarding_actions.dart';
 import '../../state/onboarding_state.dart';
 import '../../utils/onboarding_quiz.dart';
+import '../../utils/translate.dart';
 import '../organisms/guided_quiz_step.dart';
 import '../organisms/onboarding_step_layout.dart';
 import '../organisms/onboarding_steps.dart';
@@ -113,25 +114,33 @@ class OnboardingPage extends StatelessWidget {
 
   /// The main button changes its name depending on what it does.
   String _continueLabelOf(OnboardingStepId step) {
-    if (step == OnboardingStepId.summary) return 'Go to Dashboard';
-    if (step == OnboardingStepId.quiz && quizShowingResult.value) {
-      return 'Confirm this path';
+    if (step == OnboardingStepId.summary) {
+      return tr('Go to Dashboard', 'Ir al Panel');
     }
-    return 'Continue';
+    if (step == OnboardingStepId.quiz && quizShowingResult.value) {
+      return tr('Confirm this path', 'Confirmar este camino');
+    }
+    return tr('Continue', 'Continuar');
   }
 
   String _titleOf(OnboardingStepId step) {
     switch (step) {
       case OnboardingStepId.level:
-        return 'Hi! How would you describe yourself today?';
+        return tr(
+          'Hi! How would you describe yourself today?',
+          '¡Hola! ¿Cómo te describirías hoy?',
+        );
       case OnboardingStepId.track:
-        return 'What do you want to focus on?';
+        return tr(
+          'What do you want to focus on?',
+          '¿En qué te quieres enfocar?',
+        );
       case OnboardingStepId.quiz:
         return quizShowingResult.value
-            ? 'We found your path'
+            ? tr('We found your path', 'Encontramos tu camino')
             : currentQuizQuestion.value.prompt;
       case OnboardingStepId.goal:
-        return 'What is your main goal?';
+        return tr('What is your main goal?', '¿Cuál es tu meta principal?');
       case OnboardingStepId.summary:
         // The summary brings its own header with the confirmation icon.
         return '';
@@ -141,20 +150,38 @@ class OnboardingPage extends StatelessWidget {
   String? _subtitleOf(OnboardingStepId step) {
     switch (step) {
       case OnboardingStepId.level:
-        return 'We want to tailor your experience to your current level.';
+        return tr(
+          'We want to tailor your experience to your current level.',
+          'Queremos ajustar tu experiencia a tu nivel actual.',
+        );
       case OnboardingStepId.track:
-        return 'Choose the area where you feel most at home, or where you '
-            'want to grow. If you are not sure yet, we will help you.';
+        return tr(
+          'Choose the area where you feel most at home, or where you '
+              'want to grow. If you are not sure yet, we will help you.',
+          'Elige el área donde te sientas más cómoda, o donde quieras '
+              'crecer. Si todavía no estás segura, te ayudamos.',
+        );
       case OnboardingStepId.quiz:
         if (quizShowingResult.value) {
-          return 'You can take it or pick another one: the final call is '
-              'yours.';
+          return tr(
+            'You can take it or pick another one: the final call is '
+                'yours.',
+            'Puedes aceptarlo o elegir otro: la decisión final es '
+                'tuya.',
+          );
         }
         final question = currentQuizQuestion.value;
-        return 'Question ${question.number} of '
-            '${quizQuestions.length}. ${question.subtitle}';
+        return tr(
+          'Question ${question.number} of '
+              '${quizQuestions.length}. ${question.subtitle}',
+          'Pregunta ${question.number} de '
+              '${quizQuestions.length}. ${question.subtitle}',
+        );
       case OnboardingStepId.goal:
-        return 'Tell us what you want to achieve in the next 6 months.';
+        return tr(
+          'Tell us what you want to achieve in the next 6 months.',
+          'Cuéntanos qué quieres lograr en los próximos 6 meses.',
+        );
       case OnboardingStepId.summary:
         return null;
     }

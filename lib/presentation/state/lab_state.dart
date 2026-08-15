@@ -62,13 +62,17 @@ final labScore = computed<LabScore>(() {
 
   var total = 0;
   var correct = 0;
+  var concepts = 0;
   for (var i = 0; i < challenges.length; i++) {
-    if (challenges[i] is TheoryChallenge) continue;
+    if (challenges[i] is TheoryChallenge) {
+      concepts++;
+      continue;
+    }
     total++;
     if (firstTry.contains(i)) correct++;
   }
 
-  return LabScore(correct: correct, total: total);
+  return LabScore(correct: correct, total: total, concepts: concepts);
 });
 
 /// The questions that took more than one try, in the order they were met.

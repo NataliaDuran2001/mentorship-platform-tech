@@ -6,10 +6,12 @@
 // router.
 
 import 'package:flutter/material.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 import '../molecules/nav_item.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 
 /// Descriptor of a navigation destination of the shell.
 class AppDestination {
@@ -53,6 +55,14 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The destination labels are already resolved by the time they reach
+    // this widget (the router recomputes them reactively), but the two
+    // `tr()` calls made directly in this file ("Back"/"Sign out") need their
+    // own reactive scope to repaint on a language change.
+    return SignalBuilder(builder: (context) => _build(context));
+  }
+
+  Widget _build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isMobile = width <= AppConstants.breakpointMobile;
     final isDesktop = width > AppConstants.breakpointTablet;
@@ -95,7 +105,7 @@ class AppShell extends StatelessWidget {
         leading: bottomIndex < 0
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
-                tooltip: 'Back',
+                tooltip: tr('Back', 'Atrás'),
                 onPressed: () => onDestinationSelected(0), // Default to first tab (My path)
               )
             : null,
@@ -166,7 +176,7 @@ class AppShell extends StatelessWidget {
                 const Spacer(),
                 const Divider(),
                 NavItem(
-                  label: 'Sign out',
+                  label: tr('Sign out', 'Cerrar sesión'),
                   icon: Icons.logout,
                   selected: false,
                   onTap: onLogout!,
@@ -208,7 +218,7 @@ class AppShell extends StatelessWidget {
               const Spacer(),
               const Divider(),
               NavItem(
-                label: 'Sign out',
+                label: tr('Sign out', 'Cerrar sesión'),
                 icon: Icons.logout,
                 selected: false,
                 onTap: () {

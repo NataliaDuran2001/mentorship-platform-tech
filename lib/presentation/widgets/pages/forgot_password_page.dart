@@ -14,6 +14,7 @@ import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
 import '../organisms/auth_layout.dart';
@@ -28,18 +29,23 @@ class ForgotPasswordPage extends StatelessWidget {
       builder: (context) {
         if (recoveryEmailSent.value) {
           return AuthLayout(
-            title: 'Check your email',
+            title: tr('Check your email', 'Revisa tu correo'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const AuthMessage(
+                AuthMessage(
                   tone: AuthMessageTone.info,
-                  message: 'If that email has an account, the link to set a '
-                      'new password is on its way. It may take a minute.',
+                  message: tr(
+                    'If that email has an account, the link to set a '
+                        'new password is on its way. It may take a minute.',
+                    'Si ese correo tiene una cuenta, el enlace para crear '
+                        'una nueva contraseña ya va en camino. Puede tardar '
+                        'un minuto.',
+                  ),
                 ),
                 const SizedBox(height: AppConstants.defaultPadding * 1.5),
                 CustomButton(
-                  text: 'Back to sign in',
+                  text: tr('Back to sign in', 'Volver a iniciar sesión'),
                   onPressed: () {
                     clearAuthForms();
                     context.go('/login');
@@ -51,7 +57,7 @@ class ForgotPasswordPage extends StatelessWidget {
         }
 
         return AuthLayout(
-          title: 'Reset your password',
+          title: tr('Reset your password', 'Restablece tu contraseña'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -60,8 +66,12 @@ class ForgotPasswordPage extends StatelessWidget {
                 const SizedBox(height: AppConstants.defaultPadding),
               ],
               Text(
-                'Tell us the email of your account and we will send you a '
-                'link to set a new password.',
+                tr(
+                  'Tell us the email of your account and we will send you a '
+                  'link to set a new password.',
+                  'Cuéntanos el correo de tu cuenta y te enviaremos un '
+                  'enlace para crear una nueva contraseña.',
+                ),
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
@@ -69,7 +79,7 @@ class ForgotPasswordPage extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.defaultPadding * 1.5),
               CustomInput(
-                hintText: 'Email',
+                hintText: tr('Email', 'Correo electrónico'),
                 prefixIcon: Icons.email,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
@@ -83,7 +93,7 @@ class ForgotPasswordPage extends StatelessWidget {
                 const Center(child: CircularProgressIndicator())
               else
                 CustomButton(
-                  text: 'Send recovery link',
+                  text: tr('Send recovery link', 'Enviar enlace de recuperación'),
                   onPressed: () =>
                       requestPasswordRecovery(passwordFormEmail.value),
                 ),
@@ -93,7 +103,7 @@ class ForgotPasswordPage extends StatelessWidget {
                   clearAuthForms();
                   context.go('/login');
                 },
-                child: const Text('Back to sign in'),
+                child: Text(tr('Back to sign in', 'Volver a iniciar sesión')),
               ),
             ],
           ),

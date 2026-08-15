@@ -10,6 +10,7 @@
 // without the model, so failures propagate as AiFailure for the UI to show
 // directly (no graceful degradation here).
 
+import '../entities/app_language.dart';
 import '../entities/experience_level.dart';
 import '../entities/interview_question.dart';
 import '../entities/interview_session_feedback.dart';
@@ -32,6 +33,7 @@ abstract interface class InterviewRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
     String? desiredRole,
+    required AppLanguage language,
   });
 
   /// Sends every answered question of the session to Kimi3 in a single call
@@ -47,5 +49,6 @@ abstract interface class InterviewRepository {
     required Map<String, String> answers,
     required RoadmapTrack track,
     ExperienceLevel? experienceLevel,
+    required AppLanguage language,
   });
 }

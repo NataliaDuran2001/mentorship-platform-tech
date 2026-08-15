@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
 
 class OnboardingFooter extends StatelessWidget {
@@ -23,7 +24,7 @@ class OnboardingFooter extends StatelessWidget {
     this.onSkip,
     this.showBack = true,
     this.showSkip = true,
-    this.continueLabel = 'Continue',
+    this.continueLabel,
   });
 
   /// `null` disables the button: it's how step 2 keeps you from moving on
@@ -37,7 +38,8 @@ class OnboardingFooter extends StatelessWidget {
   final bool showSkip;
 
   /// The last step says "Go to Dashboard" instead of "Continue".
-  final String continueLabel;
+  /// `null` falls back to the translated "Continue" label.
+  final String? continueLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -47,17 +49,17 @@ class OnboardingFooter extends StatelessWidget {
       maintainAnimation: true,
       maintainState: true,
       child: _GhostButton(
-        label: 'Back',
+        label: tr('Back', 'Atrás'),
         onPressed: showBack ? onBack : null,
       ),
     );
 
     final skipButton = showSkip
-        ? _GhostButton(label: 'Skip', onPressed: onSkip)
+        ? _GhostButton(label: tr('Skip', 'Omitir'), onPressed: onSkip)
         : const SizedBox.shrink();
 
     final continueButton = CustomButton(
-      text: continueLabel,
+      text: continueLabel ?? tr('Continue', 'Continuar'),
       onPressed: onContinue,
       isPrimary: true,
     );

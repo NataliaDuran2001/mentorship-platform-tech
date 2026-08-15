@@ -11,6 +11,7 @@ import '../../state/interview_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_input.dart';
 
 class InterviewsPage extends StatelessWidget {
@@ -40,15 +41,24 @@ class InterviewsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: AppConstants.spacingLg),
                   Text(
-                    'Practice for your next interview',
+                    tr(
+                      'Practice for your next interview',
+                      'Practica para tu próxima entrevista',
+                    ),
                     style: textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.spacingSm),
                   Text(
-                    "We'll ask you a few interview questions for your path. "
-                    "At the end, you get friendly feedback on all your "
-                    'answers. Take your time — this is just practice.',
+                    tr(
+                      "We'll ask you a few interview questions for your path. "
+                          "At the end, you get friendly feedback on all your "
+                          'answers. Take your time — this is just practice.',
+                      'Te haremos algunas preguntas de entrevista para tu '
+                          'camino. Al final, recibes feedback amigable sobre '
+                          'todas tus respuestas. Tómate tu tiempo — esto es '
+                          'solo práctica.',
+                    ),
                     style: textTheme.bodyMedium
                         ?.copyWith(color: AppColors.onSurfaceVariant),
                     textAlign: TextAlign.center,
@@ -63,8 +73,12 @@ class InterviewsPage extends StatelessWidget {
                   const SizedBox(height: AppConstants.spacingXl),
                   if (profile?.track == null)
                     Text(
-                      'Finish setting up your path first so we can pick the '
-                      'right questions for you.',
+                      tr(
+                        'Finish setting up your path first so we can pick the '
+                            'right questions for you.',
+                        'Termina de configurar tu camino primero para que '
+                            'podamos elegir las preguntas correctas para ti.',
+                      ),
                       style: textTheme.bodySmall
                           ?.copyWith(color: AppColors.onSurfaceVariant),
                       textAlign: TextAlign.center,
@@ -73,20 +87,26 @@ class InterviewsPage extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'What role are you practicing for? (optional)',
+                        tr(
+                          'What role are you practicing for? (optional)',
+                          '¿Para qué puesto te preparas? (opcional)',
+                        ),
                         style: textTheme.labelLarge,
                       ),
                     ),
                     const SizedBox(height: AppConstants.spacingSm),
                     CustomInput(
-                      hintText: 'e.g. Frontend Developer, QA Tester',
+                      hintText: tr(
+                        'e.g. Frontend Developer, QA Tester',
+                        'ej. Desarrolladora Frontend, QA Tester',
+                      ),
                       onChanged: (value) => interviewDesiredRole.value = value,
                     ),
                     const SizedBox(height: AppConstants.spacingLg),
                     ElevatedButton.icon(
                       onPressed: () => context.go('/interviews/session'),
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('Start practice'),
+                      label: Text(tr('Start practice', 'Empezar práctica')),
                     ),
                   ],
                 ],

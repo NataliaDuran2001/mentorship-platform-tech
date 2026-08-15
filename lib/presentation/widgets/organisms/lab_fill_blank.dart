@@ -6,6 +6,7 @@ import '../../state/lab_state.dart';
 import '../../state/lab_actions.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 
 class LabFillBlank extends StatelessWidget {
   const LabFillBlank({super.key, required this.challenge});
@@ -58,7 +59,7 @@ class LabFillBlank extends StatelessWidget {
         if (challenge.availableOptions != null) ...[
           const SizedBox(height: AppConstants.spacingXl),
           Text(
-            'Options (tap to copy):',
+            tr('Options (tap to copy):', 'Opciones (toca para copiar):'),
             style: textTheme.labelMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),

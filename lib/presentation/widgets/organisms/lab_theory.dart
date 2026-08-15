@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/lab_challenge.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 
 class LabTheory extends StatelessWidget {
   const LabTheory({super.key, required this.challenge});
@@ -38,7 +39,7 @@ class LabTheory extends StatelessWidget {
             ),
             const SizedBox(width: AppConstants.spacingSm),
             Text(
-              'CONCEPT',
+              tr('CONCEPT', 'CONCEPTO'),
               style: textTheme.labelMedium?.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,

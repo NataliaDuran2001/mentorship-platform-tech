@@ -13,6 +13,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
+import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/onboarding_answer.dart';
@@ -111,6 +112,22 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
             'learning_goal': learningGoal?.slug,
             'onboarding_completed_at': DateTime.now().toUtc().toIso8601String(),
           })
+          .eq('id', id)
+          .select(UserModel.columns)
+          .single();
+
+      return UserModel.fromJson(row).toEntity();
+    });
+  }
+
+  @override
+  Future<UserProfile> updateLanguage({required AppLanguage language}) async {
+    final id = _requiredUserId;
+
+    return _translate(() async {
+      final row = await _client
+          .from(_profilesTable)
+          .update(<String, dynamic>{'language': language.slug})
           .eq('id', id)
           .select(UserModel.columns)
           .single();

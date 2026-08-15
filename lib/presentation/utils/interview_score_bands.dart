@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'translate.dart';
 
 class InterviewScoreBand {
   const InterviewScoreBand({
@@ -27,28 +28,28 @@ class InterviewScoreBand {
 /// Picks the band a 0-100 [score] falls into.
 InterviewScoreBand interviewScoreBand(int score) {
   if (score >= 85) {
-    return const InterviewScoreBand(
-      label: 'Excellent',
+    return InterviewScoreBand(
+      label: tr('Excellent', 'Excelente'),
       color: AppColors.onSuccessContainer,
       containerColor: AppColors.successContainer,
     );
   }
   if (score >= 65) {
-    return const InterviewScoreBand(
-      label: 'Good',
+    return InterviewScoreBand(
+      label: tr('Good', 'Bien'),
       color: AppColors.onPrimaryContainer,
       containerColor: AppColors.primaryContainer,
     );
   }
   if (score >= 40) {
-    return const InterviewScoreBand(
-      label: 'Getting there',
+    return InterviewScoreBand(
+      label: tr('Getting there', 'Vas por buen camino'),
       color: AppColors.onTertiaryContainer,
       containerColor: AppColors.tertiaryContainer,
     );
   }
-  return const InterviewScoreBand(
-    label: 'Keep practicing',
+  return InterviewScoreBand(
+    label: tr('Keep practicing', 'Sigue practicando'),
     color: AppColors.onErrorContainer,
     containerColor: AppColors.errorContainer,
   );

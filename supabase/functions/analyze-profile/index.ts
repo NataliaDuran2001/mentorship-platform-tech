@@ -11,7 +11,8 @@
 // {
 //   "answers": [{ "stepKey": "quiz_1", "value": "frontend" }, ...],
 //   "experienceLevel": "student" | "junior_developer" | "career_switcher",
-//   "learningGoal": "first_job" | "new_language" | "interview_skills" | "middle_level"
+//   "learningGoal": "first_job" | "new_language" | "interview_skills" | "middle_level",
+//   "language": "en" | "es" (optional, default "en")
 // }
 //
 // Response body:
@@ -60,12 +61,14 @@ Respond with a JSON object in this exact schema:
 }
 
 Only include alternatives if confidence < 0.85. Maximum 2 alternatives.
+Write every "reasoning" and "reason" field in the language requested at the end of the student profile below.
 Always respond with valid JSON only. No markdown, no extra text.`;
 
 function buildUserPrompt(
   answers: Array<{ stepKey: string; value: string }>,
   experienceLevel: string | null,
   learningGoal: string | null,
+  languageName: string,
 ): string {
   const quizAnswers = answers
     .filter((a) => a.stepKey.startsWith('quiz_'))
@@ -83,7 +86,7 @@ User profile:
 Quiz answers (each shows affinity toward a track):
 ${quizAnswers || '(no quiz answers)'}
 
-Please analyze this profile and recommend the best learning track.`.trim();
+Please analyze this profile and recommend the best learning track. Write your response in ${languageName}.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -117,11 +120,13 @@ serve(async (req: Request) => {
 
     // --- Parse body ---
     const body = await req.json();
-    const { answers = [], experienceLevel = null, learningGoal = null } = body;
+    const { answers = [], experienceLevel = null, learningGoal = null, language = 'en' } = body;
 
     if (!Array.isArray(answers)) {
       return Response.json({ error: 'answers must be an array' }, { status: 400 });
     }
+
+    const languageName = language === 'es' ? 'Spanish' : 'English';
 
     // --- Call Kimi3 ---
     const kimiKey = Deno.env.get('KIMI_API_KEY');
@@ -141,7 +146,7 @@ serve(async (req: Request) => {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: buildUserPrompt(answers, experienceLevel, learningGoal),
+            content: buildUserPrompt(answers, experienceLevel, learningGoal, languageName),
           },
         ],
         response_format: { type: 'json_object' },

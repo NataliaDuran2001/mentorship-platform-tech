@@ -126,15 +126,18 @@ void main() {
     expect(labMissedQuestions.value, isEmpty);
   });
 
-  test('explanations are not counted in the denominator', () async {
+  test('explanations are counted apart, not in the denominator', () async {
     await loadLabs('t1');
     await nextLabChallenge();
     await _solveFirstTry();
     await _solveFirstTry();
 
-    // Three challenges were played, but only two could be got wrong.
+    // Three screens were walked through, but only two could be got wrong.
+    // Both numbers are kept: the second one alone makes the score look wrong
+    // to anyone who counted the screens.
     expect(labChallenges.value.length, 3);
     expect(labScore.value.total, 2);
+    expect(labScore.value.concepts, 1);
   });
 
   test('getting it right after a retry does not count as first try', () async {

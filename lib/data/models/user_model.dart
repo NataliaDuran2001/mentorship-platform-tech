@@ -2,10 +2,11 @@
 // to the UserProfile entity of the Domain layer.
 //
 // The keys are the column names of `public.profiles`, exactly as the migration
-// of issue #7 created them. The values of `experience_level`, `track_id` and
-// `learning_goal` are the slugs of the `domain` enums, so the mapping is
-// direct and does not need a translation table.
+// of issue #7 created them. The values of `experience_level`, `track_id`,
+// `learning_goal` and `language` are the slugs of the `domain` enums, so the
+// mapping is direct and does not need a translation table.
 
+import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
@@ -22,6 +23,7 @@ class UserModel {
     this.trackId,
     this.learningGoal,
     this.onboardingCompletedAt,
+    this.language,
   });
 
   /// Columns requested in a `select`. Explicit and not `*` so that adding a
@@ -29,7 +31,7 @@ class UserModel {
   /// client.
   static const String columns =
       'id, email, display_name, role, experience_level, track_id, '
-      'learning_goal, onboarding_completed_at';
+      'learning_goal, onboarding_completed_at, language';
 
   final String id;
   final String email;
@@ -39,6 +41,7 @@ class UserModel {
   final String? trackId;
   final String? learningGoal;
   final DateTime? onboardingCompletedAt;
+  final String? language;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -52,6 +55,7 @@ class UserModel {
       trackId: json['track_id'] as String?,
       learningGoal: json['learning_goal'] as String?,
       onboardingCompletedAt: _parseDate(json['onboarding_completed_at']),
+      language: json['language'] as String?,
     );
   }
 
@@ -65,6 +69,7 @@ class UserModel {
       trackId: profile.track?.slug,
       learningGoal: profile.learningGoal?.slug,
       onboardingCompletedAt: profile.onboardingCompletedAt,
+      language: profile.language.slug,
     );
   }
 
@@ -80,6 +85,8 @@ class UserModel {
       track: RoadmapTrack.fromSlug(trackId),
       learningGoal: LearningGoal.fromSlug(learningGoal),
       onboardingCompletedAt: onboardingCompletedAt,
+      // Unknown/missing slug reads as English, the app's original baseline.
+      language: AppLanguage.fromSlug(language),
     );
   }
 
@@ -93,6 +100,7 @@ class UserModel {
       'track_id': trackId,
       'learning_goal': learningGoal,
       'onboarding_completed_at': onboardingCompletedAt?.toIso8601String(),
+      'language': language,
     };
   }
 

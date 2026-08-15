@@ -17,7 +17,8 @@
 //   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
 //   "completedTopics": number,
-//   "totalTopics": number
+//   "totalTopics": number,
+//   "language": "en" | "es" (optional, default "en")
 // }
 //
 // Response body:
@@ -40,7 +41,7 @@ The summary must:
 2. State where they are on their path in concrete terms — how much of it they have completed and what that means. Name the numbers rather than only the percentage.
 3. Say what the sensible next move is, tied to their chosen track and their goal.
 4. Match the tone to the actual state: a learner who has just started needs reassurance that the beginning is the right place to be; one who is halfway needs to see the distance already covered; one who has finished everything available needs to know there is nothing pending.
-5. Speak in English.
+5. Write it in the language requested at the end of the learner context below.
 6. Avoid unexplained technical jargon; write as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
 7. Never invent progress, topic names, deadlines, streaks or achievements that are not in the context given to you.
 8. Do not open with a time-of-day greeting ("Good morning", "Today"): the card is not tied to a moment of the day.
@@ -57,6 +58,7 @@ function buildUserPrompt(
   learningGoalSlug: string | null,
   completedTopics: number,
   totalTopics: number,
+  languageName: string,
 ): string {
   const percentage = totalTopics > 0
     ? Math.round((completedTopics / totalTopics) * 100)
@@ -80,7 +82,7 @@ Learner context:
 - Path progress: ${completedTopics} of ${totalTopics} topics completed (${percentage}%).
 - Stage: ${stage}.
 
-Write the 2-3 sentence summary for this learner.`.trim();
+Write the 2-3 sentence summary for this learner, in ${languageName}.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -120,11 +122,17 @@ serve(async (req: Request) => {
       learningGoalSlug = null,
       completedTopics = 0,
       totalTopics = 0,
+      language = 'en',
     } = body;
 
     if (!trackSlug) {
       return Response.json({ error: 'trackSlug is required' }, { status: 400 });
     }
+
+    const languageName = language === 'es' ? 'Spanish' : 'English';
+    // Cached separately per language: without this, switching Settings
+    // language would still surface a same-day brief written in the old one.
+    const insightType = `daily_brief_${language}`;
 
     // --- Check cache (ai_profile_insights) ---
     // If there is an insight of type 'daily_brief' created in the last 24 hours, return it.
@@ -138,7 +146,7 @@ serve(async (req: Request) => {
       .from('ai_profile_insights')
       .select('content')
       .eq('user_id', user.id)
-      .eq('insight_type', 'daily_brief')
+      .eq('insight_type', insightType)
       .gt('created_at', twentyFourHoursAgo)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -174,6 +182,7 @@ serve(async (req: Request) => {
               learningGoalSlug,
               completedTopics,
               totalTopics,
+              languageName,
             ),
           },
         ],
@@ -205,7 +214,7 @@ serve(async (req: Request) => {
     // --- Cache the result ---
     await serviceSupabase.from('ai_profile_insights').insert({
       user_id: user.id,
-      insight_type: 'daily_brief',
+      insight_type: insightType,
       content: briefResult,
       model: KIMI_MODEL,
     });

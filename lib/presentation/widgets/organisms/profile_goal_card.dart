@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/onboarding_labels.dart';
+import '../../utils/translate.dart';
 
 class ProfileGoalCard extends StatelessWidget {
   const ProfileGoalCard({
@@ -18,7 +19,8 @@ class ProfileGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final goalStr = goalName(profile.learningGoal) ?? 'No goal yet';
+    final goalStr =
+        goalName(profile.learningGoal) ?? tr('No goal yet', 'Sin meta aún');
     final percentage = (progress * 100).toInt();
 
     return Card(
@@ -37,7 +39,7 @@ class ProfileGoalCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Learning goals',
+                  tr('Learning goals', 'Metas de aprendizaje'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.bold,

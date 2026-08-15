@@ -7,6 +7,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:aspire_app/domain/entities/app_language.dart';
 import 'package:aspire_app/domain/entities/onboarding_answer.dart';
 import 'package:aspire_app/domain/entities/experience_level.dart';
 import 'package:aspire_app/domain/entities/learning_goal.dart';
@@ -25,6 +26,7 @@ class _OfflineAiRepository implements AiRepository {
     required List<OnboardingAnswer> answers,
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 
@@ -36,6 +38,7 @@ class _OfflineAiRepository implements AiRepository {
     required String? learningGoalSlug,
     required int completedTopics,
     required int totalTopics,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 
@@ -45,6 +48,7 @@ class _OfflineAiRepository implements AiRepository {
     required String challengeType,
     required int attemptCount,
     required String? userContext,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 
@@ -54,6 +58,7 @@ class _OfflineAiRepository implements AiRepository {
     required String? learningGoalSlug,
     required double progressFraction,
     required String? nextTopicTitle,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 }

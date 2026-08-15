@@ -19,6 +19,7 @@ import '../../state/ai_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
+import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
 import '../organisms/roadmap_tree.dart';
 
@@ -46,8 +47,8 @@ class RoadmapPage extends StatelessWidget {
               .addPostFrameCallback((_) => loadRoadmapCoachMessage());
         }
 
-        final currentTrackName =
-            trackName(currentProfile.value?.track) ?? 'your specialty';
+        final currentTrackName = trackName(currentProfile.value?.track) ??
+            tr('your specialty', 'tu especialidad');
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
@@ -94,8 +95,8 @@ class _Header extends StatelessWidget {
         final total = roadmapLeaves.value.length;
         final completed = roadmapCompletedCount.value;
         final percentage = (roadmapProgress.value * 100).round();
-        final currentTrackName =
-            trackName(currentProfile.value?.track) ?? 'your specialty';
+        final currentTrackName = trackName(currentProfile.value?.track) ??
+            tr('your specialty', 'tu especialidad');
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -108,7 +109,8 @@ class _Header extends StatelessWidget {
                 ],
                 Expanded(
                   child: Text(
-                    (roadmapCoachMessage.value ?? 'Your path').toUpperCase(),
+                    (roadmapCoachMessage.value ?? tr('Your path', 'Tu camino'))
+                        .toUpperCase(),
                     style: textTheme.labelMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
@@ -126,11 +128,15 @@ class _Header extends StatelessWidget {
             if (total > 0) ...[
               AppProgressBar(
                 value: roadmapProgress.value,
-                semanticsLabel: 'Progress of your path',
+                semanticsLabel:
+                    tr('Progress of your path', 'Progreso de tu camino'),
               ),
               const SizedBox(height: AppConstants.spacingSm),
               Text(
-                '$percentage% complete · $completed of $total topics',
+                tr(
+                  '$percentage% complete · $completed of $total topics',
+                  '$percentage% completado · $completed de $total temas',
+                ),
                 style: textTheme.bodyMedium?.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),

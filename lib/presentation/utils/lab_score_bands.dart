@@ -3,16 +3,18 @@
 // Mirrors interview_score_bands.dart, and like it uses only existing AppColors
 // tokens — no new colors for this feature.
 //
-// The weakest band is deliberately NOT red. Reaching this screen at all means
-// the section was finished: every challenge was eventually answered right.
-// Error red would read as a failed lab, which is not what happened. Neutral
-// carries "come back to this" without taking away what was just done, and the
-// copy does the rest.
+// The weakest band is deliberately NOT red, and its copy leads with what was
+// achieved rather than what was missed. Reaching this screen at all means the
+// section was finished and every challenge was eventually answered right —
+// somebody who retried a lot did not fail, they persisted. Error red and a
+// deficit-first sentence would tell them the opposite of what happened, and
+// the learner most at risk of quitting is exactly the one who lands here.
 
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/lab_score.dart';
 import 'app_colors.dart';
+import 'translate.dart';
 
 class LabScoreBandStyle {
   const LabScoreBandStyle({
@@ -35,33 +37,50 @@ class LabScoreBandStyle {
   final Color containerColor;
 }
 
+/// Reads the language signal through [tr], so it must be called from inside a
+/// reactive scope — which it is: the card that uses it renders under the
+/// closing screen's `SignalBuilder`.
 LabScoreBandStyle labScoreBandStyle(LabScoreBand band) {
   switch (band) {
     case LabScoreBand.perfect:
-      return const LabScoreBandStyle(
-        label: 'Perfect run',
-        headline: 'Every answer right on the first try.',
+      return LabScoreBandStyle(
+        label: tr('Perfect run', 'Ronda perfecta'),
+        headline: tr(
+          'Every single one on the first try. You own this topic.',
+          'Todas al primer intento. Dominas este tema.',
+        ),
         color: AppColors.onSuccessContainer,
         containerColor: AppColors.successContainer,
       );
     case LabScoreBand.strong:
-      return const LabScoreBandStyle(
-        label: 'Strong work',
-        headline: 'You moved through this one with barely a stumble.',
+      return LabScoreBandStyle(
+        label: tr('Strong work', 'Muy bien'),
+        headline: tr(
+          'Almost a clean sweep. This one is yours.',
+          'Casi impecable. Este tema ya es tuyo.',
+        ),
         color: AppColors.onPrimaryContainer,
         containerColor: AppColors.primaryContainer,
       );
     case LabScoreBand.gettingThere:
-      return const LabScoreBandStyle(
-        label: 'Getting there',
-        headline: 'You worked for this one, and you got there.',
+      return LabScoreBandStyle(
+        label: tr('Getting there', 'Vas por buen camino'),
+        headline: tr(
+          'You worked it out yourself. That is the kind that sticks.',
+          'Lo resolviste por tu cuenta. Así es como se aprende de verdad.',
+        ),
         color: AppColors.onTertiaryContainer,
         containerColor: AppColors.tertiaryContainer,
       );
     case LabScoreBand.needsReview:
-      return const LabScoreBandStyle(
-        label: 'Worth a replay',
-        headline: 'You finished it. A second pass will make it stick.',
+      return LabScoreBandStyle(
+        label: tr('You made it through', 'Lo lograste'),
+        headline: tr(
+          'This one fought back and you finished it anyway. '
+              'Run it again and watch how much easier it feels.',
+          'Este se resistió y aun así lo terminaste. '
+              'Repítelo y vas a ver lo fácil que se siente.',
+        ),
         color: AppColors.onSurfaceVariant,
         containerColor: AppColors.surfaceContainerHigh,
       );

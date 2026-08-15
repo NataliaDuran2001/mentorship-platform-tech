@@ -8,6 +8,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 
 import '../config/app_branding.dart';
 import '../../presentation/utils/app_colors.dart';
+import '../../presentation/utils/translate.dart';
 import '../../presentation/state/auth_actions.dart';
 import '../../presentation/state/auth_state.dart';
 import '../../presentation/widgets/organisms/app_shell.dart';
@@ -57,41 +58,49 @@ class _ShellDestination {
 ///
 /// "My path" goes first because it is the destination the user lands on when
 /// finishing the onboarding: it is what closes AC 1.3.
-const _shell = <_ShellDestination>[
-  _ShellDestination(
-    label: 'My path',
-    icon: Icons.route_outlined,
-    route: '/path',
-    page: RoadmapPage(),
-  ),
-  _ShellDestination(
-    label: 'Dashboard',
-    icon: Icons.space_dashboard_outlined,
-    route: '/dashboard',
-    page: DashboardPage(),
-  ),
-  _ShellDestination(
-    label: 'Interviews',
-    icon: Icons.record_voice_over_outlined,
-    route: '/interviews',
-    page: InterviewsPage(),
-  ),
-  _ShellDestination(
-    label: 'Profile',
-    icon: Icons.person_outline,
-    route: '/profile',
-    page: ProfilePage(),
-    inBottomNav: false,
-  ),
-];
+///
+/// A getter, not `const`: the labels go through `tr()`, which reads the
+/// language signal and so cannot be a compile-time constant.
+List<_ShellDestination> get _shell => [
+      _ShellDestination(
+        label: tr('My path', 'Mi camino'),
+        icon: Icons.route_outlined,
+        route: '/path',
+        page: const RoadmapPage(),
+      ),
+      _ShellDestination(
+        label: tr('Dashboard', 'Panel'),
+        icon: Icons.space_dashboard_outlined,
+        route: '/dashboard',
+        page: const DashboardPage(),
+      ),
+      _ShellDestination(
+        label: tr('Interviews', 'Entrevistas'),
+        icon: Icons.record_voice_over_outlined,
+        route: '/interviews',
+        page: const InterviewsPage(),
+      ),
+      _ShellDestination(
+        label: tr('Profile', 'Perfil'),
+        icon: Icons.person_outline,
+        route: '/profile',
+        page: const ProfilePage(),
+        inBottomNav: false,
+      ),
+    ];
 
-/// Built once, not per read: AppShell compares destinations by identity to work
-/// out which one is selected, so handing it fresh instances would break the
-/// nav highlight.
-final _destinations = [
-  for (final d in _shell) d.destination,
-];
+/// Rebuilt on every read (unlike routes, which never change): AppShell
+/// compares destinations by identity to work out which one is selected, so
+/// this must only be read once per build and the resulting list handed down
+/// consistently for that whole render — see the `SignalBuilder` around
+/// `AppShell` below, which is what makes reading it here reactive to
+/// language changes without literally rebuilding on every frame.
+List<AppDestination> get _destinations => [
+      for (final d in _shell) d.destination,
+    ];
 
+/// Route strings never change with the language, so this stays a one-time
+/// list — no need to recompute it on every read like `_destinations`.
 final _routes = [
   for (final d in _shell) d.route,
 ];
@@ -185,16 +194,23 @@ class AppRouter {
       ShellRoute(
         builder: (context, state, child) {
           final index = _routes.indexOf(state.uri.path);
-          return AppShell(
-            title: AppBranding.name,
-            destinations: _destinations,
-            // If the route is not in the list (it should not happen inside
-            // the shell), it falls back to the dashboard so as not to break
-            // the nav.
-            selectedIndex: index < 0 ? 0 : index,
-            onDestinationSelected: (i) => context.go(_routes[i]),
-            onLogout: signOut,
-            child: child,
+          // SignalBuilder, not a plain build: go_router only rebuilds this
+          // on navigation, but the destination labels go through `tr()` and
+          // must also update when the language changes. `_destinations` is
+          // read once here and handed down as one consistent list for this
+          // whole render (see the comment on `_destinations` above).
+          return SignalBuilder(
+            builder: (context) => AppShell(
+              title: AppBranding.name,
+              destinations: _destinations,
+              // If the route is not in the list (it should not happen inside
+              // the shell), it falls back to the dashboard so as not to break
+              // the nav.
+              selectedIndex: index < 0 ? 0 : index,
+              onDestinationSelected: (i) => context.go(_routes[i]),
+              onLogout: signOut,
+              child: child,
+            ),
           );
         },
         routes: [

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/onboarding_labels.dart';
+import '../../utils/translate.dart';
 
 class ProfileDetails extends StatelessWidget {
   const ProfileDetails({super.key, required this.profile});
@@ -17,8 +18,10 @@ class ProfileDetails extends StatelessWidget {
         ? profile.displayName!
         : profile.email.split('@').first;
     
-    final trackStr = trackName(profile.track) ?? 'No focus yet';
-    final levelStr = levelName(profile.experienceLevel) ?? 'No level yet';
+    final trackStr =
+        trackName(profile.track) ?? tr('No focus yet', 'Sin enfoque aún');
+    final levelStr =
+        levelName(profile.experienceLevel) ?? tr('No level yet', 'Sin nivel aún');
     final subtitle = '$trackStr · $levelStr';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
@@ -94,7 +97,7 @@ class ProfileDetails extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Edit profile'),
+                child: Text(tr('Edit profile', 'Editar perfil')),
               ),
             ),
           ],

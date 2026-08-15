@@ -15,6 +15,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
+import '../../utils/translate.dart';
 import '../organisms/auth_layout.dart';
 import '../organisms/sign_up_form.dart';
 
@@ -26,9 +27,9 @@ class SignUpPage extends StatelessWidget {
     return SignalBuilder(
       builder: (context) {
         if (authLoading.value) {
-          return const AuthLayout(
-            title: 'Create your account',
-            child: Center(child: CircularProgressIndicator()),
+          return AuthLayout(
+            title: tr('Create your account', 'Crea tu cuenta'),
+            child: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -36,7 +37,7 @@ class SignUpPage extends StatelessWidget {
 
         if (pendingEmail != null) {
           return AuthLayout(
-            title: 'Check your email',
+            title: tr('Check your email', 'Revisa tu correo'),
             child: ConfirmationPending(
               email: pendingEmail,
               wasResent: confirmationEmailResent.value,
@@ -52,7 +53,7 @@ class SignUpPage extends StatelessWidget {
         }
 
         return AuthLayout(
-          title: 'Create your account',
+          title: tr('Create your account', 'Crea tu cuenta'),
           child: SignUpForm(
             errorMessage: authError.value,
             onNameChanged: (v) => signUpName.value = v,

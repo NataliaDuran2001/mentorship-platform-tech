@@ -8,6 +8,7 @@ import '../../domain/repositories/interview_repository.dart';
 import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
 import 'interview_state.dart';
+import 'language_state.dart';
 
 /// Starts a fresh interview-practice session, personalized to the
 /// authenticated user's track, level and goal, and to [interviewDesiredRole]
@@ -27,6 +28,7 @@ Future<void> startInterviewSession() async {
       experienceLevel: profile.experienceLevel,
       learningGoal: profile.learningGoal,
       desiredRole: desiredRole.isEmpty ? null : desiredRole,
+      language: appLanguage.value,
     );
     interviewQuestions.value = questions;
   } catch (e) {
@@ -79,6 +81,7 @@ Future<void> finishInterviewSession() async {
       answers: interviewAnswers.value,
       track: track,
       experienceLevel: profile.experienceLevel,
+      language: appLanguage.value,
     );
     interviewFeedback.value = {
       for (final feedback in result.results) feedback.questionId: feedback,

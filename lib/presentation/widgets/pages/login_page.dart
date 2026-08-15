@@ -13,6 +13,7 @@ import 'package:signals_flutter/signals_flutter.dart';
 import '../../../domain/failures/auth_failure.dart';
 import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
+import '../../utils/translate.dart';
 import '../organisms/auth_layout.dart';
 import '../organisms/login_form.dart';
 
@@ -27,9 +28,9 @@ class LoginPage extends StatelessWidget {
     return SignalBuilder(
       builder: (context) {
         if (authLoading.value) {
-          return const AuthLayout(
-            title: 'Welcome',
-            child: Center(child: CircularProgressIndicator()),
+          return AuthLayout(
+            title: tr('Welcome', 'Bienvenida'),
+            child: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -39,7 +40,7 @@ class LoginPage extends StatelessWidget {
             authErrorKind.value == AuthFailureKind.emailNotConfirmed;
 
         return AuthLayout(
-          title: 'Welcome',
+          title: tr('Welcome', 'Bienvenida'),
           child: LoginForm(
             errorMessage: authError.value,
             onEmailChanged: (v) => loginEmail.value = v,

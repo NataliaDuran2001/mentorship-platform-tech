@@ -14,6 +14,7 @@ import '../../../domain/entities/lab_score.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/lab_score_bands.dart';
+import '../../utils/translate.dart';
 
 class LabScoreCard extends StatelessWidget {
   const LabScoreCard({
@@ -48,12 +49,43 @@ class LabScoreCard extends StatelessWidget {
           _ScoreFraction(score: score, color: style.color),
           const SizedBox(height: AppConstants.spacingXs),
           Text(
-            'answered right on the first try',
+            score.total == 1
+                ? tr(
+                    'exercise answered right on the first try',
+                    'ejercicio resuelto al primer intento',
+                  )
+                : tr(
+                    'exercises answered right on the first try',
+                    'ejercicios resueltos al primer intento',
+                  ),
             style: textTheme.bodySmall?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
+          // Without this line the denominator looks wrong to anyone who
+          // counted the screens they went through: they walked past the
+          // explanations too, and nothing on screen said those do not count.
+          if (score.concepts > 0) ...[
+            const SizedBox(height: AppConstants.spacingXs),
+            Text(
+              score.concepts == 1
+                  ? tr(
+                      'plus 1 concept read — explanations are not scored',
+                      'más 1 concepto leído — las explicaciones no puntúan',
+                    )
+                  : tr(
+                      'plus ${score.concepts} concepts read — '
+                          'explanations are not scored',
+                      'más ${score.concepts} conceptos leídos — '
+                          'las explicaciones no puntúan',
+                    ),
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
           const SizedBox(height: AppConstants.spacingMd),
           _BandBadge(style: style),
           const SizedBox(height: AppConstants.spacingSm),
@@ -152,7 +184,7 @@ class _MissedList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Worth another look',
+            tr('Worth another look', 'Para repasar'),
             style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: AppConstants.spacingSm),
