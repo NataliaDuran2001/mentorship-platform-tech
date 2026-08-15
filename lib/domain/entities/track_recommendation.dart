@@ -21,12 +21,17 @@ class TrackRecommendation {
   });
 
   /// With no usable answers there is nothing to recommend.
+  ///
+  /// Every track appears at zero so the UI can paint the full breakdown; the
+  /// list must stay in sync with [RoadmapTrack.values] (guarded by test).
   const TrackRecommendation.empty()
       : track = null,
         scores = const <RoadmapTrack, int>{
           RoadmapTrack.frontend: 0,
           RoadmapTrack.backend: 0,
           RoadmapTrack.infrastructure: 0,
+          RoadmapTrack.uiux: 0,
+          RoadmapTrack.projectManagement: 0,
         },
         wasTie = false,
         reasoning = null,

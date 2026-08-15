@@ -8,11 +8,16 @@ import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/roadmap_track.dart';
 
 void main() {
-  test('there are exactly 3 tracks: frontend, backend, infrastructure', () {
+  test(
+      'there are exactly 5 tracks covering the full delivery cycle, '
+      'with the original three first (the tie-break depends on their order)',
+      () {
     expect(RoadmapTrack.values.map((t) => t.slug), [
       'frontend',
       'backend',
       'infrastructure',
+      'uiux',
+      'project_management',
     ]);
   });
 

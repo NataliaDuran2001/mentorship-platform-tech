@@ -40,6 +40,17 @@ class SupabaseConfig {
     return '${Uri.base.origin}/#/auth/confirmed';
   }
 
+  /// Where the password recovery email sends the user back (issue #57).
+  ///
+  /// Same rules as [emailRedirectTo]: derived from the running origin, hash
+  /// route, and it must be authorized in Supabase's redirect allow-list or it
+  /// silently falls back to the Site URL.
+  static String get passwordRecoveryRedirectTo {
+    const override = String.fromEnvironment('SUPABASE_RECOVERY_REDIRECT');
+    if (override.isNotEmpty) return override;
+    return '${Uri.base.origin}/#/auth/recovery';
+  }
+
   /// Boots the Supabase SDK. Must be called in main() before runApp().
   static Future<void> initialize() async {
     await Supabase.initialize(url: url, publishableKey: publishableKey);

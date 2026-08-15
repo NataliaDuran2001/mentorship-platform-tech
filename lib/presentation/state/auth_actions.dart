@@ -19,6 +19,7 @@ import '../../domain/usecases/sign_in_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
 import '../../domain/usecases/sign_up_usecase.dart';
 import '../utils/auth_error_messages.dart';
+import 'ai_state.dart';
 import 'auth_state.dart';
 import 'interview_state.dart';
 import 'onboarding_actions.dart';
@@ -180,6 +181,107 @@ Future<void> resendConfirmationEmail({String? email}) async {
   }
 }
 
+/// Requests the password recovery email (issue #57).
+///
+/// Success here only means "the request was accepted": with enumeration
+/// protection on, the backend answers the same whether the account exists or
+/// not, and the UI phrases it accordingly.
+Future<void> requestPasswordRecovery(String email) async {
+  final target = email.trim();
+  if (target.isEmpty) return;
+
+  passwordUpdateLoading.value = true;
+  passwordUpdateError.value = null;
+  recoveryEmailSent.value = false;
+
+  try {
+    await getIt<AuthRepository>().requestPasswordRecovery(email: target);
+    recoveryEmailSent.value = true;
+  } catch (e) {
+    passwordUpdateError.value = errorMessage(e);
+  } finally {
+    passwordUpdateLoading.value = false;
+  }
+}
+
+/// Exchanges the recovery link's token for a session (issue #57).
+///
+/// Called by the recovery landing as soon as it mounts, so an expired or
+/// already-used link says so before the user types anything. The token hash
+/// travels in the link, which is what makes the flow work on a different
+/// browser or device than the one that requested the email.
+Future<void> verifyRecoveryToken(String tokenHash) async {
+  passwordUpdateLoading.value = true;
+  passwordUpdateError.value = null;
+  passwordUpdateErrorKind.value = null;
+
+  try {
+    await getIt<AuthRepository>().confirmPasswordRecovery(
+      tokenHash: tokenHash,
+    );
+  } catch (e) {
+    passwordUpdateError.value = errorMessage(e);
+    passwordUpdateErrorKind.value = e is AuthFailure ? e.kind : null;
+  } finally {
+    passwordUpdateLoading.value = false;
+  }
+}
+
+/// Sets the new password from the recovery landing (issue #57).
+///
+/// [verifyRecoveryToken] already opened the session by the time this runs; if
+/// it could not (expired or reused link), the repository surfaces
+/// `sessionExpired` and the page offers to request a new link.
+Future<void> submitRecoveredPassword(String newPassword) async {
+  passwordUpdateLoading.value = true;
+  passwordUpdateError.value = null;
+  passwordUpdateErrorKind.value = null;
+
+  try {
+    await getIt<AuthRepository>().updatePassword(newPassword: newPassword);
+    passwordUpdateDone.value = true;
+  } catch (e) {
+    passwordUpdateError.value = errorMessage(e);
+    passwordUpdateErrorKind.value = e is AuthFailure ? e.kind : null;
+  } finally {
+    passwordUpdateLoading.value = false;
+  }
+}
+
+/// Changes the password of the signed-in user from the profile (issue #57).
+///
+/// The current password is verified first by signing in again: Supabase's
+/// update does not ask for it, but silently accepting a change from an open
+/// session on a shared computer would hand the account to whoever sits down
+/// next.
+Future<void> changePassword({
+  required String currentPassword,
+  required String newPassword,
+}) async {
+  final email = currentSession.value?.email;
+  if (email == null || email.isEmpty) return;
+
+  passwordUpdateLoading.value = true;
+  passwordUpdateError.value = null;
+  passwordUpdateDone.value = false;
+
+  try {
+    await getIt<SignInUseCase>()(email: email, password: currentPassword);
+    await getIt<AuthRepository>().updatePassword(newPassword: newPassword);
+    passwordUpdateDone.value = true;
+  } on AuthFailure catch (e) {
+    // The re-sign-in failing with bad credentials means the *current*
+    // password box is wrong; the generic message would blame the email too.
+    passwordUpdateError.value = e.kind == AuthFailureKind.invalidCredentials
+        ? "That current password isn't right."
+        : errorMessage(e);
+  } catch (e) {
+    passwordUpdateError.value = errorMessage(e);
+  } finally {
+    passwordUpdateLoading.value = false;
+  }
+}
+
 /// Signs out and clears all derived state.
 Future<void> signOut() async {
   authLoading.value = true;
@@ -200,6 +302,9 @@ Future<void> signOut() async {
     resetOnboarding();
     resetRoadmap();
     resetInterviewState();
+    // The summary and the coaching lines are written about the person who is
+    // leaving; without this they greeted the next one by their progress.
+    resetAiState();
     authLoading.value = false;
   }
 }

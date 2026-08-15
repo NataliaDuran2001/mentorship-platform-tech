@@ -18,7 +18,7 @@ import 'ai_state.dart';
 /// Ensures the roadmap is loaded first to get correct progress numbers.
 Future<void> loadDailyBrief() async {
   final profile = currentProfile.value;
-  if (profile == null) return;
+  if (profile == null || dailyBriefLoading.value) return;
 
   dailyBriefLoading.value = true;
   dailyBriefError.value = null;
@@ -27,6 +27,13 @@ Future<void> loadDailyBrief() async {
     // 1. Ensure roadmap/progress is loaded first to pass correct numbers to AI
     if (!roadmapLoaded.value) {
       await loadRoadmap();
+    }
+
+    // Without the progress numbers the summary would be about a path of 0 of 0
+    // topics, which reads as "you have done nothing" instead of as a failure.
+    if (roadmapError.value != null) {
+      dailyBriefError.value = roadmapError.value;
+      return;
     }
 
     final total = roadmapLeaves.value.length;
@@ -53,7 +60,7 @@ Future<void> loadDailyBrief() async {
 /// Loads the roadmap coach coaching message.
 Future<void> loadRoadmapCoachMessage() async {
   final profile = currentProfile.value;
-  if (profile == null) return;
+  if (profile == null || roadmapCoachLoading.value) return;
 
   roadmapCoachLoading.value = true;
   roadmapCoachError.value = null;
@@ -61,6 +68,11 @@ Future<void> loadRoadmapCoachMessage() async {
   try {
     if (!roadmapLoaded.value) {
       await loadRoadmap();
+    }
+
+    if (roadmapError.value != null) {
+      roadmapCoachError.value = roadmapError.value;
+      return;
     }
 
     final total = roadmapLeaves.value.length;

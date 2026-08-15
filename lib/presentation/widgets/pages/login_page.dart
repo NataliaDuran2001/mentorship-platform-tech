@@ -55,6 +55,10 @@ class LoginPage extends StatelessWidget {
               clearAuthForms();
               context.go('/sign-up');
             },
+            onForgotPassword: () {
+              clearAuthForms();
+              context.go('/forgot-password');
+            },
           ),
         );
       },

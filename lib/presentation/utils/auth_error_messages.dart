@@ -19,6 +19,10 @@ String authFailureMessage(AuthFailure failure) {
       return "There's already an account with that email. Try signing in.";
     case AuthFailureKind.weakPassword:
       return 'That password is too weak. Use at least 6 characters.';
+    case AuthFailureKind.samePassword:
+      return 'Your new password must be different from the current one.';
+    case AuthFailureKind.sessionExpired:
+      return 'That link is no longer valid. Request a new one and try again.';
     case AuthFailureKind.invalidEmail:
       return "That email doesn't look valid. Check it and try again.";
     case AuthFailureKind.tooManyRequests:

@@ -1,15 +1,19 @@
 // Supabase Edge Function: daily-brief
 //
 // Receives the user's progress and onboarding parameters, calls Kimi3 (kimi-k3)
-// to generate a personalized daily brief/motivation message, and caches it
-// in `ai_profile_insights` for 24 hours.
+// to generate the dashboard summary —where the learner stands on their path and
+// what comes next— and caches it in `ai_profile_insights` for 24 hours.
+//
+// The function name and the `daily_brief` insight type are kept as they are:
+// renaming them would orphan every cached row and break the deployed function's
+// URL. What changed is what the model is asked to write.
 //
 // Endpoint: POST /functions/v1/daily-brief
 // Auth: Bearer <supabase_anon_key> (user must be authenticated)
 //
 // Request body:
 // {
-//   "trackSlug": "frontend" | "backend" | "infrastructure",
+//   "trackSlug": string — slug del track (clave de public.tracks),
 //   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
 //   "completedTopics": number,
@@ -27,16 +31,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const KIMI_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 const KIMI_MODEL = 'kimi-k3';
 
-const SYSTEM_PROMPT = `You are a supportive and encouraging mentor.
-Your task is to write a personalized "Daily Brief" (2 to 3 sentences) for a student on a mentorship platform.
+const SYSTEM_PROMPT = `You are a supportive mentor writing the "Your Summary" card on a learner's dashboard.
 
-The brief must:
-1. Address the student directly and warmly.
-2. Contextualize their progress (e.g. 5 of 10 topics completed).
-3. Connect their track (Frontend/Backend/Infrastructure) and experience level/goal to their next logical steps in a motivational way.
-4. Keep it concise, warm, and easy to read.
+Write 2 to 3 sentences that tell the learner where they stand on their learning path.
+
+The summary must:
+1. Speak to the learner directly, by "you", in a warm and plain tone.
+2. State where they are on their path in concrete terms — how much of it they have completed and what that means. Name the numbers rather than only the percentage.
+3. Say what the sensible next move is, tied to their chosen track and their goal.
+4. Match the tone to the actual state: a learner who has just started needs reassurance that the beginning is the right place to be; one who is halfway needs to see the distance already covered; one who has finished everything available needs to know there is nothing pending.
 5. Speak in English.
 6. Avoid unexplained technical jargon; write as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
+7. Never invent progress, topic names, deadlines, streaks or achievements that are not in the context given to you.
+8. Do not open with a time-of-day greeting ("Good morning", "Today"): the card is not tied to a moment of the day.
 
 Format the output strictly as a JSON object:
 {
@@ -51,14 +58,29 @@ function buildUserPrompt(
   completedTopics: number,
   totalTopics: number,
 ): string {
+  const percentage = totalTopics > 0
+    ? Math.round((completedTopics / totalTopics) * 100)
+    : 0;
+
+  // Naming the stage keeps the model from congratulating someone at 0% or
+  // pushing "keep going" at someone who has nothing left to do.
+  const stage = totalTopics === 0
+    ? 'their path has no topics available yet'
+    : completedTopics === 0
+    ? 'they are about to start their path and have not completed any topic yet'
+    : completedTopics >= totalTopics
+    ? 'they have completed every topic currently available on their path'
+    : 'they are partway through their path';
+
   return `
-Student context:
+Learner context:
 - Specialization Track: ${trackSlug}
 - Current Level: ${experienceLevelSlug ?? 'not specified'}
 - Focus/Goal: ${learningGoalSlug ?? 'not specified'}
-- Progress: ${completedTopics} out of ${totalTopics} topics completed (${totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0}%).
+- Path progress: ${completedTopics} of ${totalTopics} topics completed (${percentage}%).
+- Stage: ${stage}.
 
-Please write a personalized, highly relevant 2-3 sentence Daily Brief for this student.`.trim();
+Write the 2-3 sentence summary for this learner.`.trim();
 }
 
 serve(async (req: Request) => {

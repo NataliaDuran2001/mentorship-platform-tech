@@ -196,15 +196,17 @@ void main() {
     );
   });
 
-  testWidgets('it offers the 3 decided tracks, with no Mobile and no UI/UX',
-      (tester) async {
+  testWidgets(
+      'the quiz recommends among the 3 technical tracks only; UI/UX and PM '
+      'are reached by direct selection, not by quiz votes', (tester) async {
     await _mount(tester);
 
     expect(find.text('Front-end'), findsOneWidget);
     expect(find.text('Back-end'), findsOneWidget);
-    expect(find.text('Infrastructure'), findsOneWidget);
+    expect(find.text('Infrastructure & DevOps'), findsOneWidget);
     expect(find.text('Mobile'), findsNothing);
-    expect(find.text('UI / UX Design'), findsNothing);
+    expect(find.text('UI/UX Design'), findsNothing);
+    expect(find.text('Project Management'), findsNothing);
   });
 
   testWidgets('it walks through the questions and shows the number of each one',
@@ -281,7 +283,7 @@ void main() {
     await _answerAll(tester, RoadmapTrack.frontend);
 
     // The recommended one is Back-end; Infrastructure is chosen instead.
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Infrastructure'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Infrastructure & DevOps'));
     await tester.pumpAndSettle();
 
     expect(selectedTrack.value, RoadmapTrack.infrastructure);

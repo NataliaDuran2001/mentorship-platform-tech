@@ -47,6 +47,18 @@ MultipleChoiceChallenge _challenge(String id, String topicId) {
   );
 }
 
+TheoryChallenge _theory(String id, String topicId) {
+  return TheoryChallenge(
+    id: id,
+    topicId: topicId,
+    question: 'Tags come in pairs',
+    blocks: const [
+      TheoryBlock(type: TheoryBlockType.paragraph, text: 'Open, write, close.'),
+    ],
+    keyTakeaway: 'Open, write, close.',
+  );
+}
+
 TopicNode _topic(String id, int sortOrder) {
   return TopicNode(
     id: id,
@@ -77,6 +89,9 @@ void main() {
     overrideDependency<LabRepository>(
       _FakeLabRepository({
         't1': [_challenge('c1', 't1'), _challenge('c2', 't1')],
+        // A topic that explains first and never asks anything back. It is the
+        // shape the Basic level leans on, and it still has to close its topic.
+        't2': [_theory('c1', 't2'), _theory('c2', 't2')],
       }),
     );
 
@@ -123,6 +138,22 @@ void main() {
     expect(roadmapTree.value[1].status, TopicStatus.available);
     expect(roadmapCompletedCount.value, 1);
     expect(roadmapProgress.value, 0.5);
+  });
+
+  test('a theory step advances on acknowledgement and still closes the topic',
+      () async {
+    await loadLabs('t2');
+
+    // Nothing is answered and nothing is validated: the reader acknowledges it
+    // and moves on. That is the whole interaction.
+    await nextLabChallenge();
+    expect(labIsCompleted.value, isFalse);
+    expect(labIsCurrentValid.value, isNull);
+
+    await nextLabChallenge();
+
+    expect(labIsCompleted.value, isTrue);
+    expect(roadmapRepo.completed, ['t2']);
   });
 
   test('replaying a finished lab keeps a single completed topic', () async {
