@@ -9,6 +9,7 @@ import '../../domain/entities/topic_node.dart';
 import '../../domain/entities/roadmap_track.dart';
 import '../utils/auth_error_messages.dart';
 import 'auth_state.dart';
+import 'language_state.dart';
 import 'roadmap_state.dart';
 import 'roadmap_actions.dart';
 import 'ai_state.dart';
@@ -47,6 +48,7 @@ Future<void> loadDailyBrief() async {
       learningGoalSlug: profile.learningGoal?.slug,
       completedTopics: completed,
       totalTopics: total,
+      language: appLanguage.value,
     );
 
     dailyBrief.value = briefText;
@@ -91,6 +93,7 @@ Future<void> loadRoadmapCoachMessage() async {
       learningGoalSlug: profile.learningGoal?.slug,
       progressFraction: progressFraction,
       nextTopicTitle: nextTopicTitle,
+      language: appLanguage.value,
     );
 
     roadmapCoachMessage.value = messageText;
@@ -117,6 +120,7 @@ Future<void> requestLabHint(String topicId, String challengeQuestion, String cha
       challengeType: challengeType,
       attemptCount: attemptCount,
       userContext: currentProfile.value?.experienceLevel?.slug,
+      language: appLanguage.value,
     );
 
     final updatedList = List<String>.from(currentHintsList)..add(hintText);

@@ -14,6 +14,7 @@
 // {
 //   "trackSlug": "frontend" | "backend" | "infrastructure",
 //   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
+//   "language": "en" | "es" (optional, default "en"),
 //   "items": [
 //     { "questionId": "...", "questionPrompt": "...", "category": "behavioral" | "technical", "answerText": "..." },
 //     ...
@@ -51,8 +52,9 @@ The feedback must:
    - 81-100: a clear, complete, well-explained answer.
    Look at all the answers in this session together and grade them relative to each other: if two answers are clearly different in quality or effort, their scores must be different too.
 5. In each answer's "summary", name one specific detail from what the student actually wrote (or, if they wrote very little, say that plainly and kindly) — the score must always feel justified by something concrete in the text, never arbitrary.
-6. Use plain, simple English at an A2/B1 level: short sentences, common everyday words, no idioms, no unexplained technical jargon.
+6. Use plain, simple language at an A2/B1 level: short sentences, common everyday words, no idioms, no unexplained technical jargon.
 7. Also write one short "overallSummary" for the whole session: 1-2 friendly sentences on how the session went overall.
+8. Write every "summary", "strengths", "improvements" and "overallSummary" in the language requested at the end of the student context below — nothing else in the response changes, only the language of the text.
 
 Format the output strictly as a JSON object:
 {
@@ -74,6 +76,7 @@ function buildUserPrompt(
   trackSlug: string,
   experienceLevelSlug: string | null,
   items: { questionId: string; questionPrompt: string; category: string; answerText: string }[],
+  languageName: string,
 ): string {
   const questionsBlock = items
     .map(
@@ -91,7 +94,7 @@ Interview practice session — ${items.length} questions and the student's answe
 
 ${questionsBlock}
 
-Please give feedback on every answer above, following the rules.`.trim();
+Please give feedback on every answer above, following the rules. Write your response in ${languageName}.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -128,6 +131,7 @@ serve(async (req: Request) => {
     const {
       trackSlug,
       experienceLevelSlug = null,
+      language = 'en',
       items,
     } = body;
 
@@ -137,6 +141,8 @@ serve(async (req: Request) => {
         { status: 400 },
       );
     }
+
+    const languageName = language === 'es' ? 'Spanish' : 'English';
     for (const item of items) {
       if (!item.questionId || !item.questionPrompt || !item.answerText) {
         return Response.json(
@@ -166,7 +172,7 @@ serve(async (req: Request) => {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: buildUserPrompt(trackSlug, experienceLevelSlug, items),
+            content: buildUserPrompt(trackSlug, experienceLevelSlug, items, languageName),
           },
         ],
         response_format: { type: 'json_object' },

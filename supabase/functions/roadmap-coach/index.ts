@@ -11,7 +11,8 @@
 //   "trackSlug": "frontend" | "backend" | "infrastructure",
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
 //   "progressPercent": number,
-//   "nextTopicTitle": string | null
+//   "nextTopicTitle": string | null,
+//   "language": "en" | "es" (optional, default "en")
 // }
 //
 // Response body:
@@ -29,11 +30,12 @@ const SYSTEM_PROMPT = `You are a supportive, high-energy coding coach.
 Your task is to write a single, brief, punchy motivational coaching statement (1 sentence, max 15 words) for a student's learning path header.
 
 The coaching message must:
-1. Speak directly to the student in English.
+1. Speak directly to the student.
 2. Be extremely concise (exactly 1 sentence).
 3. Personalize the message based on their progress percentage and what is coming up next.
 4. Keep it positive and action-oriented.
 5. Avoid unexplained technical jargon; write as if explaining to someone new to tech.
+6. Write it in the language requested at the end of the coach context below.
 
 Format the output strictly as a JSON object:
 {
@@ -46,6 +48,7 @@ function buildUserPrompt(
   learningGoalSlug: string | null,
   progressPercent: number,
   nextTopicTitle: string | null,
+  languageName: string,
 ): string {
   return `
 Coach Context:
@@ -54,7 +57,7 @@ Coach Context:
 - Current Progress: ${progressPercent}% complete
 - Next upcoming topic: ${nextTopicTitle ?? 'None (all completed)'}
 
-Please write a highly relevant 1-sentence motivational coaching header message for this student.`.trim();
+Please write a highly relevant 1-sentence motivational coaching header message for this student, in ${languageName}.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -93,11 +96,17 @@ serve(async (req: Request) => {
       learningGoalSlug = null,
       progressPercent = 0,
       nextTopicTitle = null,
+      language = 'en',
     } = body;
 
     if (!trackSlug) {
       return Response.json({ error: 'trackSlug is required' }, { status: 400 });
     }
+
+    const languageName = language === 'es' ? 'Spanish' : 'English';
+    // Cached separately per language, same reasoning as daily-brief: a
+    // language switch must not surface a stale-language cached message.
+    const insightType = `roadmap_coach_${language}`;
 
     // --- Check cache (ai_profile_insights) ---
     const serviceSupabase = createClient(
@@ -110,7 +119,7 @@ serve(async (req: Request) => {
       .from('ai_profile_insights')
       .select('content')
       .eq('user_id', user.id)
-      .eq('insight_type', 'roadmap_coach')
+      .eq('insight_type', insightType)
       .gt('created_at', twelveHoursAgo)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -145,6 +154,7 @@ serve(async (req: Request) => {
               learningGoalSlug,
               progressPercent,
               nextTopicTitle,
+              languageName,
             ),
           },
         ],
@@ -176,7 +186,7 @@ serve(async (req: Request) => {
     // --- Cache the result ---
     await serviceSupabase.from('ai_profile_insights').insert({
       user_id: user.id,
-      insight_type: 'roadmap_coach',
+      insight_type: insightType,
       content: coachResult,
       model: KIMI_MODEL,
     });

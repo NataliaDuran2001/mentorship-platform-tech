@@ -12,7 +12,8 @@
 //   "challengeQuestion": string,
 //   "challengeType": "multiple_choice" | "fill_blank" | "order_logic",
 //   "attemptCount": number,
-//   "userContext": string | null
+//   "userContext": string | null,
+//   "language": "en" | "es" (optional, default "en")
 // }
 //
 // Response body:
@@ -37,7 +38,7 @@ CRITICAL RULES:
    - Attempt 1: Very conceptual, pointing to the general topic.
    - Attempt 2: Slightly more specific, pointing to a key property or tag.
    - Attempt 3+: Specific tip on where they might have made a typo or logical mistake, but still no direct answer.
-5. Speak in English.
+5. Write it in the language requested at the end of the challenge context below.
 6. Avoid unexplained technical jargon; write as if explaining to someone new to tech. If a technical term is unavoidable, explain it in plain words.
 
 Format the output strictly as a JSON object:
@@ -51,6 +52,7 @@ function buildUserPrompt(
   challengeType: string,
   attemptCount: number,
   userContext: string | null,
+  languageName: string,
 ): string {
   return `
 Challenge context:
@@ -59,7 +61,7 @@ Challenge context:
 - Attempt Count: ${attemptCount} (this is the student's attempt #${attemptCount})
 - Student Level: ${userContext ?? 'not specified'}
 
-Please generate a helpful hint conforming to the Socratic tutor rules.`.trim();
+Please generate a helpful hint conforming to the Socratic tutor rules, in ${languageName}.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -98,11 +100,14 @@ serve(async (req: Request) => {
       challengeType,
       attemptCount = 1,
       userContext = null,
+      language = 'en',
     } = body;
 
     if (!challengeQuestion || !challengeType) {
       return Response.json({ error: 'challengeQuestion and challengeType are required' }, { status: 400 });
     }
+
+    const languageName = language === 'es' ? 'Spanish' : 'English';
 
     // --- Call Kimi3 ---
     const kimiKey = Deno.env.get('KIMI_API_KEY');
@@ -127,6 +132,7 @@ serve(async (req: Request) => {
               challengeType,
               attemptCount,
               userContext,
+              languageName,
             ),
           },
         ],

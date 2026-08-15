@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
 import '../atoms/step_counter_label.dart';
 import '../molecules/onboarding_footer.dart';
@@ -31,7 +32,7 @@ class OnboardingStepLayout extends StatelessWidget {
     this.onContinue,
     this.showBack = true,
     this.showSkip = true,
-    this.continueLabel = 'Continue',
+    this.continueLabel,
     this.errorMessage,
   });
 
@@ -50,7 +51,9 @@ class OnboardingStepLayout extends StatelessWidget {
   final VoidCallback? onContinue;
   final bool showBack;
   final bool showSkip;
-  final String continueLabel;
+
+  /// `null` falls back to the default label inside [OnboardingFooter].
+  final String? continueLabel;
 
   /// Already user-facing text.
   final String? errorMessage;
@@ -65,7 +68,10 @@ class OnboardingStepLayout extends StatelessWidget {
       children: [
         AppProgressBar(
           value: currentStep / totalSteps,
-          semanticsLabel: 'Step $currentStep of $totalSteps',
+          semanticsLabel: tr(
+            'Step $currentStep of $totalSteps',
+            'Paso $currentStep de $totalSteps',
+          ),
         ),
         const SizedBox(height: AppConstants.spacingMd),
         StepCounterLabel(currentStep: currentStep, totalSteps: totalSteps),
@@ -188,7 +194,7 @@ class _DecorativePanel extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingLg),
             Text(
-              'Your future starts here',
+              tr('Your future starts here', 'Tu futuro empieza aquí'),
               style: Theme.of(context)
                   .textTheme
                   .headlineMedium
@@ -196,8 +202,12 @@ class _DecorativePanel extends StatelessWidget {
             ),
             const SizedBox(height: AppConstants.spacingSm),
             Text(
-              "We're with you at every step of your tech career, with clarity "
-              'and empathy.',
+              tr(
+                "We're with you at every step of your tech career, with clarity "
+                    'and empathy.',
+                'Estamos contigo en cada paso de tu carrera en tech, con '
+                    'claridad y empatía.',
+              ),
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium

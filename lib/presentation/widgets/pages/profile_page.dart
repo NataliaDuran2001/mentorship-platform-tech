@@ -5,9 +5,13 @@ import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
+import '../../state/language_actions.dart';
+import '../../state/language_state.dart';
 import '../../state/roadmap_state.dart';
 import '../../utils/app_colors.dart';
+import '../../utils/translate.dart';
 import '../organisms/change_password_card.dart';
+import '../organisms/language_settings_card.dart';
 import '../organisms/profile_details.dart';
 import '../organisms/profile_goal_card.dart';
 import '../organisms/roadmap_progress_card.dart';
@@ -18,13 +22,18 @@ class ProfilePage extends StatelessWidget {
   /// Client-side checks mirror the sign-up rules; the backend re-validates.
   void _submitPasswordChange() {
     if (passwordFormNew.value.length < 6) {
-      passwordUpdateError.value =
-          'That password is too weak. Use at least 6 characters.';
+      passwordUpdateError.value = tr(
+        'That password is too weak. Use at least 6 characters.',
+        'Esa contraseña es muy débil. Usa al menos 6 caracteres.',
+      );
       return;
     }
     if (passwordFormNew.value != passwordFormConfirm.value) {
-      passwordUpdateError.value =
-          "The new passwords don't match. Check them and try again.";
+      passwordUpdateError.value = tr(
+        "The new passwords don't match. Check them and try again.",
+        'Las nuevas contraseñas no coinciden. Revísalas e inténtalo de '
+            'nuevo.',
+      );
       return;
     }
     changePassword(
@@ -51,6 +60,13 @@ class ProfilePage extends StatelessWidget {
               children: [
                 ProfileDetails(profile: profile),
                 const SizedBox(height: 16),
+                LanguageSettingsCard(
+                  currentLanguage: appLanguage.value,
+                  onSelect: updateLanguage,
+                  isLoading: languageUpdateLoading.value,
+                  errorMessage: languageUpdateError.value,
+                ),
+                const SizedBox(height: 16),
                 RoadmapProgressCard(progress: progress),
                 const SizedBox(height: 16),
                 ProfileGoalCard(profile: profile, progress: progress),
@@ -73,7 +89,7 @@ class ProfilePage extends StatelessWidget {
                     onPressed: signOut,
                     icon: const Icon(Icons.logout, color: AppColors.error),
                     label: Text(
-                      'Sign out',
+                      tr('Sign out', 'Cerrar sesión'),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                             color: AppColors.error,
                             fontWeight: FontWeight.bold,

@@ -8,6 +8,7 @@
 // by step. `onboardingCompletedAt` is what tells a half-filled profile from a
 // finished one, and it is the value the route guards read.
 
+import 'app_language.dart';
 import 'experience_level.dart';
 import 'learning_goal.dart';
 import 'roadmap_track.dart';
@@ -23,6 +24,7 @@ class UserProfile {
     this.track,
     this.learningGoal,
     this.onboardingCompletedAt,
+    this.language = AppLanguage.en,
   });
 
   /// Same identifier as `auth.users.id`.
@@ -47,6 +49,10 @@ class UserProfile {
   /// When the onboarding was completed, or `null` if it is still pending.
   final DateTime? onboardingCompletedAt;
 
+  /// The language the student picked in Settings. Drives both the app's UI
+  /// text and the language the AI Edge Functions answer in.
+  final AppLanguage language;
+
   /// The onboarding is finished.
   ///
   /// It requires a track on top of the timestamp: without a track there is no
@@ -61,6 +67,7 @@ class UserProfile {
     RoadmapTrack? track,
     LearningGoal? learningGoal,
     DateTime? onboardingCompletedAt,
+    AppLanguage? language,
   }) {
     return UserProfile(
       id: id,
@@ -74,6 +81,7 @@ class UserProfile {
       track: track ?? this.track,
       learningGoal: learningGoal ?? this.learningGoal,
       onboardingCompletedAt: onboardingCompletedAt ?? this.onboardingCompletedAt,
+      language: language ?? this.language,
     );
   }
 }

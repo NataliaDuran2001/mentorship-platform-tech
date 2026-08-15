@@ -19,6 +19,7 @@ import '../../state/ai_actions.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
+import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -42,7 +43,8 @@ class DashboardPage extends StatelessWidget {
         }
 
         final profile = currentProfile.value;
-        final trackNameStr = trackName(profile?.track) ?? 'your focus area';
+        final trackNameStr =
+            trackName(profile?.track) ?? tr('your focus area', 'tu área de enfoque');
         final textTheme = Theme.of(context).textTheme;
 
         return SingleChildScrollView(
@@ -52,7 +54,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               // Header
               Text(
-                'WELCOME BACK',
+                tr('WELCOME BACK', 'BIENVENIDA DE NUEVO'),
                 style: textTheme.labelMedium?.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -61,7 +63,7 @@ class DashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.spacingXs),
               Text(
-                profile?.displayName ?? 'Learner',
+                profile?.displayName ?? tr('Learner', 'Estudiante'),
                 style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -141,7 +143,7 @@ class DashboardPage extends StatelessWidget {
                     ),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
-                      'Your Summary',
+                      tr('Your Summary', 'Tu resumen'),
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -156,7 +158,11 @@ class DashboardPage extends StatelessWidget {
                   _buildErrorState()
                 else
                   Text(
-                    dailyBrief.value ?? "We're putting your summary together. Check back in a moment!",
+                    dailyBrief.value ??
+                        tr(
+                          "We're putting your summary together. Check back in a moment!",
+                          'Estamos armando tu resumen. Vuelve en un momento.',
+                        ),
                     style: textTheme.bodyLarge?.copyWith(
                       color: AppColors.onSurfaceVariant,
                       height: 1.5,
@@ -197,19 +203,22 @@ class DashboardPage extends StatelessWidget {
   }
 
   Widget _buildErrorState() {
-    return const Row(
+    return Row(
       children: [
-        Icon(Icons.info_outline, color: AppColors.error, size: 20),
-        SizedBox(width: AppConstants.spacingSm),
+        const Icon(Icons.info_outline, color: AppColors.error, size: 20),
+        const SizedBox(width: AppConstants.spacingSm),
         Expanded(
           child: Text(
-            "We couldn't put your summary together right now. Your progress is safe — try again.",
-            style: TextStyle(color: AppColors.onSurfaceVariant),
+            tr(
+              "We couldn't put your summary together right now. Your progress is safe — try again.",
+              'No pudimos armar tu resumen en este momento. Tu progreso está a salvo — intenta de nuevo.',
+            ),
+            style: const TextStyle(color: AppColors.onSurfaceVariant),
           ),
         ),
         TextButton(
           onPressed: loadDailyBrief,
-          child: Text('Retry'),
+          child: Text(tr('Retry', 'Reintentar')),
         ),
       ],
     );
@@ -247,7 +256,7 @@ class DashboardPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Your Track Progress',
+              tr('Your Track Progress', 'El progreso de tu ruta'),
               style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppConstants.spacingXs),
@@ -263,18 +272,21 @@ class DashboardPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${(progress * 100).round()}% Completed',
+                    tr(
+                      '${(progress * 100).round()}% Completed',
+                      '${(progress * 100).round()}% completado',
+                    ),
                     style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '$completed of $total topics',
+                    tr('$completed of $total topics', '$completed de $total temas'),
                     style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
                   ),
                 ],
               ),
             ] else
               Text(
-                'No progress to track yet.',
+                tr('No progress to track yet.', 'Todavía no hay progreso que mostrar.'),
                 style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
               ),
           ],
@@ -295,7 +307,7 @@ class DashboardPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Next Up',
+              tr('Next Up', 'Lo que sigue'),
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppColors.primary,
@@ -322,7 +334,7 @@ class DashboardPage extends StatelessWidget {
                   context.go('/lab/${nextTopic.id}');
                 },
                 icon: const Icon(Icons.play_circle_outline),
-                label: const Text('Start Lab Challenge'),
+                label: Text(tr('Start Lab Challenge', 'Comenzar el reto del laboratorio')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.onPrimary,
@@ -333,12 +345,15 @@ class DashboardPage extends StatelessWidget {
               ),
             ] else ...[
               Text(
-                'All caught up!',
+                tr('All caught up!', '¡Ya estás al día!'),
                 style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: AppConstants.spacingSm),
               Text(
-                'You have completed all available topics on your current path.',
+                tr(
+                  'You have completed all available topics on your current path.',
+                  'Completaste todos los temas disponibles en tu ruta actual.',
+                ),
                 style: textTheme.bodyMedium?.copyWith(color: AppColors.onSurfaceVariant),
               ),
             ],

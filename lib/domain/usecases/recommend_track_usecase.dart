@@ -10,6 +10,7 @@
 // the vote-count rule is preserved verbatim in `_voteCount()` and the output
 // type is unchanged, so every caller of `call()` continues to work as before.
 
+import '../entities/app_language.dart';
 import '../entities/onboarding_answer.dart';
 import '../entities/experience_level.dart';
 import '../entities/learning_goal.dart';
@@ -33,6 +34,7 @@ class RecommendTrackUseCase {
     List<OnboardingAnswer> answers, {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    AppLanguage language = AppLanguage.en,
   }) async {
     // --- Try AI first ---
     try {
@@ -40,6 +42,7 @@ class RecommendTrackUseCase {
         answers: answers,
         experienceLevel: experienceLevel,
         learningGoal: learningGoal,
+        language: language,
       );
     } on AiFailure catch (e) {
       // Graceful degradation: AI unavailable, use the deterministic rule.

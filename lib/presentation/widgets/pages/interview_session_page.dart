@@ -10,8 +10,9 @@ import '../../state/interview_actions.dart';
 import '../../state/interview_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
-import '../atoms/app_progress_bar.dart';
+import '../../utils/translate.dart';
 import '../atoms/custom_button.dart';
+import '../atoms/step_dots_indicator.dart';
 import '../organisms/interview_feedback_card.dart';
 import '../organisms/interview_question_card.dart';
 
@@ -39,22 +40,29 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.go('/interviews'),
-          tooltip: 'Exit practice',
+          tooltip: tr('Exit practice', 'Salir de la práctica'),
         ),
-        title: const Text('Interview Practice'),
+        title: Text(tr('Interview Practice', 'Práctica de entrevista')),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(AppConstants.progressBarHeight),
+          preferredSize: const Size.fromHeight(
+            AppConstants.stepDotSizeCurrent + AppConstants.spacingMd,
+          ),
           child: SignalBuilder(
             builder: (context) {
               final total = interviewQuestions.value.length;
               if (total == 0) return const SizedBox.shrink();
-              final progress = interviewSessionCompleted.value
-                  ? 1.0
-                  : interviewAnswers.value.length / total;
-              return AppProgressBar(
-                value: progress,
-                semanticsLabel:
-                    'Answered ${interviewAnswers.value.length} of $total questions',
+              final currentStep = interviewSessionCompleted.value
+                  ? total + 1
+                  : interviewAnswers.value.length + 1;
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.spacingLg,
+                  vertical: AppConstants.spacingSm,
+                ),
+                child: StepDotsIndicator(
+                  currentStep: currentStep,
+                  totalSteps: total,
+                ),
               );
             },
           ),
@@ -63,9 +71,12 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
       body: SignalBuilder(
         builder: (context) {
           if (interviewQuestionsLoading.value) {
-            return const _CenteredMessage(
-              message: 'Getting your questions ready…',
-              child: CircularProgressIndicator(),
+            return _CenteredMessage(
+              message: tr(
+                'Getting your questions ready…',
+                'Preparando tus preguntas…',
+              ),
+              child: const CircularProgressIndicator(),
             );
           }
 
@@ -73,9 +84,9 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
           if (error != null) {
             return _CenteredMessage(
               message: error,
-              action: const ElevatedButton(
+              action: ElevatedButton(
                 onPressed: startInterviewSession,
-                child: Text('Try again'),
+                child: Text(tr('Try again', 'Intentar de nuevo')),
               ),
               child: const Icon(
                 Icons.error_outline,
@@ -90,9 +101,12 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
           }
 
           if (interviewSessionAnalyzing.value) {
-            return const _CenteredMessage(
-              message: 'Checking your answers…',
-              child: CircularProgressIndicator(),
+            return _CenteredMessage(
+              message: tr(
+                'Checking your answers…',
+                'Revisando tus respuestas…',
+              ),
+              child: const CircularProgressIndicator(),
             );
           }
 
@@ -100,9 +114,9 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
           if (sessionError != null) {
             return _CenteredMessage(
               message: sessionError,
-              action: const ElevatedButton(
+              action: ElevatedButton(
                 onPressed: finishInterviewSession,
-                child: Text('Try again'),
+                child: Text(tr('Try again', 'Intentar de nuevo')),
               ),
               child: const Icon(
                 Icons.error_outline,
@@ -115,7 +129,9 @@ class _InterviewSessionPageState extends State<InterviewSessionPage> {
           final questions = interviewQuestions.value;
           final index = interviewCurrentIndex.value;
           if (questions.isEmpty || index >= questions.length) {
-            return const Center(child: Text('No questions available.'));
+            return Center(
+              child: Text(tr('No questions available.', 'No hay preguntas disponibles.')),
+            );
           }
 
           final question = questions[index];
@@ -212,14 +228,17 @@ class _CompletedView extends StatelessWidget {
                   ),
                   const SizedBox(height: AppConstants.spacingLg),
                   Text(
-                    'Practice complete!',
+                    tr('Practice complete!', '¡Práctica completa!'),
                     style: textTheme.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.spacingSm),
                   Text(
                     interviewOverallSummary.value ??
-                        'You answered every question. Come back anytime for a new set of questions.',
+                        tr(
+                          'You answered every question. Come back anytime for a new set of questions.',
+                          'Respondiste todas las preguntas. Vuelve cuando quieras para un nuevo set de preguntas.',
+                        ),
                     style: textTheme.bodyLarge
                         ?.copyWith(color: AppColors.onSurfaceVariant),
                     textAlign: TextAlign.center,
@@ -235,14 +254,14 @@ class _CompletedView extends StatelessWidget {
                       const SizedBox(height: AppConstants.spacingMd),
                     ],
                   const SizedBox(height: AppConstants.spacingMd),
-                  const CustomButton(
-                    text: 'Practice again',
+                  CustomButton(
+                    text: tr('Practice again', 'Practicar de nuevo'),
                     onPressed: startInterviewSession,
                   ),
                   const SizedBox(height: AppConstants.spacingSm),
                   TextButton(
                     onPressed: () => context.go('/interviews'),
-                    child: const Text('Back to Interviews'),
+                    child: Text(tr('Back to Interviews', 'Volver a Entrevistas')),
                   ),
                 ],
               ),

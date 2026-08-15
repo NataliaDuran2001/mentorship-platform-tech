@@ -8,6 +8,7 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/interview_answer_feedback.dart';
 import '../../domain/entities/interview_question.dart';
@@ -32,6 +33,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
     String? desiredRole,
+    required AppLanguage language,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -41,6 +43,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
           'experienceLevelSlug': experienceLevel?.slug,
           'learningGoalSlug': learningGoal?.slug,
           'desiredRole': desiredRole,
+          'language': language.slug,
         },
       );
 
@@ -98,6 +101,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
     required Map<String, String> answers,
     required RoadmapTrack track,
     ExperienceLevel? experienceLevel,
+    required AppLanguage language,
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -105,6 +109,7 @@ class InterviewRepositoryImpl implements InterviewRepository {
         body: {
           'trackSlug': track.slug,
           'experienceLevelSlug': experienceLevel?.slug,
+          'language': language.slug,
           'items': [
             for (final question in questions)
               {

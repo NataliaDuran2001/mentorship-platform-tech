@@ -14,6 +14,7 @@
 //   "experienceLevelSlug": "student" | "junior_developer" | "career_switcher" | null,
 //   "learningGoalSlug": "first_job" | "new_language" | "interview_skills" | "middle_level" | null,
 //   "desiredRole": string | null (free text, e.g. "Frontend Developer"),
+//   "language": "en" | "es" (optional, default "en"),
 //   "count": number (optional, default 5)
 // }
 //
@@ -44,7 +45,8 @@ The questions must:
 3. When a target role is given, write questions a real interviewer for that specific role would ask, not generic track questions.
 4. Be realistic questions a real interviewer would ask, not trick questions.
 5. Vary from one request to the next — this matters a lot: do not always reach for the most common/textbook question for the track. Use the "topic angles" and "variety seed" given below to spread the technical questions across different subtopics instead of repeating the same one or two obvious questions every time.
-6. Use plain, simple English at an A2/B1 level: short sentences, common everyday words, no idioms, no unexplained technical jargon. Write as if explaining to someone new to tech.
+6. Use plain, simple language at an A2/B1 level: short sentences, common everyday words, no idioms, no unexplained technical jargon. Write as if explaining to someone new to tech.
+7. Write every "prompt" in the language requested at the end of the student context below — nothing else in the response changes, only the language of the text.
 
 Format the output strictly as a JSON object:
 {
@@ -61,6 +63,7 @@ function buildUserPrompt(
   learningGoalSlug: string | null,
   desiredRole: string | null,
   count: number,
+  languageName: string,
 ): string {
   const angles = TOPIC_ANGLES[trackSlug] ?? [];
   const varietySeed = crypto.randomUUID();
@@ -75,7 +78,7 @@ Student context:
 Topic angles to pick from for the technical questions (spread across different ones, do not use them all): ${angles.join(', ') || 'use your judgement for this track'}.
 Variety seed for this request: ${varietySeed} — treat this as a new, independent session. Do not default to the same questions you would normally give first; pick a different mix of angles than the most obvious one.
 
-Please write ${count} interview-practice questions for this student, following the rules.`.trim();
+Please write ${count} interview-practice questions for this student, following the rules. Write them in ${languageName}.`.trim();
 }
 
 serve(async (req: Request) => {
@@ -114,12 +117,15 @@ serve(async (req: Request) => {
       experienceLevelSlug = null,
       learningGoalSlug = null,
       desiredRole = null,
+      language = 'en',
       count = 5,
     } = body;
 
     if (!trackSlug) {
       return Response.json({ error: 'trackSlug is required' }, { status: 400 });
     }
+
+    const languageName = language === 'es' ? 'Spanish' : 'English';
 
     // --- Call Kimi3 ---
     // No cache check here on purpose: dynamic variation between sessions is
@@ -142,7 +148,7 @@ serve(async (req: Request) => {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: buildUserPrompt(trackSlug, experienceLevelSlug, learningGoalSlug, desiredRole, count),
+            content: buildUserPrompt(trackSlug, experienceLevelSlug, learningGoalSlug, desiredRole, count, languageName),
           },
         ],
         response_format: { type: 'json_object' },

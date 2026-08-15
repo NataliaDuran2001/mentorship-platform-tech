@@ -22,6 +22,7 @@ import 'package:aspire_app/presentation/widgets/organisms/roadmap_tree.dart';
 import 'package:aspire_app/presentation/widgets/pages/roadmap_page.dart';
 
 import 'package:aspire_app/domain/entities/onboarding_answer.dart';
+import 'package:aspire_app/domain/entities/app_language.dart';
 import 'package:aspire_app/domain/entities/experience_level.dart';
 import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/track_recommendation.dart';
@@ -74,6 +75,7 @@ class FakeAiRepository implements AiRepository {
     required List<OnboardingAnswer> answers,
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    required AppLanguage language,
   }) async => const TrackRecommendation.empty();
 
   @override
@@ -84,6 +86,7 @@ class FakeAiRepository implements AiRepository {
     required String? learningGoalSlug,
     required int completedTopics,
     required int totalTopics,
+    required AppLanguage language,
   }) async => 'Daily Brief';
 
   @override
@@ -92,6 +95,7 @@ class FakeAiRepository implements AiRepository {
     required String challengeType,
     required int attemptCount,
     required String? userContext,
+    required AppLanguage language,
   }) async => 'Lab Hint';
 
   @override
@@ -100,6 +104,7 @@ class FakeAiRepository implements AiRepository {
     required String? learningGoalSlug,
     required double progressFraction,
     required String? nextTopicTitle,
+    required AppLanguage language,
   }) async => 'Your Path';
 }
 

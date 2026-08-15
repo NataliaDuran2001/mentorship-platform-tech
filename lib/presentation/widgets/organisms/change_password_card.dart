@@ -15,6 +15,7 @@ import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import 'auth_message.dart';
 
 class ChangePasswordCard extends StatelessWidget {
@@ -62,15 +63,15 @@ class ChangePasswordCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Change password',
+              tr('Change password', 'Cambiar contraseña'),
               style:
                   textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: AppConstants.spacingMd),
             if (isDone)
-              const AuthMessage(
+              AuthMessage(
                 tone: AuthMessageTone.info,
-                message: 'Your password was updated.',
+                message: tr('Your password was updated.', 'Tu contraseña fue actualizada.'),
               )
             else ...[
               if (errorMessage != null) ...[
@@ -78,7 +79,7 @@ class ChangePasswordCard extends StatelessWidget {
                 const SizedBox(height: AppConstants.spacingMd),
               ],
               CustomInput(
-                hintText: 'Current password',
+                hintText: tr('Current password', 'Contraseña actual'),
                 prefixIcon: Icons.lock_outline,
                 obscureText: obscurePasswords,
                 onToggleObscure: onToggleObscure,
@@ -88,7 +89,7 @@ class ChangePasswordCard extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.spacingMd),
               CustomInput(
-                hintText: 'New password',
+                hintText: tr('New password', 'Nueva contraseña'),
                 prefixIcon: Icons.lock,
                 obscureText: obscurePasswords,
                 textInputAction: TextInputAction.next,
@@ -97,7 +98,7 @@ class ChangePasswordCard extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.spacingMd),
               CustomInput(
-                hintText: 'Confirm new password',
+                hintText: tr('Confirm new password', 'Confirma la nueva contraseña'),
                 prefixIcon: Icons.lock,
                 obscureText: obscurePasswords,
                 textInputAction: TextInputAction.done,
@@ -109,7 +110,10 @@ class ChangePasswordCard extends StatelessWidget {
               if (isLoading)
                 const Center(child: CircularProgressIndicator())
               else
-                CustomButton(text: 'Update password', onPressed: onSubmit),
+                CustomButton(
+                  text: tr('Update password', 'Actualizar contraseña'),
+                  onPressed: onSubmit,
+                ),
             ],
           ],
         ),

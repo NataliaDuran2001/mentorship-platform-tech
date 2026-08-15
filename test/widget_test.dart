@@ -18,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:aspire_app/core/di/injection.dart';
 import 'package:aspire_app/core/router/app_router.dart';
 import 'package:aspire_app/domain/entities/auth_session.dart';
+import 'package:aspire_app/domain/entities/app_language.dart';
 import 'package:aspire_app/domain/entities/experience_level.dart';
 import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/onboarding_answer.dart';
@@ -163,6 +164,11 @@ class FakeOnboardingRepository implements OnboardingRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
   }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<UserProfile> updateLanguage({required AppLanguage language}) async {
     throw UnimplementedError();
   }
 }

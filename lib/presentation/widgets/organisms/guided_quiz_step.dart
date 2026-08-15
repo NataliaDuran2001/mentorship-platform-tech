@@ -18,6 +18,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
 import '../../utils/onboarding_quiz.dart';
+import '../../utils/translate.dart';
 import '../molecules/track_card.dart';
 
 /// One quiz question with its three options.
@@ -120,7 +121,7 @@ class GuidedQuizResult extends StatelessWidget {
           const Center(child: CircularProgressIndicator()),
           const SizedBox(height: AppConstants.spacingMd),
           Text(
-            '✨ Looking at your answers…',
+            tr('✨ Looking at your answers…', '✨ Mirando tus respuestas…'),
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -137,7 +138,11 @@ class GuidedQuizResult extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            "We don't have enough answers yet to suggest a path for you.",
+            tr(
+              "We don't have enough answers yet to suggest a path for you.",
+              'Todavía no tenemos suficientes respuestas para sugerirte '
+                  'un camino.',
+            ),
             style: textTheme.bodyLarge,
           ),
           const SizedBox(height: AppConstants.spacingMd),
@@ -145,7 +150,7 @@ class GuidedQuizResult extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onRedo,
-              child: const Text('Take the quiz'),
+              child: Text(tr('Take the quiz', 'Hacer el quiz')),
             ),
           ),
         ],
@@ -165,7 +170,7 @@ class GuidedQuizResult extends StatelessWidget {
                   size: 14, color: AppColors.primary),
               const SizedBox(width: 4),
               Text(
-                'Picked for you by AI',
+                tr('Picked for you by AI', 'Elegido para ti por IA'),
                 style: textTheme.labelSmall
                     ?.copyWith(color: AppColors.primary),
               ),
@@ -173,7 +178,7 @@ class GuidedQuizResult extends StatelessWidget {
           )
         else
           Text(
-            'We suggest this path',
+            tr('We suggest this path', 'Te sugerimos este camino'),
             style: textTheme.labelMedium
                 ?.copyWith(color: AppColors.primary),
           ),
@@ -192,8 +197,12 @@ class GuidedQuizResult extends StatelessWidget {
         if (recommendation.wasTie && !recommendation.isAiGenerated) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            'It was close with another path, so take a look at the suggestion '
-            'before you confirm it.',
+            tr(
+              'It was close with another path, so take a look at the suggestion '
+                  'before you confirm it.',
+              'Estuvo cerca con otro camino, así que échale un vistazo a '
+                  'la sugerencia antes de confirmarla.',
+            ),
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -204,7 +213,7 @@ class GuidedQuizResult extends StatelessWidget {
             recommendation.alternatives.isNotEmpty) ...[
           const SizedBox(height: AppConstants.spacingMd),
           Text(
-            'Also worth considering:',
+            tr('Also worth considering:', 'También vale la pena considerar:'),
             style: textTheme.labelMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -235,7 +244,7 @@ class GuidedQuizResult extends StatelessWidget {
         ],
         const SizedBox(height: AppConstants.spacingLg),
         Text(
-          'Prefer another one?',
+          tr('Prefer another one?', '¿Prefieres otro?'),
           style: textTheme.bodyMedium?.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -260,7 +269,7 @@ class GuidedQuizResult extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: TextButton(
             onPressed: onRedo,
-            child: const Text('Take the quiz again'),
+            child: Text(tr('Take the quiz again', 'Volver a hacer el quiz')),
           ),
         ),
       ],

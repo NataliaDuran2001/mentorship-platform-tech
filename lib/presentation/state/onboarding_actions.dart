@@ -23,6 +23,7 @@ import '../utils/auth_error_messages.dart';
 import '../utils/constants.dart';
 import '../utils/onboarding_quiz.dart';
 import 'auth_state.dart';
+import 'language_state.dart';
 import 'onboarding_state.dart';
 // quizAnalyzing is declared in onboarding_state.dart and imported above.
 
@@ -384,6 +385,7 @@ Future<void> _computeRecommendation() async {
       answers,
       experienceLevel: selectedLevel.value,
       learningGoal: selectedGoal.value,
+      language: appLanguage.value,
     );
   } finally {
     quizAnalyzing.value = false;

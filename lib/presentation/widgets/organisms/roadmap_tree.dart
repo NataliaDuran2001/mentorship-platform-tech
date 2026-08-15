@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/topic_node.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import '../atoms/app_progress_bar.dart';
 
 class RoadmapTree extends StatelessWidget {
@@ -86,7 +87,7 @@ class _Module extends StatelessWidget {
               _LevelBadge(title: node.title, status: node.status),
               const Spacer(),
               Text(
-                '$done of ${leaves.length}',
+                tr('$done of ${leaves.length}', '$done de ${leaves.length}'),
                 style: textTheme.labelMedium?.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
@@ -97,7 +98,8 @@ class _Module extends StatelessWidget {
             const SizedBox(height: AppConstants.spacingSm),
             AppProgressBar(
               value: done / leaves.length,
-              semanticsLabel: '${node.title} progress',
+              semanticsLabel:
+                  tr('${node.title} progress', 'Progreso de ${node.title}'),
             ),
           ],
           if (node.description != null) ...[
@@ -291,11 +293,11 @@ Color _colorFor(TopicStatus status) {
 String _labelFor(TopicStatus status) {
   switch (status) {
     case TopicStatus.completed:
-      return 'Done';
+      return tr('Done', 'Hecho');
     case TopicStatus.available:
-      return 'Start now';
+      return tr('Start now', 'Comenzar ahora');
     case TopicStatus.locked:
-      return 'Locked';
+      return tr('Locked', 'Bloqueado');
   }
 }
 
@@ -332,14 +334,21 @@ class RoadmapEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: AppConstants.spacingMd),
           Text(
-            'Your $trackName path is being built',
+            tr(
+              'Your $trackName path is being built',
+              'Tu camino de $trackName se está construyendo',
+            ),
             style: textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            "We haven't loaded the topics for this track yet. Your choice is "
-            "saved: when the content is ready, you'll see it here.",
+            tr(
+              "We haven't loaded the topics for this track yet. Your choice is "
+              "saved: when the content is ready, you'll see it here.",
+              'Todavía no hemos cargado los temas de este camino. Tu elección '
+              'está guardada: cuando el contenido esté listo, lo verás aquí.',
+            ),
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -384,7 +393,7 @@ class RoadmapErrorState extends StatelessWidget {
           ),
           const SizedBox(height: AppConstants.spacingMd),
           Text(
-            "We couldn't load your path",
+            tr("We couldn't load your path", 'No pudimos cargar tu camino'),
             style: textTheme.headlineSmall
                 ?.copyWith(color: AppColors.onErrorContainer),
             textAlign: TextAlign.center,
@@ -400,7 +409,7 @@ class RoadmapErrorState extends StatelessWidget {
           FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Try again'),
+            label: Text(tr('Try again', 'Intentar de nuevo')),
           ),
         ],
       ),

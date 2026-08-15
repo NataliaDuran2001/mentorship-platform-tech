@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/app_colors.dart';
+import '../../utils/translate.dart';
 
 class RoadmapProgressCard extends StatelessWidget {
   const RoadmapProgressCard({super.key, required this.progress});
@@ -25,7 +26,7 @@ class RoadmapProgressCard extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              'Path progress',
+              tr('Path progress', 'Progreso del camino'),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: AppColors.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -63,7 +64,7 @@ class RoadmapProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'COMPLETE',
+                          tr('COMPLETE', 'COMPLETO'),
                           style: Theme.of(context)
                               .textTheme
                               .labelSmall

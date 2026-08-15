@@ -13,6 +13,7 @@ import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/translate.dart';
 import 'auth_message.dart';
 
 class SignUpForm extends StatelessWidget {
@@ -51,7 +52,7 @@ class SignUpForm extends StatelessWidget {
           const SizedBox(height: AppConstants.defaultPadding),
         ],
         CustomInput(
-          hintText: 'Your name (optional)',
+          hintText: tr('Your name (optional)', 'Tu nombre (opcional)'),
           prefixIcon: Icons.person_outline,
           textInputAction: TextInputAction.next,
           autofillHints: const [AutofillHints.name],
@@ -59,7 +60,7 @@ class SignUpForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding),
         CustomInput(
-          hintText: 'Email',
+          hintText: tr('Email', 'Correo electrónico'),
           prefixIcon: Icons.email,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
@@ -68,7 +69,7 @@ class SignUpForm extends StatelessWidget {
         ),
         const SizedBox(height: AppConstants.defaultPadding),
         CustomInput(
-          hintText: 'Password',
+          hintText: tr('Password', 'Contraseña'),
           prefixIcon: Icons.lock,
           obscureText: obscurePassword,
           onToggleObscure: onToggleObscurePassword,
@@ -78,7 +79,7 @@ class SignUpForm extends StatelessWidget {
           onSubmitted: (_) => onSubmit(),
         ),
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        CustomButton(text: 'Create account', onPressed: onSubmit),
+        CustomButton(text: tr('Create account', 'Crear cuenta'), onPressed: onSubmit),
         const SizedBox(height: AppConstants.defaultPadding),
         // Wrap and not Row: on narrow screens the question and the link do not
         // fit in one line and a Row would overflow.
@@ -87,7 +88,7 @@ class SignUpForm extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              'Already have an account?',
+              tr('Already have an account?', '¿Ya tienes una cuenta?'),
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -95,7 +96,7 @@ class SignUpForm extends StatelessWidget {
             ),
             TextButton(
               onPressed: onGoToLogin,
-              child: const Text('Sign in'),
+              child: Text(tr('Sign in', 'Iniciar sesión')),
             ),
           ],
         ),
@@ -132,13 +133,17 @@ class ConfirmationPending extends StatelessWidget {
       children: [
         AuthMessage(
           tone: AuthMessageTone.info,
-          message: 'We sent an email to $email. Open the link inside to '
-              'confirm your account, then sign in.',
+          message: tr(
+            'We sent an email to $email. Open the link inside to '
+                'confirm your account, then sign in.',
+            'Te enviamos un correo a $email. Abre el enlace que contiene '
+                'para confirmar tu cuenta y luego inicia sesión.',
+          ),
         ),
         if (wasResent) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            'Email resent.',
+            tr('Email resent.', 'Correo reenviado.'),
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -150,11 +155,13 @@ class ConfirmationPending extends StatelessWidget {
           AuthMessage(message: errorMessage!),
         ],
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        CustomButton(text: 'Go to sign in', onPressed: onGoToLogin),
+        CustomButton(text: tr('Go to sign in', 'Ir a iniciar sesión'), onPressed: onGoToLogin),
         const SizedBox(height: AppConstants.spacingSm),
         TextButton(
           onPressed: onResend,
-          child: const Text("It didn't arrive, resend the email"),
+          child: Text(
+            tr("It didn't arrive, resend the email", 'No llegó, reenviar el correo'),
+          ),
         ),
       ],
     );

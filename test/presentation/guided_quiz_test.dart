@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:aspire_app/core/di/injection.dart';
+import 'package:aspire_app/domain/entities/app_language.dart';
 import 'package:aspire_app/domain/entities/experience_level.dart';
 import 'package:aspire_app/domain/entities/learning_goal.dart';
 import 'package:aspire_app/domain/entities/onboarding_answer.dart';
@@ -55,6 +56,11 @@ class SpyOnboardingRepository implements OnboardingRepository {
       onboardingCompletedAt: DateTime(2026, 7, 26),
     );
   }
+
+  @override
+  Future<UserProfile> updateLanguage({required AppLanguage language}) async {
+    return UserProfile(id: 'u1', email: 'ana@example.com', language: language);
+  }
 }
 
 /// AiRepository stub for the quiz test: always throws so the fake use case
@@ -67,6 +73,7 @@ class _OfflineAiRepository implements AiRepository {
     required List<OnboardingAnswer> answers,
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 
@@ -78,6 +85,7 @@ class _OfflineAiRepository implements AiRepository {
     required String? learningGoalSlug,
     required int completedTopics,
     required int totalTopics,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 
@@ -87,6 +95,7 @@ class _OfflineAiRepository implements AiRepository {
     required String challengeType,
     required int attemptCount,
     required String? userContext,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 
@@ -96,6 +105,7 @@ class _OfflineAiRepository implements AiRepository {
     required String? learningGoalSlug,
     required double progressFraction,
     required String? nextTopicTitle,
+    required AppLanguage language,
   }) async =>
       throw const AiFailure(AiFailureKind.network);
 }
@@ -116,6 +126,7 @@ class FakeRecommendTrackUseCase extends RecommendTrackUseCase {
     List<OnboardingAnswer> answers, {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
+    AppLanguage language = AppLanguage.en,
   }) async {
     received = answers;
     return result;
