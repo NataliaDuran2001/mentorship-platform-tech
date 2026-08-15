@@ -11,7 +11,7 @@ import '../../../domain/entities/app_language.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/translate.dart';
-import '../molecules/goal_radio_row.dart';
+import '../molecules/language_segmented_control.dart';
 import 'auth_message.dart';
 
 class LanguageSettingsCard extends StatelessWidget {
@@ -61,16 +61,10 @@ class LanguageSettingsCard extends StatelessWidget {
               AuthMessage(message: errorMessage!),
               const SizedBox(height: AppConstants.spacingSm),
             ],
-            GoalRadioRow(
-              label: 'English',
-              isSelected: currentLanguage == AppLanguage.en,
-              onTap: isLoading ? () {} : () => onSelect(AppLanguage.en),
-            ),
-            const SizedBox(height: AppConstants.spacingSm),
-            GoalRadioRow(
-              label: 'Español',
-              isSelected: currentLanguage == AppLanguage.es,
-              onTap: isLoading ? () {} : () => onSelect(AppLanguage.es),
+            LanguageSegmentedControl(
+              currentLanguage: currentLanguage,
+              onSelect: onSelect,
+              isLoading: isLoading,
             ),
             if (isLoading) ...[
               const SizedBox(height: AppConstants.spacingSm),

@@ -5,16 +5,18 @@ import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../state/auth_actions.dart';
 import '../../state/auth_state.dart';
+import '../../state/goal_actions.dart';
+import '../../state/goal_state.dart';
 import '../../state/language_actions.dart';
 import '../../state/language_state.dart';
 import '../../state/roadmap_state.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/translate.dart';
+import '../molecules/goal_picker_sheet.dart';
 import '../organisms/change_password_card.dart';
 import '../organisms/language_settings_card.dart';
 import '../organisms/profile_details.dart';
-import '../organisms/profile_goal_card.dart';
-import '../organisms/roadmap_progress_card.dart';
+import '../organisms/route_overview_card.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -39,6 +41,32 @@ class ProfilePage extends StatelessWidget {
     changePassword(
       currentPassword: passwordFormCurrent.value,
       newPassword: passwordFormNew.value,
+    );
+  }
+
+  void _openGoalPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceContainerLowest,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SignalBuilder(
+          builder: (sheetContext) {
+            return GoalPickerSheet(
+              currentGoal: currentProfile.value?.learningGoal,
+              isLoading: goalUpdateLoading.value,
+              errorMessage: goalUpdateError.value,
+              onSelect: (goal) async {
+                await updateLearningGoal(goal);
+                if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -67,9 +95,14 @@ class ProfilePage extends StatelessWidget {
                   errorMessage: languageUpdateError.value,
                 ),
                 const SizedBox(height: 16),
-                RoadmapProgressCard(progress: progress),
-                const SizedBox(height: 16),
-                ProfileGoalCard(profile: profile, progress: progress),
+                RouteOverviewCard(
+                  track: profile.track,
+                  progress: progress,
+                  completedCount: roadmapCompletedCount.value,
+                  totalCount: roadmapLeaves.value.length,
+                  goal: profile.learningGoal,
+                  onEditGoal: () => _openGoalPicker(context),
+                ),
                 const SizedBox(height: 16),
                 ChangePasswordCard(
                   onCurrentChanged: (v) => passwordFormCurrent.value = v,

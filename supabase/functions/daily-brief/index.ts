@@ -38,7 +38,7 @@ Write 2 to 3 sentences that tell the learner where they stand on their learning 
 
 The summary must:
 1. Speak to the learner directly, by "you", in a warm and plain tone.
-2. State where they are on their path in concrete terms — how much of it they have completed and what that means. Name the numbers rather than only the percentage.
+2. Describe where they are on their path in qualitative terms only, using the Stage given in the learner context below (just starting, partway through, finished everything available) — never state a percentage, a topic count or any other number. That figure is already shown elsewhere on the screen; repeating it here is not your job.
 3. Say what the sensible next move is, tied to their chosen track and their goal.
 4. Match the tone to the actual state: a learner who has just started needs reassurance that the beginning is the right place to be; one who is halfway needs to see the distance already covered; one who has finished everything available needs to know there is nothing pending.
 5. Write it in the language requested at the end of the learner context below.
@@ -60,10 +60,6 @@ function buildUserPrompt(
   totalTopics: number,
   languageName: string,
 ): string {
-  const percentage = totalTopics > 0
-    ? Math.round((completedTopics / totalTopics) * 100)
-    : 0;
-
   // Naming the stage keeps the model from congratulating someone at 0% or
   // pushing "keep going" at someone who has nothing left to do.
   const stage = totalTopics === 0
@@ -79,10 +75,9 @@ Learner context:
 - Specialization Track: ${trackSlug}
 - Current Level: ${experienceLevelSlug ?? 'not specified'}
 - Focus/Goal: ${learningGoalSlug ?? 'not specified'}
-- Path progress: ${completedTopics} of ${totalTopics} topics completed (${percentage}%).
 - Stage: ${stage}.
 
-Write the 2-3 sentence summary for this learner, in ${languageName}.`.trim();
+Write the 2-3 sentence summary for this learner, in ${languageName}. The Stage above is the only progress signal you have — there is no topic count or percentage to draw on, so don't invent one.`.trim();
 }
 
 serve(async (req: Request) => {

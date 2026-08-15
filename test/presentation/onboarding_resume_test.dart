@@ -144,6 +144,11 @@ class FakeOnboardingRepository implements OnboardingRepository {
   Future<UserProfile> updateLanguage({required AppLanguage language}) async {
     return UserProfile(id: 'u1', email: 'ana@example.com', language: language);
   }
+
+  @override
+  Future<UserProfile> updateLearningGoal({required LearningGoal goal}) async {
+    return UserProfile(id: 'u1', email: 'ana@example.com', learningGoal: goal);
+  }
 }
 
 Future<void> _mount(WidgetTester tester) async {
