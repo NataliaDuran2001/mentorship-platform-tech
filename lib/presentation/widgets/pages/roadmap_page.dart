@@ -12,6 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../state/auth_state.dart';
+import '../../state/content_translation_actions.dart';
+import '../../state/content_translation_state.dart';
+import '../../state/language_state.dart';
 import '../../state/roadmap_actions.dart';
 import '../../state/roadmap_state.dart';
 import '../../state/ai_actions.dart';
@@ -39,12 +42,21 @@ class RoadmapPage extends StatelessWidget {
           // it is being built.
           WidgetsBinding.instance.addPostFrameCallback((_) => loadRoadmap());
         }
-        // The coach line is this page's own AI piece, so this page asks for it.
-        if (roadmapCoachMessage.value == null &&
+        // The coach line is this page's own AI piece, so this page asks for
+        // it. The language check makes a Settings language switch refetch it
+        // instead of leaving a stale-language message on screen.
+        if ((roadmapCoachMessage.value == null ||
+                roadmapCoachLanguage.value != appLanguage.value) &&
             !roadmapCoachLoading.value &&
             roadmapCoachError.value == null) {
           WidgetsBinding.instance
               .addPostFrameCallback((_) => loadRoadmapCoachMessage());
+        }
+        // The tree's titles/descriptions are this page's own content to
+        // translate, same reasoning as the coach line above.
+        if (roadmapLoaded.value) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => ensureRoadmapTranslations());
         }
 
         final currentTrackName = trackName(currentProfile.value?.track) ??
@@ -74,7 +86,10 @@ class RoadmapPage extends StatelessWidget {
               else if (roadmapIsEmpty.value)
                 RoadmapEmptyState(trackName: currentTrackName)
               else
-                RoadmapTree(roots: roadmapTree.value),
+                RoadmapTree(
+                  roots: roadmapTree.value,
+                  translations: roadmapTopicTranslations.value,
+                ),
             ],
           ),
         );

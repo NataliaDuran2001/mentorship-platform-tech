@@ -21,6 +21,7 @@ import '../../domain/usecases/sign_up_usecase.dart';
 import '../utils/auth_error_messages.dart';
 import 'ai_state.dart';
 import 'auth_state.dart';
+import 'content_translation_state.dart';
 import 'interview_state.dart';
 import 'onboarding_actions.dart';
 import 'onboarding_state.dart';
@@ -305,6 +306,7 @@ Future<void> signOut() async {
     // The summary and the coaching lines are written about the person who is
     // leaving; without this they greeted the next one by their progress.
     resetAiState();
+    resetContentTranslationState();
     authLoading.value = false;
   }
 }

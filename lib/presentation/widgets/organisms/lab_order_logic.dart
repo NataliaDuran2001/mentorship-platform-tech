@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
+import '../../../domain/entities/content_translation.dart';
 import '../../../domain/entities/lab_challenge.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../state/lab_state.dart';
@@ -7,13 +8,22 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 
 class LabOrderLogic extends StatelessWidget {
-  const LabOrderLogic({super.key, required this.challenge});
+  const LabOrderLogic({super.key, required this.challenge, this.translation});
 
   final OrderLogicChallenge challenge;
+
+  /// AI-translated overlay for [challenge]'s question/description/block
+  /// text, or `null` when the Settings language is English or no
+  /// translation is cached yet. `correctOrder` always comes from
+  /// [challenge] — the translation only ever supplies display text, keyed
+  /// by the same block id.
+  final ExerciseTranslation? translation;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final question = translation?.question ?? challenge.question;
+    final description = translation?.description ?? challenge.description;
 
     // Initialize state if empty
     if (labSelectedAnswers.value.isEmpty) {
@@ -37,18 +47,18 @@ class LabOrderLogic extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(challenge.question, style: textTheme.headlineMedium),
-        if (challenge.description != null) ...[
+        Text(question, style: textTheme.headlineMedium),
+        if (description != null) ...[
           const SizedBox(height: AppConstants.spacingSm),
           Text(
-            challenge.description!,
+            description,
             style: textTheme.bodyLarge?.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
           ),
         ],
         const SizedBox(height: AppConstants.spacingXl),
-        
+
         SignalBuilder(
           builder: (context) {
             final currentOrderKeys = List.generate(
@@ -86,7 +96,8 @@ class LabOrderLogic extends StatelessWidget {
                 children: currentOrderKeys.asMap().entries.map((entry) {
                   final index = entry.key;
                   final blockKey = entry.value!;
-                  final blockText = challenge.blocks[blockKey]!;
+                  final blockText =
+                      translation?.items?[blockKey] ?? challenge.blocks[blockKey]!;
                   
                   return ReorderableDragStartListener(
                     key: ValueKey(blockKey),
