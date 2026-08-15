@@ -12,6 +12,7 @@ import '../../utils/constants.dart';
 import '../organisms/lab_fill_blank.dart';
 import '../organisms/lab_multiple_choice.dart';
 import '../organisms/lab_order_logic.dart';
+import '../organisms/lab_score_card.dart';
 import '../organisms/lab_theory.dart';
 
 class LabPage extends StatefulWidget {
@@ -49,11 +50,14 @@ class _LabPageState extends State<LabPage> {
           child: SignalBuilder(
             builder: (context) {
               if (labChallenges.value.isEmpty) return const SizedBox.shrink();
-              final progress = (labCurrentIndex.value) / labChallenges.value.length;
+              final progress =
+                  (labCurrentIndex.value) / labChallenges.value.length;
               return LinearProgressIndicator(
                 value: progress,
                 backgroundColor: AppColors.surfaceContainerHigh,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.primary,
+                ),
               );
             },
           ),
@@ -70,9 +74,16 @@ class _LabPageState extends State<LabPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 48,
+                  ),
                   const SizedBox(height: AppConstants.spacingMd),
-                  Text(labError.value!, style: Theme.of(context).textTheme.bodyLarge),
+                  Text(
+                    labError.value!,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                   const SizedBox(height: AppConstants.spacingMd),
                   ElevatedButton(
                     onPressed: () => loadLabs(widget.topicId),
@@ -99,7 +110,9 @@ class _LabPageState extends State<LabPage> {
                   padding: const EdgeInsets.all(AppConstants.spacingLg),
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: AppConstants.maxReadableWidth),
+                      constraints: const BoxConstraints(
+                        maxWidth: AppConstants.maxReadableWidth,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -189,29 +202,27 @@ class _BottomValidationBar extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: Row(
-          children: [
-            Expanded(
-              child: _FeedbackMessage(isValid: isValid),
+              children: [
+                Expanded(child: _FeedbackMessage(isValid: isValid)),
+                const SizedBox(width: AppConstants.spacingMd),
+                if (isValid == true)
+                  ElevatedButton(
+                    onPressed: nextLabChallenge,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: AppColors.onSuccess,
+                    ),
+                    child: const Text('Continue'),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: hasSelection ? submitLabAnswer : null,
+                    child: const Text('Check Answer'),
+                  ),
+              ],
             ),
-            const SizedBox(width: AppConstants.spacingMd),
-            if (isValid == true)
-              ElevatedButton(
-                onPressed: nextLabChallenge,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: AppColors.onSuccess,
-                ),
-                child: const Text('Continue'),
-              )
-            else
-              ElevatedButton(
-                onPressed: hasSelection ? submitLabAnswer : null,
-                child: const Text('Check Answer'),
-              ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
       },
     );
   }
@@ -224,11 +235,11 @@ class _FeedbackMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    
+
     if (isValid == null) {
       return const SizedBox.shrink();
     }
-    
+
     if (isValid == true) {
       return Row(
         children: [
@@ -246,21 +257,21 @@ class _FeedbackMessage extends StatelessWidget {
         ],
       );
     }
-    
+
     return Row(
-        children: [
-          const Icon(Icons.cancel, color: AppColors.onErrorContainer),
-          const SizedBox(width: AppConstants.spacingSm),
-          Expanded(
-            child: Text(
-              'Not quite right. Try again.',
-              style: textTheme.bodyLarge?.copyWith(
-                color: AppColors.onErrorContainer,
-                fontWeight: FontWeight.w600,
-              ),
+      children: [
+        const Icon(Icons.cancel, color: AppColors.onErrorContainer),
+        const SizedBox(width: AppConstants.spacingSm),
+        Expanded(
+          child: Text(
+            'Not quite right. Try again.',
+            style: textTheme.bodyLarge?.copyWith(
+              color: AppColors.onErrorContainer,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ],
+        ),
+      ],
     );
   }
 }
@@ -273,63 +284,85 @@ class _CompletedView extends StatelessWidget {
     return SignalBuilder(
       builder: (context) {
         final saveError = labSaveError.value;
+        final score = labScore.value;
 
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.emoji_events,
-                size: AppConstants.iconSizeCelebration,
-                color: AppColors.tertiary,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppConstants.spacingLg),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppConstants.maxReadableWidth,
               ),
-              const SizedBox(height: AppConstants.spacingLg),
-              Text('Lab Completed!', style: textTheme.headlineLarge),
-              const SizedBox(height: AppConstants.spacingMd),
-              Text(
-                'You finished every challenge here. Nice work!',
-                style: textTheme.bodyLarge
-                    ?.copyWith(color: AppColors.onSurfaceVariant),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.emoji_events,
+                    size: AppConstants.iconSizeCelebration,
+                    color: AppColors.tertiary,
+                  ),
+                  const SizedBox(height: AppConstants.spacingLg),
+                  Text('Lab Completed!', style: textTheme.headlineLarge),
+                  const SizedBox(height: AppConstants.spacingLg),
+                  // A section made only of explanations has nothing to score, and
+                  // showing it a "0 / 0" would invent a defeat out of a read.
+                  if (score.isScored)
+                    LabScoreCard(
+                      score: score,
+                      missedQuestions: labMissedQuestions.value,
+                    )
+                  else
+                    Text(
+                      'You worked through every step here. Nice work!',
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  // The topic is closed here, so the path is left up to date before
+                  // going back to it. While it is being recorded the way out is
+                  // held, otherwise the tree would be reached still showing the
+                  // topic as pending.
+                  if (labSavingProgress.value) ...[
+                    const SizedBox(height: AppConstants.spacingXl),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: AppConstants.spacingMd),
+                    Text(
+                      'Saving your progress…',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ] else if (saveError != null) ...[
+                    const SizedBox(height: AppConstants.spacingLg),
+                    Text(
+                      "$saveError Your answers are safe, but the topic wasn't "
+                      'marked as completed.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.error,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppConstants.spacingMd),
+                    const ElevatedButton(
+                      onPressed: completeCurrentTopic,
+                      child: Text('Retry'),
+                    ),
+                    const SizedBox(height: AppConstants.spacingSm),
+                    TextButton(
+                      onPressed: () => context.go('/path'),
+                      child: const Text('Return to my path'),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: AppConstants.spacingXl),
+                    ElevatedButton(
+                      onPressed: () => context.go('/path'),
+                      child: const Text('Return to my path'),
+                    ),
+                  ],
+                ],
               ),
-              // The topic is closed here, so the path is left up to date before
-              // going back to it. While it is being recorded the way out is
-              // held, otherwise the tree would be reached still showing the
-              // topic as pending.
-              if (labSavingProgress.value) ...[
-                const SizedBox(height: AppConstants.spacingXl),
-                const CircularProgressIndicator(),
-                const SizedBox(height: AppConstants.spacingMd),
-                Text(
-                  'Saving your progress…',
-                  style: textTheme.bodyMedium
-                      ?.copyWith(color: AppColors.onSurfaceVariant),
-                ),
-              ] else if (saveError != null) ...[
-                const SizedBox(height: AppConstants.spacingLg),
-                Text(
-                  "$saveError Your answers are safe, but the topic wasn't "
-                  'marked as completed.',
-                  style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppConstants.spacingMd),
-                const ElevatedButton(
-                  onPressed: completeCurrentTopic,
-                  child: Text('Retry'),
-                ),
-                const SizedBox(height: AppConstants.spacingSm),
-                TextButton(
-                  onPressed: () => context.go('/path'),
-                  child: const Text('Return to my path'),
-                ),
-              ] else ...[
-                const SizedBox(height: AppConstants.spacingXl),
-                ElevatedButton(
-                  onPressed: () => context.go('/path'),
-                  child: const Text('Return to my path'),
-                ),
-              ],
-            ],
+            ),
           ),
         );
       },
@@ -368,7 +401,11 @@ class _AiHintSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: AppConstants.spacingSm),
                     Text(
                       'Need a Hint?',
@@ -395,7 +432,9 @@ class _AiHintSection extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.lightbulb_outline, size: 16),
-                    label: Text(hintsList.isEmpty ? 'Get Hint' : 'Get Another Hint'),
+                    label: Text(
+                      hintsList.isEmpty ? 'Get Hint' : 'Get Another Hint',
+                    ),
                   ),
               ],
             ),
@@ -413,7 +452,9 @@ class _AiHintSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -424,10 +465,7 @@ class _AiHintSection extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '💡 ',
-                              style: textTheme.bodyMedium,
-                            ),
+                            Text('💡 ', style: textTheme.bodyMedium),
                             Expanded(
                               child: Text(
                                 hintsList[i],

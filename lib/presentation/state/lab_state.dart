@@ -1,6 +1,7 @@
 import 'package:signals_flutter/signals_flutter.dart';
 
 import '../../domain/entities/lab_challenge.dart';
+import '../../domain/entities/lab_score.dart';
 
 /// The topic the open lab belongs to.
 ///
@@ -38,6 +39,55 @@ final labSelectedAnswers = signal<Map<String, String>>({});
 /// `true` means correct.
 /// `false` means incorrect.
 final labIsCurrentValid = signal<bool?>(null);
+
+/// Indices of the challenges that have already been checked at least once.
+///
+/// This is what makes the score a *first-try* reading: the outcome of a
+/// challenge is written down the first time it is checked and never revised,
+/// so the retries that follow move the lab forward without rewriting history.
+final labCheckedIndices = signal<Set<int>>(<int>{});
+
+/// Indices of the challenges answered right on the very first check.
+///
+/// A subset of [labCheckedIndices]: what is in one and not the other is what
+/// the learner had to retry.
+final labFirstTryCorrectIndices = signal<Set<int>>(<int>{});
+
+/// How well the open lab was solved.
+///
+/// Explanations are skipped, so `total` counts only what could be got wrong.
+final labScore = computed<LabScore>(() {
+  final challenges = labChallenges.value;
+  final firstTry = labFirstTryCorrectIndices.value;
+
+  var total = 0;
+  var correct = 0;
+  for (var i = 0; i < challenges.length; i++) {
+    if (challenges[i] is TheoryChallenge) continue;
+    total++;
+    if (firstTry.contains(i)) correct++;
+  }
+
+  return LabScore(correct: correct, total: total);
+});
+
+/// The questions that took more than one try, in the order they were met.
+///
+/// The closing screen names them: "4 of 5" says how it went, but only the
+/// titles say what to go back to.
+final labMissedQuestions = computed<List<String>>(() {
+  final challenges = labChallenges.value;
+  final checked = labCheckedIndices.value;
+  final firstTry = labFirstTryCorrectIndices.value;
+
+  return [
+    for (var i = 0; i < challenges.length; i++)
+      if (challenges[i] is! TheoryChallenge &&
+          checked.contains(i) &&
+          !firstTry.contains(i))
+        challenges[i].question,
+  ];
+});
 
 /// True when all challenges are completed.
 final labIsCompleted = computed(() {
