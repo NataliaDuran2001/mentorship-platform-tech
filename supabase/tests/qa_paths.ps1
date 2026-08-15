@@ -194,6 +194,11 @@ foreach ($acct in $accounts) {
   #
   # No hay "fojas cero" posible: user_progress no tiene policy de DELETE, y esta
   # bien que no la tenga. La idempotencia la da el propio upsert.
+  #
+  # Se mide el CAMBIO entre las dos escrituras, no un total absoluto. Estas
+  # cuentas tambien se usan a mano para revisar la app, asi que pueden llegar
+  # aca con temas ya completados; exigir "1 fila" convertia ese uso legitimo en
+  # una falla y tapaba las reales.
   $upsert = @{
     apikey        = $APIKEY
     Authorization = "Bearer $token"
@@ -207,24 +212,49 @@ foreach ($acct in $accounts) {
   } | ConvertTo-Json
 
   try {
-    # Dos veces a proposito: la segunda es el replay.
-    foreach ($intento in 1, 2) {
-      $null = Invoke-RestMethod -Method Post `
-        -Uri "$U/rest/v1/user_progress?on_conflict=user_id,topic_id" `
-        -Headers $upsert -ContentType 'application/json' -Body $body
+    $null = Invoke-RestMethod -Method Post `
+      -Uri "$U/rest/v1/user_progress?on_conflict=user_id,topic_id" `
+      -Headers $upsert -ContentType 'application/json' -Body $body
+    $trasPrimero = @(Rest $token "user_progress?select=topic_id&status=eq.completed").Count
+
+    # La segunda es el replay de un lab ya cerrado: no puede agregar una fila.
+    $null = Invoke-RestMethod -Method Post `
+      -Uri "$U/rest/v1/user_progress?on_conflict=user_id,topic_id" `
+      -Headers $upsert -ContentType 'application/json' -Body $body
+
+    $prog = @(Rest $token "user_progress?select=topic_id,status&status=eq.completed")
+    $done = $prog.Count
+    if ($done -ne $trasPrimero) {
+      Fail $tr 'CU6 progreso' "rejugar el lab dejo $done filas donde habia ${trasPrimero}: el upsert no esta deduplicando"
     }
 
-    $prog = Rest $token "user_progress?select=topic_id,status&status=eq.completed"
-    $done = @($prog).Count
-    # Dos upserts, una sola fila: es la garantia de que rejugar un lab no
-    # duplica ni revierte nada.
-    if ($done -ne 1) { Fail $tr 'CU6 progreso' "$done topicos completados tras 2 upserts, esperaba 1" }
-    if (@($prog)[0].topic_id -ne $first.id) { Fail $tr 'CU6 progreso' 'se registro contra otro topico' }
+    $delTopico = @($prog | Where-Object { $_.topic_id -eq $first.id }).Count
+    if ($delTopico -ne 1) {
+      Fail $tr 'CU6 progreso' "$delTopico filas para el topico recien cerrado, esperaba exactamente 1"
+    }
 
+    # El porcentaje del path se calcula sobre las hojas, igual que roadmapProgress.
     $pct = [math]::Round(($done / $leaves.Count) * 100)
-    $expected = [math]::Round((1 / 15) * 100)
-    if ($pct -ne $expected) { Fail $tr 'CU6 progreso' "$pct% calculado sobre $($leaves.Count) hojas, esperaba $expected%" }
-    Write-Host "  CU6 progreso: 1 de $($leaves.Count) = $pct% (coincide con el resumen del perfil)"
+    if ($pct -lt 0 -or $pct -gt 100) { Fail $tr 'CU6 progreso' "porcentaje fuera de rango: $pct%" }
+    Write-Host "  CU6 progreso: $done de $($leaves.Count) = $pct% (replay sin duplicar)"
+
+    # --- CU6b: el puntaje del lab se puede guardar ------------------------
+    #
+    # Las migraciones no se aplican solas, y el codigo que escribe estas
+    # columnas ya esta en main. Si faltan, la app cierra el lab igual y pierde
+    # el puntaje en silencio: no hay pantalla donde eso se note. Preguntarlo
+    # aca es lo que convierte "no se corrio la migracion" en una falla ruidosa.
+    try {
+      $conScore = Rest $token "user_progress?select=topic_id,score_exercises_correct,score_exercises_total&topic_id=eq.$($first.id)"
+      $fila = @($conScore)[0]
+      if (-not ($fila.PSObject.Properties.Name -contains 'score_exercises_total')) {
+        Fail $tr 'CU6b puntaje' 'user_progress no expone score_exercises_total: falta correr 20260815000001'
+      } else {
+        Write-Host "  CU6b columnas de puntaje: OK"
+      }
+    } catch {
+      Fail $tr 'CU6b puntaje' "no se pudieron leer las columnas de puntaje (falta 20260815000001?): $($_.Exception.Message)"
+    }
   } catch {
     Fail $tr 'CU6 progreso' $_.Exception.Message
     Write-Host "  CU6 progreso: FALLA" -ForegroundColor Red
