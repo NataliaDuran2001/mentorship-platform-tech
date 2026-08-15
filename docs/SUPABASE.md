@@ -23,8 +23,8 @@ contraseñas se comparten por fuera del repositorio.
 | `google` | `false` | Diferido al issue #15 (`fase:post-mvp`) |
 | `disable_signup` | `false` | La app tiene registro propio (`/registro`) |
 | `mailer_autoconfirm` | **`false`** | Un `signUp` **no** devuelve sesión hasta que se confirme el correo |
-| Site URL | `http://localhost:5000` | Correr siempre con `--web-port 5000` o el enlace del correo no vuelve a la app |
-| Redirects | `http://localhost:5000/**` | idem |
+| Site URL | `https://kora-dev-1.web.app` | Dominio real de Firebase Hosting; es el fallback si una redirección no está en la allow-list |
+| Redirects | `https://kora-dev-1.web.app/**` · `https://kora-dev-1.firebaseapp.com/**` · `http://localhost:5000/**` | los dos dominios de Firebase Hosting (issue #34) más localhost para correr con `--web-port 5000` en desarrollo |
 
 Las plantillas de correo están en inglés (default de Supabase), por decisión de
 producto. Las traducciones quedaron en el comentario de cierre del issue #3.
@@ -183,12 +183,13 @@ app está corriendo, así que el mismo build sirve en localhost y en un dominio
 real. Se puede forzar con `--dart-define=SUPABASE_EMAIL_REDIRECT=...`.
 
 **Requisito**: la allow-list de *Redirect URLs* tiene que autorizarla. Con
+`https://kora-dev-1.web.app/**`, `https://kora-dev-1.firebaseapp.com/**` y
 `http://localhost:5000/**` ya queda cubierta; una URL que no esté en la lista
 se ignora en silencio y Supabase cae al Site URL, que es justamente el
 comportamiento viejo.
 
-Recordá correr la app con `--web-port 5000`, o el enlace apuntará a un puerto
-donde no hay nada escuchando.
+En local, recordá correr la app con `--web-port 5000`, o el enlace apuntará a
+un puerto donde no hay nada escuchando.
 
 ## Promover a una administradora — issue #36
 
