@@ -1,6 +1,7 @@
 // Domain layer: Contract (interface) of the roadmap repository.
 // It defines WHAT can be done, not HOW. The implementation lives in `data`.
 
+import '../entities/lab_score.dart';
 import '../entities/roadmap_track.dart';
 import '../entities/topic_node.dart';
 import '../entities/track.dart';
@@ -18,10 +19,17 @@ abstract class RoadmapRepository {
   /// `GetRoadmapTreeUseCase` and not by the Data layer or a widget.
   Future<List<TopicNode>> listTopics(RoadmapTrack track);
 
-  /// Records the topic as completed for the signed-in user.
+  /// Records the topic as completed for the signed-in user, optionally with
+  /// how the lab went.
   ///
   /// It is idempotent: completing the same topic twice leaves one record and
   /// does not fail. Progress belongs to the user, so the implementation takes
   /// the identity from the session and never from the caller.
-  Future<void> markTopicCompleted(String topicId);
+  ///
+  /// [score] is optional because not every way of closing a topic has one to
+  /// report — a section made only of explanations had nothing at stake. When
+  /// it is given and the topic was already completed, the better of the two
+  /// runs is what stays: replaying a section to review it must never be able
+  /// to damage the record of having once known it.
+  Future<void> markTopicCompleted(String topicId, {LabScore? score});
 }

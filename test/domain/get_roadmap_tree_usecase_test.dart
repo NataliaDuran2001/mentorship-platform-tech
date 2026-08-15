@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:aspire_app/domain/entities/lab_score.dart';
 import 'package:aspire_app/domain/entities/roadmap_track.dart';
 import 'package:aspire_app/domain/entities/topic_node.dart';
 import 'package:aspire_app/domain/entities/track.dart';
@@ -24,7 +25,7 @@ class _FakeRoadmapRepository implements RoadmapRepository {
       topics.where((t) => t.trackId == track).toList();
 
   @override
-  Future<void> markTopicCompleted(String topicId) async {
+  Future<void> markTopicCompleted(String topicId, {LabScore? score}) async {
     topics = [
       for (final topic in topics)
         topic.id == topicId ? topic.copyWith(isCompleted: true) : topic,
@@ -138,8 +139,9 @@ void main() {
           .expand((n) => n.flattened)
           .where((n) => n.isLeaf)
           .toList();
-      final available =
-          leaves.where((n) => n.status == TopicStatus.available).toList();
+      final available = leaves
+          .where((n) => n.status == TopicStatus.available)
+          .toList();
 
       expect(available.map((n) => n.id), ['a2']);
     });
@@ -163,18 +165,20 @@ void main() {
     });
   });
 
-  test('call filters by track and returns the tree of the requested track',
-      () async {
-    final repo = _FakeRoadmapRepository([
-      _node('fe1', sortOrder: 1),
-      _node('be1', sortOrder: 1, track: RoadmapTrack.backend),
-    ]);
+  test(
+    'call filters by track and returns the tree of the requested track',
+    () async {
+      final repo = _FakeRoadmapRepository([
+        _node('fe1', sortOrder: 1),
+        _node('be1', sortOrder: 1, track: RoadmapTrack.backend),
+      ]);
 
-    final tree = await GetRoadmapTreeUseCase(repo)(RoadmapTrack.backend);
+      final tree = await GetRoadmapTreeUseCase(repo)(RoadmapTrack.backend);
 
-    expect(tree.map((n) => n.id), ['be1']);
-    expect(tree.first.status, TopicStatus.available);
-  });
+      expect(tree.map((n) => n.id), ['be1']);
+      expect(tree.first.status, TopicStatus.available);
+    },
+  );
 }
 
 /// Unusable repository, for the tests that only exercise `buildTree`.
@@ -189,5 +193,6 @@ class _NoRepo implements RoadmapRepository {
       throw UnimplementedError();
 
   @override
-  Future<void> markTopicCompleted(String topicId) => throw UnimplementedError();
+  Future<void> markTopicCompleted(String topicId, {LabScore? score}) =>
+      throw UnimplementedError();
 }

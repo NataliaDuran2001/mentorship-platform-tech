@@ -128,7 +128,7 @@ Future<void> completeCurrentTopic() async {
   labSaveError.value = null;
 
   try {
-    await getIt<CompleteTopicUseCase>()(topicId);
+    await getIt<CompleteTopicUseCase>()(topicId, score: labScore.value);
     await loadRoadmap();
   } catch (e) {
     labSaveError.value = errorMessage(e);

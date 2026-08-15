@@ -77,8 +77,10 @@ Future<void> _solveAfterRetry() async {
 }
 
 void main() {
+  late FakeRoadmapRepository roadmapRepo;
+
   setUp(() async {
-    final roadmapRepo = FakeRoadmapRepository(
+    roadmapRepo = FakeRoadmapRepository(
       topics: const [
         TopicNode(
           id: 't1',
@@ -219,5 +221,65 @@ void main() {
     expect(labScore.value.exercisesCorrect, 2);
     expect(labScore.value.completedSteps, 3);
     expect(labScore.value.totalSteps, 3);
+  });
+
+  group('what gets stored', () {
+    test(
+      'closing the lab records how it went, not just that it closed',
+      () async {
+        await loadLabs('t1');
+        await nextLabChallenge();
+        await _solveAfterRetry();
+        await _solveFirstTry();
+
+        final stored = roadmapRepo.scores['t1'];
+        expect(stored, isNotNull);
+        expect(stored!.exercisesCorrect, 1);
+        expect(stored.exercisesTotal, 2);
+      },
+    );
+
+    test('a section with nothing at stake stores no score', () async {
+      await loadLabs('t-theory');
+      await nextLabChallenge();
+      await nextLabChallenge();
+
+      // The topic is closed, but a full house for reading is not a result
+      // worth keeping — it would read as a perfect run forever after.
+      expect(roadmapRepo.completed, ['t-theory']);
+      expect(roadmapRepo.scores.containsKey('t-theory'), isFalse);
+    });
+
+    test('replaying worse than before does not damage the record', () async {
+      await loadLabs('t1');
+      await nextLabChallenge();
+      await _solveFirstTry();
+      await _solveFirstTry();
+      expect(roadmapRepo.scores['t1']!.exercisesCorrect, 2);
+
+      // Back for a review pass, and it goes badly. Reviewing must never cost
+      // the learner the record of having once known it.
+      await loadLabs('t1');
+      await nextLabChallenge();
+      await _solveAfterRetry();
+      await _solveAfterRetry();
+
+      expect(roadmapRepo.scores['t1']!.exercisesCorrect, 2);
+    });
+
+    test('replaying better than before does improve the record', () async {
+      await loadLabs('t1');
+      await nextLabChallenge();
+      await _solveAfterRetry();
+      await _solveAfterRetry();
+      expect(roadmapRepo.scores['t1']!.exercisesCorrect, 0);
+
+      await loadLabs('t1');
+      await nextLabChallenge();
+      await _solveFirstTry();
+      await _solveFirstTry();
+
+      expect(roadmapRepo.scores['t1']!.exercisesCorrect, 2);
+    });
   });
 }
