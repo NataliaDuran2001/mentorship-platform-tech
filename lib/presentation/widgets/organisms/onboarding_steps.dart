@@ -19,6 +19,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
 import '../../utils/translate.dart';
+import '../atoms/custom_input.dart';
 import '../molecules/goal_radio_row.dart';
 import '../molecules/option_card_tile.dart';
 import '../molecules/track_card.dart';
@@ -68,15 +69,26 @@ class OnboardingStepLanguage extends StatelessWidget {
 }
 
 /// Step 2: experience level. Skippable.
+///
+/// The fourth option, "Other", opens a free-text field. It was added after the
+/// first beta: the three closed options left anyone who recognized herself in
+/// none of them with only two ways out, forcing a wrong answer or skipping the
+/// step. It **adds** to the three, it does not replace them.
 class OnboardingStepRole extends StatelessWidget {
   const OnboardingStepRole({
     super.key,
     required this.selected,
     required this.onSelected,
+    required this.otherText,
+    required this.onOtherChanged,
   });
 
   final ExperienceLevel? selected;
   final ValueChanged<ExperienceLevel> onSelected;
+
+  /// What she has written in the "Other" field so far.
+  final String otherText;
+  final ValueChanged<String> onOtherChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +106,17 @@ class OnboardingStepRole extends StatelessWidget {
               onTap: () => onSelected(entry.key),
             ),
           ),
+        if (selected == ExperienceLevel.other) ...[
+          const SizedBox(height: AppConstants.spacingSm),
+          CustomInput(
+            hintText: experienceOtherHint,
+            // Seeded so coming back to this step shows what she wrote, rather
+            // than an empty box next to an option that is clearly marked.
+            initialValue: otherText,
+            maxLines: 3,
+            onChanged: onOtherChanged,
+          ),
+        ],
       ],
     );
   }
@@ -217,11 +240,16 @@ class OnboardingSummary extends StatelessWidget {
     required this.level,
     required this.track,
     required this.goal,
+    this.experienceOther = '',
   });
 
   final ExperienceLevel? level;
   final RoadmapTrack? track;
   final LearningGoal? goal;
+
+  /// What she wrote if her level was "Other". The summary shows her own words
+  /// back, which say more than the label of the option that opened the field.
+  final String experienceOther;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +315,10 @@ class OnboardingSummary extends StatelessWidget {
               const SizedBox(height: AppConstants.spacingMd),
               _SummaryRow(
                 label: tr('Your level', 'Tu nivel'),
-                value: levelName(level),
+                value: level == ExperienceLevel.other &&
+                        experienceOther.trim().isNotEmpty
+                    ? experienceOther.trim()
+                    : levelName(level),
               ),
               _SummaryRow(
                 label: tr('Your focus', 'Tu enfoque'),

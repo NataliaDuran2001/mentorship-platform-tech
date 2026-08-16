@@ -73,7 +73,37 @@ Future<void> selectLanguage(AppLanguage language) async {
 void selectLevel(ExperienceLevel level) {
   selectedLevel.value = level;
   _persistAnswer(OnboardingKeys.experienceLevel, level.slug);
+
+  // "Other" opens a text field, so the 400 ms auto-advance would drag her off
+  // the step before she has written a word. Here "Continue" is what moves on,
+  // and it stays disabled until there is something to move on with.
+  if (level == ExperienceLevel.other) {
+    cancelOnboardingTimers();
+    return;
+  }
+
+  // Picking one of the closed options after having typed something drops the
+  // text: leaving it behind would persist an answer she just replaced.
+  experienceOtherText.value = '';
   _advanceWithFeedback();
+}
+
+/// Records what she is writing in the "Other" field.
+///
+/// It does not persist on every keystroke: the row is written when she leaves
+/// the step, in [confirmExperienceOther].
+void setExperienceOther(String text) {
+  experienceOtherText.value = text;
+}
+
+/// Saves the free text and moves on. It is what "Continue" does on the level
+/// step when "Other" is the answer.
+Future<void> confirmExperienceOther() async {
+  final text = experienceOtherText.value.trim();
+  if (text.isEmpty) return;
+
+  await _persistAnswer(OnboardingKeys.experienceOther, text);
+  goToNextStep();
 }
 
 /// Picks the track and moves forward.
@@ -244,6 +274,7 @@ Future<void> restoreOnboarding() async {
 
   selectedLevel.value =
       ExperienceLevel.fromSlug(byKey[OnboardingKeys.experienceLevel]);
+  experienceOtherText.value = byKey[OnboardingKeys.experienceOther] ?? '';
   selectedGoal.value = LearningGoal.fromSlug(byKey[OnboardingKeys.goal]);
   selectedTrack.value = RoadmapTrack.fromSlug(byKey[OnboardingKeys.track]);
 

@@ -544,6 +544,134 @@ void main() {
     });
   });
 
+  group('Step 2: the "Other" option', () {
+    Finder theField() => find.byType(TextField);
+
+    testWidgets('it adds a fourth option without touching the three original '
+        'ones', (tester) async {
+      await _mount(tester);
+
+      expect(find.text('Student / Self-taught'), findsOneWidget);
+      expect(find.text('Junior Developer'), findsOneWidget);
+      expect(find.text('Career Switcher'), findsOneWidget);
+      expect(find.text('Something else'), findsOneWidget);
+
+      // The field only shows up once that option is the answer.
+      expect(theField(), findsNothing);
+    });
+
+    testWidgets('choosing it opens the field and does NOT advance on its own',
+        (tester) async {
+      await _mount(tester);
+
+      await tester.tap(find.text('Something else'));
+      await _waitForAutoAdvance(tester);
+
+      // The 400 ms auto-advance of every other option would drag her off the
+      // step before she wrote a word.
+      expect(currentStep.value, OnboardingStepId.level);
+      expect(theField(), findsOneWidget);
+    });
+
+    testWidgets('"Continue" waits until there is something written',
+        (tester) async {
+      await _mount(tester);
+
+      await tester.tap(find.text('Something else'));
+      await tester.pumpAndSettle();
+
+      ElevatedButton continueButton() => tester.widget<ElevatedButton>(
+            find.widgetWithText(ElevatedButton, 'Continue'),
+          );
+
+      expect(continueButton().onPressed, isNull);
+
+      // Blanks are not an answer.
+      await tester.enterText(theField(), '   ');
+      await tester.pumpAndSettle();
+      expect(continueButton().onPressed, isNull);
+
+      await tester.enterText(theField(), 'I run a bakery and want to automate '
+          'my orders');
+      await tester.pumpAndSettle();
+      expect(continueButton().onPressed, isNotNull);
+    });
+
+    testWidgets('her words are saved under their own key, trimmed',
+        (tester) async {
+      await _mount(tester);
+
+      await tester.tap(find.text('Something else'));
+      await tester.pumpAndSettle();
+      await tester.enterText(theField(), '  I want to teach my daughters  ');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      final byKey = {for (final a in repo.answers) a.stepKey: a.value};
+      expect(byKey[OnboardingKeys.experienceLevel], 'other');
+      expect(byKey[OnboardingKeys.experienceOther], 'I want to teach my daughters');
+      expect(currentStep.value, OnboardingStepId.track);
+    });
+
+    testWidgets('changing your mind to a closed option drops the text',
+        (tester) async {
+      await _mount(tester);
+
+      await tester.tap(find.text('Something else'));
+      await tester.pumpAndSettle();
+      await tester.enterText(theField(), 'a reason I then thought better of');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Junior Developer'));
+      await _waitForAutoAdvance(tester);
+
+      // Otherwise the abandoned text would travel with an answer that no
+      // longer has anything to do with it.
+      expect(experienceOtherText.value, isEmpty);
+      expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
+      expect(
+        repo.answers.map((a) => a.stepKey),
+        isNot(contains(OnboardingKeys.experienceOther)),
+      );
+    });
+
+    testWidgets('coming back to the step shows what she wrote', (tester) async {
+      await _mount(tester);
+
+      await tester.tap(find.text('Something else'));
+      await tester.pumpAndSettle();
+      await tester.enterText(theField(), 'I am curious about data');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Back'));
+      await tester.pumpAndSettle();
+
+      // An option clearly marked next to an empty box would read as lost work.
+      expect(find.text('I am curious about data'), findsOneWidget);
+    });
+
+    testWidgets('the summary shows her words, not the label of the option',
+        (tester) async {
+      selectedLevel.value = ExperienceLevel.other;
+      experienceOtherText.value = 'I want to build my own shop online';
+      selectedTrack.value = RoadmapTrack.frontend;
+      currentStepIndex.value =
+          activeSteps.value.indexOf(OnboardingStepId.summary);
+
+      await _mount(tester);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('I want to build my own shop online'),
+        findsOneWidget,
+      );
+      expect(find.text('Something else'), findsNothing);
+    });
+  });
+
   group('Responsive', () {
     testWidgets('on mobile the decorative column is not shown', (tester) async {
       await _mount(tester, size: const Size(420, 1600));

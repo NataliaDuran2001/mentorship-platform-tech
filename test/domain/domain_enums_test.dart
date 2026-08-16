@@ -21,11 +21,16 @@ void main() {
     ]);
   });
 
-  test('there are exactly 3 experience levels', () {
+  test('there are exactly 4 experience levels', () {
+    // The order is the order they are offered in, and 'other' goes last: it is
+    // the way out for whoever recognizes herself in none of the three, not a
+    // peer of them. Adding a value here also means adding it to the
+    // `public.experience_level` enum in the database, or the write fails.
     expect(ExperienceLevel.values.map((l) => l.slug), [
       'student',
       'junior_developer',
       'career_switcher',
+      'other',
     ]);
   });
 

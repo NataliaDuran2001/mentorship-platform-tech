@@ -19,6 +19,13 @@ abstract final class OnboardingKeys {
   /// stored value alone cannot say whether anyone chose it.
   static const String language = 'language';
 
+  /// Free text of the "Other" option on the level step.
+  ///
+  /// It is a row of its own and not a variant of [experienceLevel] because
+  /// that one holds a slug the database validates as an enum. Here what is
+  /// stored is what she wrote.
+  static const String experienceOther = 'experience_other';
+
   /// Step 2: track chosen directly.
   static const String track = 'track';
 

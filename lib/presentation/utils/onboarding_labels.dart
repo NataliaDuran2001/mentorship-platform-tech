@@ -60,7 +60,24 @@ Map<ExperienceLevel, OptionVisual> get levelLabels => {
         ),
         icon: Icons.terminal,
       ),
+      // Added after the first beta. It does not replace the three above: it
+      // gives somewhere to go to whoever recognizes herself in none of them,
+      // instead of forcing a wrong answer or a skipped step.
+      ExperienceLevel.other: OptionVisual(
+        label: tr('Something else', 'Otro motivo'),
+        description: tr(
+          'None of these fit me. I will tell you in my own words.',
+          'Ninguna de estas me describe. Te cuento en mis palabras.',
+        ),
+        icon: Icons.edit_outlined,
+      ),
     };
+
+/// Placeholder of the free-text field the "Other" option opens.
+String get experienceOtherHint => tr(
+      'What brings you to Kora?',
+      '¿Qué te trae a Kora?',
+    );
 
 Map<RoadmapTrack, OptionVisual> get trackLabels => {
       RoadmapTrack.frontend: OptionVisual(

@@ -38,6 +38,13 @@ final currentStepIndex = signal<int>(0);
 final selectedLanguage = signal<AppLanguage?>(null);
 
 final selectedLevel = signal<ExperienceLevel?>(null);
+
+/// What she wrote when she picked "Other" on the level step.
+///
+/// It is kept apart from [selectedLevel] because the enum travels to a
+/// database enum column and this does not: it is persisted as free text in
+/// `onboarding_answers`.
+final experienceOtherText = signal<String>('');
 final selectedTrack = signal<RoadmapTrack?>(null);
 final selectedGoal = signal<LearningGoal?>(null);
 
@@ -168,6 +175,12 @@ final canSkipCurrentStep = computed(() {
 final canAdvance = computed(() {
   switch (currentStep.value) {
     case OnboardingStepId.level:
+      // "Other" with nothing written says less than not answering at all, and
+      // the whole point of the option is what she writes. Any other answer —
+      // including leaving the step blank, which is what "Skip" is for — moves
+      // on as before.
+      return selectedLevel.value != ExperienceLevel.other ||
+          experienceOtherText.value.trim().isNotEmpty;
     case OnboardingStepId.goal:
     case OnboardingStepId.summary:
       return true;
@@ -195,6 +208,7 @@ void resetOnboarding() {
   storedStepKeys.value = <String>{};
   selectedLanguage.value = null;
   selectedLevel.value = null;
+  experienceOtherText.value = '';
   selectedTrack.value = null;
   selectedGoal.value = null;
   onboardingSaving.value = false;
