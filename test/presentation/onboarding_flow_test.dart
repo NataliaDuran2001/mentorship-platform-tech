@@ -34,6 +34,14 @@ class SpyOnboardingRepository implements OnboardingRepository {
   int calls = 0;
   AuthFailure? failure;
 
+  /// Language written to the profile, and the failure to simulate on that
+  /// write.
+  AppLanguage? savedLanguage;
+  AuthFailure? languageFailure;
+
+  /// Every answer that went through `saveAnswer`, in order.
+  final List<OnboardingAnswer> answers = <OnboardingAnswer>[];
+
   @override
   Future<UserProfile> completeOnboarding({
     required RoadmapTrack track,
@@ -65,10 +73,12 @@ class SpyOnboardingRepository implements OnboardingRepository {
       const <OnboardingAnswer>[];
 
   @override
-  Future<void> saveAnswer(OnboardingAnswer answer) async {}
+  Future<void> saveAnswer(OnboardingAnswer answer) async => answers.add(answer);
 
   @override
   Future<UserProfile> updateLanguage({required AppLanguage language}) async {
+    if (languageFailure != null) throw languageFailure!;
+    savedLanguage = language;
     return UserProfile(id: 'u1', email: 'ana@example.com', language: language);
   }
 
@@ -92,6 +102,20 @@ Future<void> _mount(WidgetTester tester, {Size? size}) async {
 Future<void> _waitForAutoAdvance(WidgetTester tester) =>
     tester.pumpAndSettle(const Duration(milliseconds: 600));
 
+/// Leaves the language step behind, answered in English.
+///
+/// Every test in this file is about the steps that come after it, and they
+/// assert on English text — which is what the language step is there to
+/// decide. The step has its own group at the end of the file.
+void _languageAlreadyChosen() {
+  selectedLanguage.value = AppLanguage.en;
+  storedStepKeys.value = <String>{
+    ...storedStepKeys.value,
+    OnboardingKeys.language,
+  };
+  currentStepIndex.value = activeSteps.value.indexOf(OnboardingStepId.level);
+}
+
 void main() {
   late SpyOnboardingRepository repo;
 
@@ -103,15 +127,16 @@ void main() {
     resetOnboarding();
     cancelOnboardingTimers();
     currentProfile.value = null;
+    _languageAlreadyChosen();
   });
 
   tearDown(cancelOnboardingTimers);
 
   group('Journey and counter', () {
-    testWidgets('it starts on step 1 of 4', (tester) async {
+    testWidgets('after the language, the level is step 2 of 5', (tester) async {
       await _mount(tester);
 
-      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      expect(find.text('STEP 2 OF 5'), findsOneWidget);
       expect(
         find.text('Hi! How would you describe yourself today?'),
         findsOneWidget,
@@ -129,14 +154,14 @@ void main() {
       await tester.tap(find.text('Junior Developer'));
       await tester.pump();
 
-      // Before the timer it is still on step 1, with the option marked: that
-      // is the visual feedback the pause exists to show.
-      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      // Before the timer it has not moved, with the option marked: that is the
+      // visual feedback the pause exists to show.
+      expect(find.text('STEP 2 OF 5'), findsOneWidget);
       expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
 
       await _waitForAutoAdvance(tester);
 
-      expect(find.text('STEP 2 OF 4'), findsOneWidget);
+      expect(find.text('STEP 3 OF 5'), findsOneWidget);
       expect(find.text('What do you want to focus on?'), findsOneWidget);
     });
 
@@ -145,26 +170,25 @@ void main() {
       await _mount(tester);
       await tester.pumpAndSettle();
 
-      // Step 1 of 4 → 25%, same as the prototype.
+      // Step 2 of 5 → 40%.
       expect(
         tester
             .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
             .widthFactor,
-        closeTo(0.25, 0.001),
+        closeTo(0.4, 0.001),
       );
 
-      // On entering the guided branch the total becomes 5 and the same
+      // On entering the guided branch the total becomes 6 and the same
       // position is worth a different fraction.
       usesGuidedQuiz.value = true;
-      currentStepIndex.value = 0;
       await tester.pumpAndSettle();
 
-      expect(find.text('STEP 1 OF 5'), findsOneWidget);
+      expect(find.text('STEP 2 OF 6'), findsOneWidget);
       expect(
         tester
             .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
             .widthFactor,
-        closeTo(0.2, 0.001),
+        closeTo(2 / 6, 0.001),
       );
     });
   });
@@ -172,7 +196,7 @@ void main() {
   group('Step 2: specialty', () {
     testWidgets("it offers the 3 decided tracks plus the I am not sure yet option",
         (tester) async {
-      currentStepIndex.value = 1;
+      currentStepIndex.value = 2;
       await _mount(tester);
 
       expect(find.text('Front-end'), findsOneWidget);
@@ -192,12 +216,12 @@ void main() {
       expect(find.text('Skip'), findsOneWidget);
 
       // Step 2: forbidden. Without a track there is no roadmap (AC 1.3).
-      currentStepIndex.value = 1;
+      currentStepIndex.value = 2;
       await tester.pumpAndSettle();
       expect(find.text('Skip'), findsNothing);
 
       // Step 3: skippable again.
-      currentStepIndex.value = 2;
+      currentStepIndex.value = 3;
       await tester.pumpAndSettle();
       expect(find.text('What is your main goal?'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
@@ -205,7 +229,7 @@ void main() {
 
     testWidgets('"Continue" is disabled until a track is chosen',
         (tester) async {
-      currentStepIndex.value = 1;
+      currentStepIndex.value = 2;
       await _mount(tester);
 
       final button = find.widgetWithText(ElevatedButton, 'Continue');
@@ -223,7 +247,7 @@ void main() {
 
     testWidgets("The I am not sure yet option turns on the guided branch and the counter "
         'goes to 5', (tester) async {
-      currentStepIndex.value = 1;
+      currentStepIndex.value = 2;
       await _mount(tester);
 
       await tester.tap(find.text(notSureOption.label));
@@ -231,9 +255,9 @@ void main() {
 
       expect(usesGuidedQuiz.value, isTrue);
       expect(selectedTrack.value, isNull);
-      expect(totalSteps.value, 5);
+      expect(totalSteps.value, 6);
       expect(currentStep.value, OnboardingStepId.quiz);
-      expect(find.text('STEP 3 OF 5'), findsOneWidget);
+      expect(find.text('STEP 4 OF 6'), findsOneWidget);
     });
   });
 
@@ -260,12 +284,12 @@ void main() {
 
       // And to step 1 with the level still chosen.
       expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
-      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      expect(find.text('STEP 2 OF 5'), findsOneWidget);
     });
 
     testWidgets('going back from the guided quiz reopens the track step',
         (tester) async {
-      currentStepIndex.value = 1;
+      currentStepIndex.value = 2;
       await _mount(tester);
 
       await tester.tap(find.text(notSureOption.label));
@@ -278,11 +302,14 @@ void main() {
       // The branch is turned off and the total goes back to 4: the user is
       // reconsidering her specialty.
       expect(usesGuidedQuiz.value, isFalse);
-      expect(totalSteps.value, 4);
+      expect(totalSteps.value, 5);
       expect(currentStep.value, OnboardingStepId.track);
     });
 
     testWidgets('on the first step "Back" is not offered', (tester) async {
+      // The first step is the language one now, so this test has to stand on
+      // it rather than on the level, where going back is legitimate.
+      currentStepIndex.value = 0;
       await _mount(tester);
 
       final button = find.widgetWithText(TextButton, 'Back');
@@ -303,7 +330,7 @@ void main() {
       await _waitForAutoAdvance(tester);
 
       // Step 4: the summary, with Level and Focus like the prototype.
-      expect(find.text('STEP 4 OF 4'), findsOneWidget);
+      expect(find.text('STEP 5 OF 5'), findsOneWidget);
       expect(find.text("You're all set!"), findsOneWidget);
       expect(find.text('Junior Developer'), findsOneWidget);
       expect(find.text('Front-end'), findsOneWidget);
@@ -356,7 +383,7 @@ void main() {
         technicalDetail: 'SocketException',
       );
       selectedTrack.value = RoadmapTrack.backend;
-      currentStepIndex.value = 3;
+      currentStepIndex.value = 4;
 
       await _mount(tester);
       await tester.tap(find.text('Go to Dashboard'));
@@ -370,7 +397,7 @@ void main() {
     testWidgets('without a track nothing is saved and it goes back to step 2',
         (tester) async {
       // A state the UI cannot reach, but the rule cannot depend on that.
-      currentStepIndex.value = 3;
+      currentStepIndex.value = 4;
       await _mount(tester);
 
       await tester.tap(find.text('Go to Dashboard'));
@@ -382,6 +409,138 @@ void main() {
         find.textContaining('We need to know what you want to focus on'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('Step 1: language', () {
+    /// Rewinds to the language step, undoing what setUp did for the rest of
+    /// the file.
+    void onTheLanguageStep() {
+      resetOnboarding();
+      currentStepIndex.value = 0;
+    }
+
+    testWidgets('it comes first, in both languages, with nothing chosen',
+        (tester) async {
+      onTheLanguageStep();
+      await _mount(tester);
+
+      expect(find.text('STEP 1 OF 5'), findsOneWidget);
+      // Its own text cannot go through tr(): this is the screen that decides
+      // what tr() will answer.
+      expect(
+        find.text('Elige tu idioma\nChoose your language'),
+        findsOneWidget,
+      );
+      expect(find.text('Español'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+
+      // Nothing preselected: every profile is born in English, and showing
+      // that default as if it were her answer would be a lie.
+      expect(selectedLanguage.value, isNull);
+      expect(
+        tester
+            .widget<ElevatedButton>(
+              find.widgetWithText(ElevatedButton, 'Continue'),
+            )
+            .onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('it cannot be skipped', (tester) async {
+      onTheLanguageStep();
+      await _mount(tester);
+
+      // Skipping would leave the rest of the onboarding in English, which is
+      // the problem this step exists to solve.
+      expect(find.text('Skip'), findsNothing);
+    });
+
+    testWidgets('choosing Español saves it and repaints the next step in '
+        'Spanish', (tester) async {
+      onTheLanguageStep();
+      await _mount(tester);
+
+      await tester.tap(find.text('Español'));
+      await _waitForAutoAdvance(tester);
+
+      // It reached the profile, which is what every tr() in the app reads.
+      expect(repo.savedLanguage, AppLanguage.es);
+      // And it left a row, so resuming knows the question was already asked.
+      expect(
+        repo.answers.map((a) => a.stepKey),
+        contains(OnboardingKeys.language),
+      );
+      expect(repo.answers.last.value, 'es');
+
+      // The step it advanced to is already in Spanish. This is the whole
+      // point: before, the onboarding ran in English for everyone, because
+      // the language could only be changed from a profile page the guard
+      // makes unreachable until the onboarding is done.
+      // Including the counter, which is one more thing that used to stay in
+      // English for the whole flow.
+      expect(find.text('PASO 2 DE 5'), findsOneWidget);
+      expect(find.text('¡Hola! ¿Cómo te describirías hoy?'), findsOneWidget);
+      expect(find.text('Estudiante / Autodidacta'), findsOneWidget);
+    });
+
+    testWidgets('choosing English also advances, and writes nothing new',
+        (tester) async {
+      onTheLanguageStep();
+      await _mount(tester);
+
+      await tester.tap(find.text('English'));
+      await _waitForAutoAdvance(tester);
+
+      // The profile was already English, so there is nothing to update — but
+      // the answer is recorded all the same, which is what tells a resumed
+      // onboarding not to ask again.
+      expect(repo.savedLanguage, isNull);
+      expect(repo.answers.last.stepKey, OnboardingKeys.language);
+      expect(currentStep.value, OnboardingStepId.level);
+      expect(
+        find.text('Hi! How would you describe yourself today?'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('if it cannot be saved it says so and does not move on',
+        (tester) async {
+      onTheLanguageStep();
+      repo.languageFailure = const AuthFailure(AuthFailureKind.network);
+      await _mount(tester);
+
+      await tester.tap(find.text('Español'));
+      await _waitForAutoAdvance(tester);
+
+      // Every other step tolerates a failed save and carries on, because what
+      // is lost there is the resuming of one answer. Here what is lost is the
+      // answer itself.
+      expect(currentStep.value, OnboardingStepId.language);
+      expect(selectedLanguage.value, isNull);
+      expect(
+        find.textContaining("We couldn't connect"),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('after a failure, the other language can still be chosen',
+        (tester) async {
+      onTheLanguageStep();
+      repo.languageFailure = const AuthFailure(AuthFailureKind.network);
+      await _mount(tester);
+
+      await tester.tap(find.text('Español'));
+      await _waitForAutoAdvance(tester);
+      expect(currentStep.value, OnboardingStepId.language);
+
+      // English is the language the profile already carries, so this write
+      // short-circuits. It must not inherit the previous attempt's error.
+      await tester.tap(find.text('English'));
+      await _waitForAutoAdvance(tester);
+
+      expect(currentStep.value, OnboardingStepId.level);
     });
   });
 

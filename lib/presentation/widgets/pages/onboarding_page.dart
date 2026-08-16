@@ -69,6 +69,11 @@ class OnboardingPage extends StatelessWidget {
 
   Widget _contentOf(OnboardingStepId step) {
     switch (step) {
+      case OnboardingStepId.language:
+        return OnboardingStepLanguage(
+          selected: selectedLanguage.value,
+          onSelected: selectLanguage,
+        );
       case OnboardingStepId.level:
         return OnboardingStepRole(
           selected: selectedLevel.value,
@@ -125,6 +130,11 @@ class OnboardingPage extends StatelessWidget {
 
   String _titleOf(OnboardingStepId step) {
     switch (step) {
+      case OnboardingStepId.language:
+        // Both languages at once, and not `tr()`: this is the screen that
+        // decides which language `tr()` will answer in, so it has to be
+        // readable before that decision exists.
+        return 'Elige tu idioma\nChoose your language';
       case OnboardingStepId.level:
         return tr(
           'Hi! How would you describe yourself today?',
@@ -149,6 +159,11 @@ class OnboardingPage extends StatelessWidget {
 
   String? _subtitleOf(OnboardingStepId step) {
     switch (step) {
+      case OnboardingStepId.language:
+        return 'Verás el resto de la aplicación en el idioma que elijas. '
+            'Puedes cambiarlo cuando quieras desde tu perfil.\n'
+            "You'll see the rest of the app in the language you pick. "
+            'You can change it any time from your profile.';
       case OnboardingStepId.level:
         return tr(
           'We want to tailor your experience to your current level.',

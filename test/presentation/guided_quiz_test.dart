@@ -219,22 +219,22 @@ void main() {
 
     // Enter the guided branch: it is what "I'm not sure yet" does on step 2.
     usesGuidedQuiz.value = true;
-    currentStepIndex.value = 2;
+    currentStepIndex.value = 3;
   });
 
   tearDown(cancelOnboardingTimers);
 
-  testWidgets('it is reachable from step 2 and the counter says "of 5"',
+  testWidgets('it is reachable from the track step and the counter says "of 6"',
       (tester) async {
     resetOnboarding();
-    currentStepIndex.value = 1;
+    currentStepIndex.value = 2;
     await _mount(tester);
 
     await tester.tap(find.text(notSureOption.label));
     await _settle(tester);
 
     expect(currentStep.value, OnboardingStepId.quiz);
-    expect(find.text('STEP 3 OF 5'), findsOneWidget);
+    expect(find.text('STEP 4 OF 6'), findsOneWidget);
     expect(
       find.text('What kind of problems do you enjoy solving the most?'),
       findsOneWidget,
@@ -265,7 +265,7 @@ void main() {
 
     expect(find.textContaining('Question 2 of 3'), findsOneWidget);
     // It is still step 3 of 5: the quiz is one step, not three.
-    expect(find.text('STEP 3 OF 5'), findsOneWidget);
+    expect(find.text('STEP 4 OF 6'), findsOneWidget);
   });
 
   testWidgets('the recommendation comes from the use case, not from the widget',
@@ -318,9 +318,9 @@ void main() {
     expect(selectedTrack.value, RoadmapTrack.backend);
     // And the flow carries on to the goal step, with the counter still at 5.
     expect(currentStep.value, OnboardingStepId.goal);
-    expect(totalSteps.value, 5);
+    expect(totalSteps.value, 6);
     expect(find.text('What is your main goal?'), findsOneWidget);
-    expect(find.text('STEP 4 OF 5'), findsOneWidget);
+    expect(find.text('STEP 5 OF 6'), findsOneWidget);
   });
 
   testWidgets('the recommendation can be corrected by hand', (tester) async {
@@ -392,7 +392,7 @@ void main() {
 
     expect(currentStep.value, OnboardingStepId.track);
     expect(usesGuidedQuiz.value, isFalse);
-    expect(totalSteps.value, 4);
+    expect(totalSteps.value, 5);
   });
 
   testWidgets('"Continue" is disabled until the question is answered',

@@ -183,6 +183,22 @@ void main() {
     resetOnboarding();
     cancelOnboardingTimers();
     currentProfile.value = null;
+
+    // The language step is behind us in every test of this file: they are
+    // about resuming the steps that follow, and they read English text. It is
+    // seeded in the database as well as in memory, because that is the row
+    // `restoreOnboarding()` reads to know the question was already asked —
+    // every profile carries a language, so the value alone cannot say it.
+    repo.rows[OnboardingKeys.language] = const OnboardingAnswer(
+      stepKey: OnboardingKeys.language,
+      value: 'en',
+    );
+    selectedLanguage.value = AppLanguage.en;
+    storedStepKeys.value = <String>{
+      ...storedStepKeys.value,
+      OnboardingKeys.language,
+    };
+    currentStepIndex.value = activeSteps.value.indexOf(OnboardingStepId.level);
   });
 
   tearDown(cancelOnboardingTimers);
@@ -213,7 +229,7 @@ void main() {
     });
 
     testWidgets("The I am not sure yet option is saved too", (tester) async {
-      currentStepIndex.value = 1;
+      currentStepIndex.value = 2;
       await _mount(tester);
 
       await tester.tap(find.text(notSureOption.label));
@@ -269,7 +285,7 @@ void main() {
 
       // It resumes on step 3.
       expect(currentStep.value, OnboardingStepId.goal);
-      expect(find.text('STEP 3 OF 4'), findsOneWidget);
+      expect(find.text('STEP 4 OF 5'), findsOneWidget);
       // With steps 1 and 2 already marked.
       expect(selectedLevel.value, ExperienceLevel.juniorDeveloper);
       expect(selectedTrack.value, RoadmapTrack.frontend);
@@ -300,7 +316,7 @@ void main() {
       await _mount(tester);
 
       expect(currentStep.value, OnboardingStepId.level);
-      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      expect(find.text('STEP 2 OF 5'), findsOneWidget);
     });
 
     testWidgets('with everything answered it resumes on the summary',
@@ -370,7 +386,7 @@ void main() {
 
       // Guided branch recognized: 5 steps.
       expect(usesGuidedQuiz.value, isTrue);
-      expect(totalSteps.value, 5);
+      expect(totalSteps.value, 6);
       expect(currentStep.value, OnboardingStepId.quiz);
       // With number 1 already answered, it picks up on number 2.
       expect(find.textContaining('Question 2 of 3'), findsOneWidget);
@@ -419,9 +435,9 @@ void main() {
       await _mount(tester);
 
       expect(usesGuidedQuiz.value, isTrue);
-      expect(totalSteps.value, 5);
+      expect(totalSteps.value, 6);
       expect(currentStep.value, OnboardingStepId.goal);
-      expect(find.text('STEP 4 OF 5'), findsOneWidget);
+      expect(find.text('STEP 5 OF 6'), findsOneWidget);
     });
   });
 
@@ -464,7 +480,7 @@ void main() {
     testWidgets('forcing the summary without a track saves nothing and goes '
         'back to step 2', (tester) async {
       // A state unreachable through the UI; the rule cannot depend on that.
-      currentStepIndex.value = 3;
+      currentStepIndex.value = 4;
       await _mount(tester);
 
       await tester.tap(find.text('Go to Dashboard'));

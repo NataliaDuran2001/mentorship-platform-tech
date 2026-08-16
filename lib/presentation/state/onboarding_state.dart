@@ -12,6 +12,7 @@
 
 import 'package:signals_flutter/signals_flutter.dart';
 
+import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
@@ -19,7 +20,7 @@ import '../../domain/entities/track_recommendation.dart';
 import '../utils/onboarding_quiz.dart';
 
 /// The possible steps. `quiz` only takes part in the guided branch.
-enum OnboardingStepId { level, track, quiz, goal, summary }
+enum OnboardingStepId { language, level, track, quiz, goal, summary }
 
 /// The user picked "I'm not sure yet" on step 2 and goes through the guided
 /// quiz.
@@ -27,6 +28,14 @@ final usesGuidedQuiz = signal<bool>(false);
 
 /// Index within [activeSteps], starting at 0.
 final currentStepIndex = signal<int>(0);
+
+/// Language picked on step 1, or `null` while it has not been picked.
+///
+/// It is not derived from [appLanguage]: that one always has a value —every
+/// profile is born with `language = 'en'`— so it could never tell "she chose
+/// English" from "nobody has been asked yet", and the step would start with an
+/// answer already filled in.
+final selectedLanguage = signal<AppLanguage?>(null);
 
 final selectedLevel = signal<ExperienceLevel?>(null);
 final selectedTrack = signal<RoadmapTrack?>(null);
@@ -90,6 +99,7 @@ final onboardingError = signal<String?>(null);
 final activeSteps = computed<List<OnboardingStepId>>(() {
   return usesGuidedQuiz.value
       ? const [
+          OnboardingStepId.language,
           OnboardingStepId.level,
           OnboardingStepId.track,
           OnboardingStepId.quiz,
@@ -97,6 +107,7 @@ final activeSteps = computed<List<OnboardingStepId>>(() {
           OnboardingStepId.summary,
         ]
       : const [
+          OnboardingStepId.language,
           OnboardingStepId.level,
           OnboardingStepId.track,
           OnboardingStepId.goal,
@@ -104,7 +115,7 @@ final activeSteps = computed<List<OnboardingStepId>>(() {
         ];
 });
 
-/// 4 on the direct branch, 5 on the guided one. It includes the summary, just
+/// 5 on the direct branch, 6 on the guided one. It includes the summary, just
 /// like the prototype's "Step 1 of 4".
 final totalSteps = computed(() => activeSteps.value.length);
 
@@ -132,12 +143,15 @@ final canGoBack = computed(() => currentStepIndex.value > 0);
 ///
 /// Only the level and the goal. The track is **not** skippable: without a track
 /// there is no roadmap to unfold and AC 1.3 would be violated. Neither is the
-/// guided quiz, because it exists precisely to get that track.
+/// guided quiz, because it exists precisely to get that track. Nor is the
+/// language: skipping it would leave the rest of the onboarding in English,
+/// which is the exact problem the step was added to solve.
 final canSkipCurrentStep = computed(() {
   switch (currentStep.value) {
     case OnboardingStepId.level:
     case OnboardingStepId.goal:
       return true;
+    case OnboardingStepId.language:
     case OnboardingStepId.track:
     case OnboardingStepId.quiz:
     case OnboardingStepId.summary:
@@ -157,6 +171,8 @@ final canAdvance = computed(() {
     case OnboardingStepId.goal:
     case OnboardingStepId.summary:
       return true;
+    case OnboardingStepId.language:
+      return selectedLanguage.value != null;
     case OnboardingStepId.track:
       return selectedTrack.value != null;
     case OnboardingStepId.quiz:
@@ -177,6 +193,7 @@ void resetOnboarding() {
   quizRecommendation.value = null;
   quizAnalyzing.value = false;
   storedStepKeys.value = <String>{};
+  selectedLanguage.value = null;
   selectedLevel.value = null;
   selectedTrack.value = null;
   selectedGoal.value = null;

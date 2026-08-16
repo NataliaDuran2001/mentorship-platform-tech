@@ -1,16 +1,17 @@
 // Atomic Design (Organism): Functional sections of the onboarding steps.
 //
-// The four steps of the direct branch. None of them reads signals nor resolves
+// The five steps of the direct branch. None of them reads signals nor resolves
 // dependencies: they take the current selection and report back through a
 // callback. That is what lets them be tested on their own and what lets issue
 // #12 reuse the same molecules for the guided quiz.
 //
-// All four live in one file because they are variations of the same pattern —a
-// list of options— and splitting them would give four twenty-line files that
+// They all live in one file because they are variations of the same pattern —a
+// list of options— and splitting them would give five twenty-line files that
 // are always read together.
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/app_language.dart';
 import '../../../domain/entities/experience_level.dart';
 import '../../../domain/entities/learning_goal.dart';
 import '../../../domain/entities/roadmap_track.dart';
@@ -22,7 +23,51 @@ import '../molecules/goal_radio_row.dart';
 import '../molecules/option_card_tile.dart';
 import '../molecules/track_card.dart';
 
-/// Step 1: experience level. Skippable.
+/// Step 1: interface language. **Not** skippable.
+///
+/// It is the only step whose text does not go through `tr()`, and it could not:
+/// `tr()` picks a language, and picking the language is what this screen is
+/// for. Each option is written in the language it offers, which also makes it
+/// readable to someone who does not read the other one.
+///
+/// Nothing is selected on arrival. The profile is born with `language = 'en'`,
+/// so showing English pre-selected would present a default as if it were her
+/// answer.
+class OnboardingStepLanguage extends StatelessWidget {
+  const OnboardingStepLanguage({
+    super.key,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final AppLanguage? selected;
+  final ValueChanged<AppLanguage> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final option in const [
+          (AppLanguage.es, 'Español', 'Continuar en español.'),
+          (AppLanguage.en, 'English', 'Continue in English.'),
+        ])
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppConstants.spacingSm),
+            child: OptionCardTile(
+              icon: Icons.translate,
+              title: option.$2,
+              description: option.$3,
+              isSelected: selected == option.$1,
+              onTap: () => onSelected(option.$1),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Step 2: experience level. Skippable.
 class OnboardingStepRole extends StatelessWidget {
   const OnboardingStepRole({
     super.key,
@@ -54,7 +99,7 @@ class OnboardingStepRole extends StatelessWidget {
   }
 }
 
-/// Step 2: specialty. **Not** skippable: without a track there is no roadmap
+/// Step 3: specialty. **Not** skippable: without a track there is no roadmap
 /// (AC 1.3).
 ///
 /// It offers the 3 decided tracks plus "I'm not sure yet", which is not in any
@@ -132,7 +177,7 @@ class OnboardingStepStack extends StatelessWidget {
   }
 }
 
-/// Step 3: main goal. Skippable.
+/// Step 4: main goal. Skippable.
 class OnboardingStepGoal extends StatelessWidget {
   const OnboardingStepGoal({
     super.key,
@@ -162,7 +207,7 @@ class OnboardingStepGoal extends StatelessWidget {
   }
 }
 
-/// Step 4: summary. Shows Level and Focus, like the prototype.
+/// Step 5: summary. Shows Level and Focus, like the prototype.
 ///
 /// Skipped steps show up as "Not set" instead of hiding: the user has to be
 /// able to see what she left blank.
