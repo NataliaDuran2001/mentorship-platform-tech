@@ -27,13 +27,6 @@ class LoginPage extends StatelessWidget {
     // the E1 handoff and in CLAUDE.md.
     return SignalBuilder(
       builder: (context) {
-        if (authLoading.value) {
-          return AuthLayout(
-            title: tr('Welcome', 'Bienvenida'),
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
         // The resend is offered only if the account exists and is missing the
         // email link. For any other error it would make no sense.
         final needsConfirmation =
@@ -43,6 +36,7 @@ class LoginPage extends StatelessWidget {
           title: tr('Welcome', 'Bienvenida'),
           child: LoginForm(
             errorMessage: authError.value,
+            isLoading: authLoading.value,
             onEmailChanged: (v) => loginEmail.value = v,
             onPasswordChanged: (v) => loginPassword.value = v,
             obscurePassword: !loginPasswordVisible.value,

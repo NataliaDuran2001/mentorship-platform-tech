@@ -250,36 +250,42 @@ void main() {
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Password'), findsOneWidget);
       expect(find.text('Sign in'), findsOneWidget);
-      expect(find.text('OR'), findsOneWidget);
       // Signing up has to be one tap away: before there was no way to create
       // an account.
       expect(find.text('Sign up'), findsOneWidget);
     });
 
-    testWidgets('the Google button is visible but disabled (#15)',
+    testWidgets('there is no Google button, nor the divider that introduced it',
         (tester) async {
       _widenWindow(tester);
 
       await tester.pumpWidget(const MyApp());
 
-      final button =
-          find.widgetWithText(OutlinedButton, 'Continue with Google');
-      expect(button, findsOneWidget);
-      // Visible but unwired: not even to a stub that fails.
-      expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+      // It used to sit here disabled, waiting for issue #15. A control that
+      // cannot be pressed only makes people wonder whether the app is broken.
+      expect(find.text('Continue with Google'), findsNothing);
+      expect(find.text('OR'), findsNothing);
     });
 
-    testWidgets('with authLoading on, the indicator is shown', (tester) async {
+    testWidgets('while signing in, the form stays on screen and the wait is '
+        'inside the button', (tester) async {
       _widenWindow(tester);
       authLoading.value = true;
 
       await tester.pumpWidget(const MyApp());
 
+      // The whole page used to be replaced by an indicator. With `authLoading`
+      // shared between login and sign up and no timeout on the request, one
+      // stalled call left every way in covered by a spinner.
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(
-        find.widgetWithText(OutlinedButton, 'Continue with Google'),
-        findsNothing,
-      );
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Sign up'), findsOneWidget);
+
+      // And the button does not take a second tap while the first is in
+      // flight.
+      final button = find.widgetWithText(ElevatedButton, 'Sign in');
+      expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
     });
 
     testWidgets('without filling in the fields it warns and does not call the '
@@ -490,6 +496,33 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Check your email'), findsNothing);
+    });
+
+    testWidgets('"check your email" does not outlive the sign-up that '
+        'produced it', (tester) async {
+      _widenWindow(tester);
+      await tester.pumpWidget(const MyApp());
+
+      await tester.tap(find.text('Sign up'));
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(1), 'ana@example.com');
+      await tester.enterText(fields.at(2), 'secret123');
+      await tester.tap(find.text('Create account'));
+      await tester.pumpAndSettle();
+      expect(find.text('Check your email'), findsOneWidget);
+
+      // Go to the login and come back to create another account. The pending
+      // email used to survive, so this screen showed the *previous* attempt's
+      // confirmation instead of an empty form.
+      await tester.tap(find.text('Go to sign in'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign up'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Check your email'), findsNothing);
+      expect(find.text('Create account'), findsOneWidget);
     });
   });
 

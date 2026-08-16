@@ -26,13 +26,6 @@ class SignUpPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return SignalBuilder(
       builder: (context) {
-        if (authLoading.value) {
-          return AuthLayout(
-            title: tr('Create your account', 'Crea tu cuenta'),
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
         final pendingEmail = pendingConfirmationEmail.value;
 
         if (pendingEmail != null) {
@@ -42,6 +35,7 @@ class SignUpPage extends StatelessWidget {
               email: pendingEmail,
               wasResent: confirmationEmailResent.value,
               errorMessage: authError.value,
+              isLoading: authLoading.value,
               onResend: resendConfirmationEmail,
               onGoToLogin: () {
                 pendingConfirmationEmail.value = null;
@@ -56,6 +50,7 @@ class SignUpPage extends StatelessWidget {
           title: tr('Create your account', 'Crea tu cuenta'),
           child: SignUpForm(
             errorMessage: authError.value,
+            isLoading: authLoading.value,
             onNameChanged: (v) => signUpName.value = v,
             onEmailChanged: (v) => signUpEmail.value = v,
             onPasswordChanged: (v) => signUpPassword.value = v,
