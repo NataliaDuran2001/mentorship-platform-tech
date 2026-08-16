@@ -11,6 +11,21 @@ abstract final class OnboardingKeys {
   /// Step 1: experience level.
   static const String experienceLevel = 'experience_level';
 
+  /// Step 0: interface language.
+  ///
+  /// The choice itself lives in `profiles.language`, which is what the app
+  /// reads. This row exists only so resuming can tell "already asked" from
+  /// "never got there": every profile is born with `language = 'en'`, so the
+  /// stored value alone cannot say whether anyone chose it.
+  static const String language = 'language';
+
+  /// Free text of the "Other" option on the level step.
+  ///
+  /// It is a row of its own and not a variant of [experienceLevel] because
+  /// that one holds a slug the database validates as an enum. Here what is
+  /// stored is what she wrote.
+  static const String experienceOther = 'experience_other';
+
   /// Step 2: track chosen directly.
   static const String track = 'track';
 

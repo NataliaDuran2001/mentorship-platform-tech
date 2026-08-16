@@ -22,7 +22,7 @@ contraseñas se comparten por fuera del repositorio.
 | `email` | `true` | Es el único proveedor del MVP |
 | `google` | `false` | Diferido al issue #15 (`fase:post-mvp`) |
 | `disable_signup` | `false` | La app tiene registro propio (`/registro`) |
-| `mailer_autoconfirm` | **`false`** | Un `signUp` **no** devuelve sesión hasta que se confirme el correo |
+| `mailer_autoconfirm` | **`true`** *(temporal)* | Ver «Por qué la confirmación está apagada», abajo. Con esto en `true` un `signUp` **sí** devuelve sesión al instante |
 | Site URL | `https://kora-dev-1.web.app` | Dominio real de Firebase Hosting; es el fallback si una redirección no está en la allow-list |
 | Redirects | `https://kora-dev-1.web.app/**` · `https://kora-dev-1.firebaseapp.com/**` · `http://localhost:5000/**` | los dos dominios de Firebase Hosting (issue #34) más localhost para correr con `--web-port 5000` en desarrollo |
 
@@ -32,6 +32,33 @@ producto. Las traducciones quedaron en el comentario de cierre del issue #3.
 **Cuota de correos**: el SMTP integrado de Supabase tiene un límite bajo por
 hora. Cada registro y cada reenvío de confirmación consume uno. Conviene no
 gastarlos en pruebas automatizadas.
+
+### Por qué la confirmación está apagada
+
+En la primera prueba con usuarias reales, dos registros seguidos agotaron esa
+cuota: es del proyecto entero, no por usuaria, y es del orden de dos a cuatro
+correos por hora. El segundo `signUp` recibió `429 · email rate limit
+exceeded` y **la cuenta no se creó**, porque el envío del correo es parte de la
+transacción del registro. Para poder seguir probando ese día se apagó la
+confirmación.
+
+Es una solución prestada, no el estado deseado: sin confirmación cualquiera
+puede registrarse con el correo de otra persona, y no hay forma de recuperar
+una cuenta cuya dirección nunca se verificó.
+
+**Para volver a encenderla** hay que dejar de usar el SMTP integrado:
+
+1. *Authentication → Emails → SMTP Settings* → conectar un proveedor propio
+   (Resend, Brevo o SendGrid; las capas gratuitas cubren de sobra una beta).
+2. *Authentication → Rate Limits* → subir el límite de correos, que hasta ese
+   momento sigue atado al valor de desarrollo.
+3. *Authentication → Sign In / Providers → Email* → volver a marcar **Confirm
+   email** (`mailer_autoconfirm` a `false`) y actualizar la fila de la tabla de
+   arriba.
+
+Del lado de la app, el 429 ya se reconoce y se muestra como «espera unos
+minutos» en vez de «algo salió mal»: ver `_classify` en
+[auth_repository_impl.dart](../lib/data/repositories/auth_repository_impl.dart).
 
 ## Usuarias de prueba
 
@@ -161,6 +188,16 @@ aplicadas a mano en el dashboard.
 | `20260727044422` | Rol `student`/`admin` en `profiles`, RLS de escritura del catálogo (issue #36) |
 | `20260727044728` | Corrige el trigger del rol: tenía que ser `SECURITY INVOKER` (issue #36) |
 | `20260727050231` | El rol también es inmutable en el `insert` (issue #36) |
+
+> La tabla se quedó en `20260727050231`; las de agosto (contenido de los cinco
+> tracks, `user_progress.score_*`, `content_translations`, `interview_sessions`,
+> `profiles.language`) están en la carpeta y aplicadas, sin fila acá.
+
+**Pendiente de aplicar**: `20260816000001_nivel_otro.sql` agrega el valor
+`'other'` al enum `experience_level`, para la cuarta opción del paso de nivel
+del onboarding. Sin ella, elegir «Otro» falla al guardar el perfil. Va sola en
+su archivo porque `alter type ... add value` no puede correr en la misma
+transacción que después usa el valor.
 
 Después de cada migración, correr el linter de seguridad y verificar que no
 aparezcan hallazgos nuevos:

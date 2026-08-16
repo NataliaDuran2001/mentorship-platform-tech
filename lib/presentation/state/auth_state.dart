@@ -136,5 +136,10 @@ void clearAuthForms() {
   authError.value = null;
   authErrorKind.value = null;
   confirmationEmailResent.value = false;
+  // Without this, "check your email" outlived the sign-up that produced it:
+  // going to the login and back to "Create your account" showed the previous
+  // attempt's confirmation screen instead of an empty form, because the
+  // sign-up page decides which face to show from this signal alone.
+  pendingConfirmationEmail.value = null;
   resetPasswordFlows();
 }

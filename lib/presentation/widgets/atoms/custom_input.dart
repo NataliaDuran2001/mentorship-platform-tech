@@ -6,6 +6,10 @@
 // It has no TextEditingController: the value comes out through [onChanged] and
 // whoever uses it holds on to it, usually a signal. A controller would need a
 // State to dispose of it, and the widgets in this project are StatelessWidget.
+//
+// It is a TextFormField and not a TextField only so it can be seeded with
+// [initialValue] — what a resumed onboarding needs to show text the user
+// already wrote. Everything else behaves identically.
 
 import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
@@ -46,9 +50,14 @@ class CustomInput extends StatelessWidget {
   /// single-line credential.
   final int maxLines;
 
+  /// Text the field opens with. It seeds the field on mount and is ignored
+  /// afterwards: what the user types from then on travels through [onChanged].
+  final String? initialValue;
+
   const CustomInput({
     super.key,
     required this.hintText,
+    this.initialValue,
     this.prefixIcon,
     this.obscureText = false,
     this.onChanged,
@@ -85,11 +94,12 @@ class CustomInput extends StatelessWidget {
                     ]
                   : const [],
             ),
-            child: TextField(
+            child: TextFormField(
+              initialValue: initialValue,
               obscureText: obscureText,
               enabled: enabled,
               onChanged: onChanged,
-              onSubmitted: onSubmitted,
+              onFieldSubmitted: onSubmitted,
               keyboardType: keyboardType,
               textInputAction: textInputAction,
               autofillHints: autofillHints,

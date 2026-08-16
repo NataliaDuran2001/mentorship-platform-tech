@@ -27,7 +27,12 @@ class SignUpForm extends StatelessWidget {
     required this.obscurePassword,
     required this.onToggleObscurePassword,
     this.errorMessage,
+    this.isLoading = false,
   });
+
+  /// A sign up is in flight. The button waits; the rest of the form stays on
+  /// screen and usable, so there is always a way out.
+  final bool isLoading;
 
   final ValueChanged<String> onNameChanged;
   final ValueChanged<String> onEmailChanged;
@@ -79,7 +84,11 @@ class SignUpForm extends StatelessWidget {
           onSubmitted: (_) => onSubmit(),
         ),
         const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        CustomButton(text: tr('Create account', 'Crear cuenta'), onPressed: onSubmit),
+        CustomButton(
+          text: tr('Create account', 'Crear cuenta'),
+          onPressed: onSubmit,
+          isLoading: isLoading,
+        ),
         const SizedBox(height: AppConstants.defaultPadding),
         // Wrap and not Row: on narrow screens the question and the link do not
         // fit in one line and a Row would overflow.
@@ -114,11 +123,18 @@ class ConfirmationPending extends StatelessWidget {
     required this.onGoToLogin,
     this.wasResent = false,
     this.errorMessage,
+    this.isLoading = false,
   });
 
   final String email;
   final VoidCallback onResend;
   final VoidCallback onGoToLogin;
+
+  /// A resend is in flight. This screen must survive it: replacing it with a
+  /// spinner used to hide both the address the email went to and the error
+  /// that came back — including the "wait a few minutes" of a spent quota,
+  /// which is precisely the message someone tapping "resend" needs to read.
+  final bool isLoading;
 
   /// The resend went through. Without this feedback, tapping "resend" does not
   /// feel like anything happened.
@@ -158,9 +174,14 @@ class ConfirmationPending extends StatelessWidget {
         CustomButton(text: tr('Go to sign in', 'Ir a iniciar sesión'), onPressed: onGoToLogin),
         const SizedBox(height: AppConstants.spacingSm),
         TextButton(
-          onPressed: onResend,
+          onPressed: isLoading ? null : onResend,
           child: Text(
-            tr("It didn't arrive, resend the email", 'No llegó, reenviar el correo'),
+            isLoading
+                ? tr('Sending…', 'Enviando…')
+                : tr(
+                    "It didn't arrive, resend the email",
+                    'No llegó, reenviar el correo',
+                  ),
           ),
         ),
       ],

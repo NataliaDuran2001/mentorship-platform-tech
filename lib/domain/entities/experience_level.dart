@@ -1,7 +1,14 @@
 // Domain layer: Pure business entity (pure Dart, no Flutter, no JSON).
 //
-// The 3 experience levels of Module 1. They are exactly the ones from the
-// `descubre_tu_ruta_onboarding` prototype and admit no extra values.
+// The experience levels of Module 1. The first three are exactly the ones
+// from the `descubre_tu_ruta_onboarding` prototype; `other` was added after
+// the first beta, where the three closed options left anyone who recognized
+// herself in none of them with only two ways out: force a wrong answer or
+// skip the step.
+//
+// `other` carries no meaning of its own: what it means is in the free text the
+// user writes, which is persisted in `onboarding_answers` under the
+// `experience_other` key. This enum stays a plain list of slugs.
 //
 // The `slug` is the stable value that travels to the database: the Data
 // layer persists it as-is in `profiles.experience_level`. The visible
@@ -15,7 +22,10 @@ enum ExperienceLevel {
   juniorDeveloper('junior_developer'),
 
   /// Career switcher: comes from another sector and wants to enter tech.
-  careerSwitcher('career_switcher');
+  careerSwitcher('career_switcher'),
+
+  /// None of the above: the reason is in her own words.
+  other('other');
 
   const ExperienceLevel(this.slug);
 

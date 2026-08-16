@@ -10,6 +10,8 @@
 // what makes it possible to honour "no raw Supabase error in sight" without
 // presentation importing supabase_flutter.
 
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../../core/config/supabase_config.dart';
@@ -18,9 +20,25 @@ import '../../domain/failures/auth_failure.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  const AuthRepositoryImpl(this._client);
+  const AuthRepositoryImpl(this._client, {Duration timeout = defaultTimeout})
+      : _timeout = timeout;
 
   final sb.SupabaseClient _client;
+
+  /// Deadline for every authentication call.
+  ///
+  /// It is set here and not on the shared http client of `Supabase.initialize`
+  /// on purpose: that client also carries the Edge Function calls, and the AI
+  /// ones legitimately take tens of seconds. Authentication does not — and a
+  /// request with no deadline is what let a single stalled sign-up leave
+  /// `authLoading` on forever, with the spinner covering both the sign-up and
+  /// the login screen.
+  ///
+  /// It is a parameter only so a test can use a short one; production always
+  /// takes [defaultTimeout].
+  static const Duration defaultTimeout = Duration(seconds: 30);
+
+  final Duration _timeout;
 
   @override
   Future<AuthResult> signUp({
@@ -160,13 +178,38 @@ class AuthRepositoryImpl implements AuthRepository {
     );
   }
 
-  /// Runs [action] and converts any exception into an [AuthFailure].
+  /// Runs [action] under [_timeout] and converts any exception into an
+  /// [AuthFailure].
   Future<T> _translate<T>(Future<T> Function() action) async {
     try {
-      return await action();
+      return await action().timeout(_timeout);
+    } on TimeoutException {
+      // The request never came back. From the user's side that is
+      // indistinguishable from having no connection, and the message —"check
+      // your connection and try again"— is the right advice either way.
+      throw const AuthFailure(
+        AuthFailureKind.network,
+        technicalDetail: 'auth request timed out',
+      );
     } on AuthFailure {
       // Already translated: signUp throws it for the duplicated email.
       rethrow;
+    } on sb.AuthRetryableFetchException catch (e) {
+      // It has to be caught *before* AuthException, which it extends. Without
+      // this branch a dropped connection or a CORS misconfiguration reached
+      // `_classify`, matched none of its cases and came out as "unknown" —
+      // "Something went wrong" for what is plainly "we could not connect".
+      //
+      // gotrue throws it in two situations, and only one of them is the
+      // network: a failed fetch (no status code) and a 5xx (status code
+      // present). A server error is not the user's connection, so it keeps
+      // saying "try again in a moment" instead of blaming her wifi.
+      throw AuthFailure(
+        e.statusCode == null
+            ? AuthFailureKind.network
+            : AuthFailureKind.unknown,
+        technicalDetail: e.message,
+      );
     } on sb.AuthException catch (e) {
       throw AuthFailure(_classify(e), technicalDetail: e.message);
     } on sb.PostgrestException catch (e) {
@@ -186,9 +229,26 @@ class AuthRepositoryImpl implements AuthRepository {
 
   /// Maps the Supabase Auth error to a domain case.
   ///
-  /// It decides by `code`, which is stable, and only falls back to the message
-  /// text when the backend does not send it.
+  /// It decides by `code`, which is stable, and only falls back to the HTTP
+  /// status and the message text when the backend does not send it.
   AuthFailureKind _classify(sb.AuthException e) {
+    // Rate limiting is checked before the `code` switch because that is the
+    // case where `code` is the least trustworthy. GoTrue answers a spent email
+    // quota with `{"code": 429, "error_code": "over_email_send_rate_limit"}`,
+    // and gotrue-dart only reads `code` when it arrives as a *string*: a
+    // numeric 429 leaves `e.code` null and the error fell through to
+    // "unknown". That is exactly what the beta hit — the whole project shares
+    // one small hourly quota on Supabase's built-in mailer, so the second
+    // person to sign up within the hour was told "Something went wrong"
+    // instead of "wait a few minutes".
+    //
+    // `statusCode` is the reliable signal: gotrue fills it from the HTTP
+    // response on every AuthApiException, whatever the body looks like.
+    if (e.statusCode == '429' ||
+        e.message.toLowerCase().contains('rate limit')) {
+      return AuthFailureKind.tooManyRequests;
+    }
+
     switch (e.code) {
       case 'invalid_credentials':
       case 'invalid_grant':

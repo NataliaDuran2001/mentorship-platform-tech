@@ -1,16 +1,17 @@
 // Atomic Design (Organism): Functional sections of the onboarding steps.
 //
-// The four steps of the direct branch. None of them reads signals nor resolves
+// The five steps of the direct branch. None of them reads signals nor resolves
 // dependencies: they take the current selection and report back through a
 // callback. That is what lets them be tested on their own and what lets issue
 // #12 reuse the same molecules for the guided quiz.
 //
-// All four live in one file because they are variations of the same pattern —a
-// list of options— and splitting them would give four twenty-line files that
+// They all live in one file because they are variations of the same pattern —a
+// list of options— and splitting them would give five twenty-line files that
 // are always read together.
 
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/app_language.dart';
 import '../../../domain/entities/experience_level.dart';
 import '../../../domain/entities/learning_goal.dart';
 import '../../../domain/entities/roadmap_track.dart';
@@ -18,20 +19,76 @@ import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/onboarding_labels.dart';
 import '../../utils/translate.dart';
+import '../atoms/custom_input.dart';
 import '../molecules/goal_radio_row.dart';
 import '../molecules/option_card_tile.dart';
 import '../molecules/track_card.dart';
 
-/// Step 1: experience level. Skippable.
-class OnboardingStepRole extends StatelessWidget {
-  const OnboardingStepRole({
+/// Step 1: interface language. **Not** skippable.
+///
+/// It is the only step whose text does not go through `tr()`, and it could not:
+/// `tr()` picks a language, and picking the language is what this screen is
+/// for. Each option is written in the language it offers, which also makes it
+/// readable to someone who does not read the other one.
+///
+/// Nothing is selected on arrival. The profile is born with `language = 'en'`,
+/// so showing English pre-selected would present a default as if it were her
+/// answer.
+class OnboardingStepLanguage extends StatelessWidget {
+  const OnboardingStepLanguage({
     super.key,
     required this.selected,
     required this.onSelected,
   });
 
+  final AppLanguage? selected;
+  final ValueChanged<AppLanguage> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final option in const [
+          (AppLanguage.es, 'Español', 'Continuar en español.'),
+          (AppLanguage.en, 'English', 'Continue in English.'),
+        ])
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppConstants.spacingSm),
+            child: OptionCardTile(
+              icon: Icons.translate,
+              title: option.$2,
+              description: option.$3,
+              isSelected: selected == option.$1,
+              onTap: () => onSelected(option.$1),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Step 2: experience level. Skippable.
+///
+/// The fourth option, "Other", opens a free-text field. It was added after the
+/// first beta: the three closed options left anyone who recognized herself in
+/// none of them with only two ways out, forcing a wrong answer or skipping the
+/// step. It **adds** to the three, it does not replace them.
+class OnboardingStepRole extends StatelessWidget {
+  const OnboardingStepRole({
+    super.key,
+    required this.selected,
+    required this.onSelected,
+    required this.otherText,
+    required this.onOtherChanged,
+  });
+
   final ExperienceLevel? selected;
   final ValueChanged<ExperienceLevel> onSelected;
+
+  /// What she has written in the "Other" field so far.
+  final String otherText;
+  final ValueChanged<String> onOtherChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -49,12 +106,23 @@ class OnboardingStepRole extends StatelessWidget {
               onTap: () => onSelected(entry.key),
             ),
           ),
+        if (selected == ExperienceLevel.other) ...[
+          const SizedBox(height: AppConstants.spacingSm),
+          CustomInput(
+            hintText: experienceOtherHint,
+            // Seeded so coming back to this step shows what she wrote, rather
+            // than an empty box next to an option that is clearly marked.
+            initialValue: otherText,
+            maxLines: 3,
+            onChanged: onOtherChanged,
+          ),
+        ],
       ],
     );
   }
 }
 
-/// Step 2: specialty. **Not** skippable: without a track there is no roadmap
+/// Step 3: specialty. **Not** skippable: without a track there is no roadmap
 /// (AC 1.3).
 ///
 /// It offers the 3 decided tracks plus "I'm not sure yet", which is not in any
@@ -132,7 +200,7 @@ class OnboardingStepStack extends StatelessWidget {
   }
 }
 
-/// Step 3: main goal. Skippable.
+/// Step 4: main goal. Skippable.
 class OnboardingStepGoal extends StatelessWidget {
   const OnboardingStepGoal({
     super.key,
@@ -162,7 +230,7 @@ class OnboardingStepGoal extends StatelessWidget {
   }
 }
 
-/// Step 4: summary. Shows Level and Focus, like the prototype.
+/// Step 5: summary. Shows Level and Focus, like the prototype.
 ///
 /// Skipped steps show up as "Not set" instead of hiding: the user has to be
 /// able to see what she left blank.
@@ -172,11 +240,16 @@ class OnboardingSummary extends StatelessWidget {
     required this.level,
     required this.track,
     required this.goal,
+    this.experienceOther = '',
   });
 
   final ExperienceLevel? level;
   final RoadmapTrack? track;
   final LearningGoal? goal;
+
+  /// What she wrote if her level was "Other". The summary shows her own words
+  /// back, which say more than the label of the option that opened the field.
+  final String experienceOther;
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +315,10 @@ class OnboardingSummary extends StatelessWidget {
               const SizedBox(height: AppConstants.spacingMd),
               _SummaryRow(
                 label: tr('Your level', 'Tu nivel'),
-                value: levelName(level),
+                value: level == ExperienceLevel.other &&
+                        experienceOther.trim().isNotEmpty
+                    ? experienceOther.trim()
+                    : levelName(level),
               ),
               _SummaryRow(
                 label: tr('Your focus', 'Tu enfoque'),

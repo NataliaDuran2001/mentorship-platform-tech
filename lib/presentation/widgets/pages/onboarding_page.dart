@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:signals_flutter/signals_flutter.dart';
 
+import '../../../domain/entities/experience_level.dart';
 import '../../state/onboarding_actions.dart';
 import '../../state/onboarding_state.dart';
 import '../../utils/onboarding_quiz.dart';
@@ -34,16 +35,13 @@ class OnboardingPage extends StatelessWidget {
         }
 
         final step = currentStep.value;
-        final isSummary = step == OnboardingStepId.summary;
         final isQuiz = step == OnboardingStepId.quiz;
 
         // The quiz is a single step of the counter but it has its own internal
         // navigation: the footer drives its questions instead of the overall
         // flow.
         final back = isQuiz ? goToPreviousQuizQuestion : goToPreviousStep;
-        final forward = isQuiz
-            ? (quizShowingResult.value ? confirmRecommendedTrack : advanceQuiz)
-            : (isSummary ? submitOnboarding : goToNextStep);
+        final forward = _forwardFor(step);
 
         return OnboardingStepLayout(
           currentStep: currentStepNumber.value,
@@ -67,12 +65,38 @@ class OnboardingPage extends StatelessWidget {
     );
   }
 
+  /// What "Continue" does on each step.
+  ///
+  /// The quiz is a step of the counter with its own internal navigation, so
+  /// there the footer drives its questions instead of the overall flow. And on
+  /// the level step, "Other" has a text field whose content has to be saved
+  /// before moving on — the other options were already saved the moment they
+  /// were tapped.
+  VoidCallback _forwardFor(OnboardingStepId step) {
+    if (step == OnboardingStepId.quiz) {
+      return quizShowingResult.value ? confirmRecommendedTrack : advanceQuiz;
+    }
+    if (step == OnboardingStepId.summary) return submitOnboarding;
+    if (step == OnboardingStepId.level &&
+        selectedLevel.value == ExperienceLevel.other) {
+      return confirmExperienceOther;
+    }
+    return goToNextStep;
+  }
+
   Widget _contentOf(OnboardingStepId step) {
     switch (step) {
+      case OnboardingStepId.language:
+        return OnboardingStepLanguage(
+          selected: selectedLanguage.value,
+          onSelected: selectLanguage,
+        );
       case OnboardingStepId.level:
         return OnboardingStepRole(
           selected: selectedLevel.value,
           onSelected: selectLevel,
+          otherText: experienceOtherText.value,
+          onOtherChanged: setExperienceOther,
         );
       case OnboardingStepId.track:
         return OnboardingStepStack(
@@ -108,6 +132,7 @@ class OnboardingPage extends StatelessWidget {
           level: selectedLevel.value,
           track: selectedTrack.value,
           goal: selectedGoal.value,
+          experienceOther: experienceOtherText.value,
         );
     }
   }
@@ -125,6 +150,11 @@ class OnboardingPage extends StatelessWidget {
 
   String _titleOf(OnboardingStepId step) {
     switch (step) {
+      case OnboardingStepId.language:
+        // Both languages at once, and not `tr()`: this is the screen that
+        // decides which language `tr()` will answer in, so it has to be
+        // readable before that decision exists.
+        return 'Elige tu idioma\nChoose your language';
       case OnboardingStepId.level:
         return tr(
           'Hi! How would you describe yourself today?',
@@ -149,6 +179,11 @@ class OnboardingPage extends StatelessWidget {
 
   String? _subtitleOf(OnboardingStepId step) {
     switch (step) {
+      case OnboardingStepId.language:
+        return 'Verás el resto de la aplicación en el idioma que elijas. '
+            'Puedes cambiarlo cuando quieras desde tu perfil.\n'
+            "You'll see the rest of the app in the language you pick. "
+            'You can change it any time from your profile.';
       case OnboardingStepId.level:
         return tr(
           'We want to tailor your experience to your current level.',

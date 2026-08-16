@@ -12,6 +12,7 @@
 import 'dart:async';
 
 import '../../core/di/injection.dart';
+import '../../domain/entities/app_language.dart';
 import '../../domain/entities/experience_level.dart';
 import '../../domain/entities/learning_goal.dart';
 import '../../domain/entities/roadmap_track.dart';
@@ -23,11 +24,47 @@ import '../utils/auth_error_messages.dart';
 import '../utils/constants.dart';
 import '../utils/onboarding_quiz.dart';
 import 'auth_state.dart';
+import 'language_actions.dart';
 import 'language_state.dart';
 import 'onboarding_state.dart';
 // quizAnalyzing is declared in onboarding_state.dart and imported above.
 
 Timer? _autoAdvance;
+
+/// Picks the interface language and moves forward.
+///
+/// This one writes to the profile instead of only to a signal, because
+/// `appLanguage` —what every `tr()` in the app reads— is derived from
+/// `profiles.language`. The write is awaited before advancing so the next step
+/// is already painted in the chosen language rather than flipping under the
+/// user a moment later.
+///
+/// A failure does **not** advance. Every other step tolerates a failed save and
+/// carries on, because what is lost there is the resuming of one answer. Here
+/// what is lost is the answer itself: the point of the step is that the rest of
+/// the onboarding stops being in English.
+Future<void> selectLanguage(AppLanguage language) async {
+  cancelOnboardingTimers();
+  selectedLanguage.value = language;
+  onboardingError.value = null;
+  // Cleared here and not only inside `updateLanguage`, which returns early
+  // when the language is already the current one: without this, a failed
+  // attempt at the other language would leave its error behind and block the
+  // retry that asks for the one already set.
+  languageUpdateError.value = null;
+
+  await updateLanguage(language);
+
+  final failure = languageUpdateError.value;
+  if (failure != null) {
+    onboardingError.value = failure;
+    selectedLanguage.value = null;
+    return;
+  }
+
+  await _persistAnswer(OnboardingKeys.language, language.slug);
+  _advanceWithFeedback();
+}
 
 /// Picks the experience level and moves forward.
 ///
@@ -36,7 +73,37 @@ Timer? _autoAdvance;
 void selectLevel(ExperienceLevel level) {
   selectedLevel.value = level;
   _persistAnswer(OnboardingKeys.experienceLevel, level.slug);
+
+  // "Other" opens a text field, so the 400 ms auto-advance would drag her off
+  // the step before she has written a word. Here "Continue" is what moves on,
+  // and it stays disabled until there is something to move on with.
+  if (level == ExperienceLevel.other) {
+    cancelOnboardingTimers();
+    return;
+  }
+
+  // Picking one of the closed options after having typed something drops the
+  // text: leaving it behind would persist an answer she just replaced.
+  experienceOtherText.value = '';
   _advanceWithFeedback();
+}
+
+/// Records what she is writing in the "Other" field.
+///
+/// It does not persist on every keystroke: the row is written when she leaves
+/// the step, in [confirmExperienceOther].
+void setExperienceOther(String text) {
+  experienceOtherText.value = text;
+}
+
+/// Saves the free text and moves on. It is what "Continue" does on the level
+/// step when "Other" is the answer.
+Future<void> confirmExperienceOther() async {
+  final text = experienceOtherText.value.trim();
+  if (text.isEmpty) return;
+
+  await _persistAnswer(OnboardingKeys.experienceOther, text);
+  goToNextStep();
 }
 
 /// Picks the track and moves forward.
@@ -115,6 +182,8 @@ void skipCurrentStep() {
 /// `onboarding_answers` key of the step, or `null` if the step saves nothing.
 String? _stepKey(OnboardingStepId step) {
   switch (step) {
+    case OnboardingStepId.language:
+      return OnboardingKeys.language;
     case OnboardingStepId.level:
       return OnboardingKeys.experienceLevel;
     case OnboardingStepId.track:
@@ -196,8 +265,16 @@ Future<void> restoreOnboarding() async {
   };
   storedStepKeys.value = byKey.keys.toSet();
 
+  // `AppLanguage.fromSlug` never returns null —it falls back to English— so
+  // the presence of the row is what decides, not the value. Without that check
+  // a resumed onboarding would show the step already answered.
+  selectedLanguage.value = byKey.containsKey(OnboardingKeys.language)
+      ? AppLanguage.fromSlug(byKey[OnboardingKeys.language])
+      : null;
+
   selectedLevel.value =
       ExperienceLevel.fromSlug(byKey[OnboardingKeys.experienceLevel]);
+  experienceOtherText.value = byKey[OnboardingKeys.experienceOther] ?? '';
   selectedGoal.value = LearningGoal.fromSlug(byKey[OnboardingKeys.goal]);
   selectedTrack.value = RoadmapTrack.fromSlug(byKey[OnboardingKeys.track]);
 
@@ -261,6 +338,10 @@ int _firstUnansweredStep() {
 
   for (var i = 0; i < steps.length; i++) {
     switch (steps[i]) {
+      case OnboardingStepId.language:
+        // Same reasoning as the level below: the profile always carries a
+        // language, so only the saved row can say whether anyone was asked.
+        if (!storedStepKeys.value.contains(OnboardingKeys.language)) return i;
       case OnboardingStepId.level:
         // It asks for the saved row and not for the selection: skipping leaves
         // the selection at `null` just like never having got there.
