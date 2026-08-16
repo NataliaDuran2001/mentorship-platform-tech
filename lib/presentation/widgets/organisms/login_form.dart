@@ -5,14 +5,15 @@
 // dependencies: it takes the callbacks and the already user-facing error
 // message. LoginPage is the one that wires it to getIt.
 //
-// The Google button is still on the screen but disabled: the MVP authenticates
-// with email/password and Google is issue #15.
+// There is no Google button. It used to sit here disabled, waiting for issue
+// #15, and a control that cannot be pressed only makes people wonder whether
+// the app is broken. The `signInWithGoogle()` contract stays in the repository:
+// what is missing is the provider, not the seam to plug it into.
 
 import 'package:flutter/material.dart';
 
 import '../atoms/custom_button.dart';
 import '../atoms/custom_input.dart';
-import '../molecules/google_login_button.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 import '../../utils/translate.dart';
@@ -30,7 +31,12 @@ class LoginForm extends StatelessWidget {
     required this.onToggleObscurePassword,
     this.errorMessage,
     this.onResendConfirmation,
+    this.isLoading = false,
   });
+
+  /// A sign in is in flight. The button waits; the rest of the form stays on
+  /// screen and usable, so there is always a way out.
+  final bool isLoading;
 
   final ValueChanged<String> onEmailChanged;
   final ValueChanged<String> onPasswordChanged;
@@ -99,7 +105,11 @@ class LoginForm extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppConstants.defaultPadding / 2),
-        CustomButton(text: tr('Sign in', 'Iniciar sesión'), onPressed: onSubmit),
+        CustomButton(
+          text: tr('Sign in', 'Iniciar sesión'),
+          onPressed: onSubmit,
+          isLoading: isLoading,
+        ),
         const SizedBox(height: AppConstants.defaultPadding),
         // Wrap and not Row: on narrow screens the question and the link do not
         // fit in one line and a Row would overflow.
@@ -119,31 +129,6 @@ class LoginForm extends StatelessWidget {
               child: Text(tr('Sign up', 'Regístrate')),
             ),
           ],
-        ),
-        const SizedBox(height: AppConstants.defaultPadding),
-        Row(
-          children: [
-            const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.defaultPadding,
-              ),
-              child: Text(
-                tr('OR', 'O'),
-                style: const TextStyle(color: AppColors.onSurfaceVariant),
-              ),
-            ),
-            const Expanded(child: Divider()),
-          ],
-        ),
-        const SizedBox(height: AppConstants.defaultPadding * 1.5),
-        GoogleLoginButton(
-          disabledHint: tr(
-            'Coming a bit later. For now, sign in with your email '
-                'and password.',
-            'Estará disponible un poco más adelante. Por ahora, inicia '
-                'sesión con tu correo y contraseña.',
-          ),
         ),
       ],
     );
