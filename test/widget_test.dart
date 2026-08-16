@@ -30,6 +30,7 @@ import 'package:aspire_app/domain/repositories/onboarding_repository.dart';
 import 'package:aspire_app/domain/usecases/sign_in_usecase.dart';
 import 'package:aspire_app/domain/usecases/sign_out_usecase.dart';
 import 'package:aspire_app/domain/usecases/sign_up_usecase.dart';
+import 'package:aspire_app/domain/usecases/submit_onboarding_usecase.dart';
 import 'package:aspire_app/main.dart';
 import 'package:aspire_app/presentation/state/auth_actions.dart'
     show changePassword;
@@ -144,9 +145,16 @@ class FakeAuthRepository implements AuthRepository {
   void close() => _changes.close();
 }
 
-/// In-memory onboarding repository. It only returns the configured profile.
+/// In-memory onboarding repository.
+///
+/// It behaves like the real one for the end-to-end journey: it keeps the
+/// profile it is given, updates it in place and records every answer, so a
+/// test can walk the onboarding the way a person does instead of setting the
+/// step index by hand.
 class FakeOnboardingRepository implements OnboardingRepository {
   UserProfile? profile;
+
+  final List<OnboardingAnswer> answers = <OnboardingAnswer>[];
 
   @override
   Future<UserProfile?> loadProfile() async => profile;
@@ -156,7 +164,8 @@ class FakeOnboardingRepository implements OnboardingRepository {
       const <OnboardingAnswer>[];
 
   @override
-  Future<void> saveAnswer(OnboardingAnswer answer) async {}
+  Future<void> saveAnswer(OnboardingAnswer answer) async =>
+      answers.add(answer);
 
   @override
   Future<UserProfile> completeOnboarding({
@@ -164,12 +173,26 @@ class FakeOnboardingRepository implements OnboardingRepository {
     ExperienceLevel? experienceLevel,
     LearningGoal? learningGoal,
   }) async {
-    throw UnimplementedError();
+    final updated = (profile ?? _incompleteProfile).copyWith(
+      track: track,
+      experienceLevel: experienceLevel,
+      learningGoal: learningGoal,
+      onboardingCompletedAt: DateTime(2026, 8, 16),
+    );
+    profile = updated;
+    return updated;
   }
 
   @override
   Future<UserProfile> updateLanguage({required AppLanguage language}) async {
-    throw UnimplementedError();
+    // It must keep the onboarding incomplete: the guard reads this profile on
+    // every redirect, and handing back a complete one would throw the user out
+    // of the flow halfway through.
+    final updated = (profile ?? _incompleteProfile).copyWith(
+      language: language,
+    );
+    profile = updated;
+    return updated;
   }
 
   @override
@@ -229,6 +252,7 @@ void main() {
     overrideDependency(SignInUseCase(auth));
     overrideDependency(SignUpUseCase(auth));
     overrideDependency(SignOutUseCase(auth));
+    overrideDependency(SubmitOnboardingUseCase(onboarding));
 
     currentSession.value = null;
     currentProfile.value = null;
@@ -523,6 +547,102 @@ void main() {
 
       expect(find.text('Check your email'), findsNothing);
       expect(find.text('Create account'), findsOneWidget);
+    });
+  });
+
+  group('The onboarding, walked end to end', () {
+    // This is the manual QA pass, written down: no step index is set by hand
+    // and no signal is poked. It signs in, follows the guard, taps what a
+    // person taps and checks what she would see — including the whole flow
+    // switching to Spanish the moment she asks for it.
+    testWidgets('she signs in, picks Spanish, explains herself in her own '
+        'words and reaches her path', (tester) async {
+      _widenWindow(tester);
+      auth.sessionOnSignIn = _session;
+      onboarding.profile = _incompleteProfile;
+
+      await tester.pumpWidget(const MyApp());
+
+      // --- Sign in ---------------------------------------------------------
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'ana@example.com');
+      await tester.enterText(fields.at(1), 'secret123');
+      await tester.tap(find.text('Sign in'));
+      await tester.pumpAndSettle();
+
+      // The guard drops her into the onboarding, on the language step, which
+      // greets her in both languages because it cannot know yet which one she
+      // reads.
+      expect(find.byType(OnboardingPage), findsOneWidget);
+      expect(find.text('STEP 1 OF 5'), findsOneWidget);
+      expect(
+        find.text('Elige tu idioma\nChoose your language'),
+        findsOneWidget,
+      );
+
+      // --- Step 1: Spanish -------------------------------------------------
+      await tester.tap(find.text('Español'));
+      await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+      // From here on, everything is in Spanish. This is what did not happen
+      // before: the language could only be changed from a page the guard makes
+      // unreachable until the onboarding is over.
+      expect(onboarding.profile!.language, AppLanguage.es);
+      expect(find.text('PASO 2 DE 5'), findsOneWidget);
+      expect(find.text('¡Hola! ¿Cómo te describirías hoy?'), findsOneWidget);
+
+      // --- Step 2: none of the three describes her -------------------------
+      expect(find.text('Estudiante / Autodidacta'), findsOneWidget);
+      expect(find.text('Otro motivo'), findsOneWidget);
+
+      await tester.tap(find.text('Otro motivo'));
+      await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+      // It waits for her instead of advancing on its own.
+      expect(find.text('PASO 2 DE 5'), findsOneWidget);
+      await tester.enterText(
+        find.byType(TextField),
+        'Tengo una tienda de barrio y quiero venderle por internet',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuar'));
+      await tester.pumpAndSettle();
+
+      // --- Step 3: track ---------------------------------------------------
+      expect(find.text('PASO 3 DE 5'), findsOneWidget);
+      await tester.tap(find.text('Front-end'));
+      await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+      // --- Step 4: goal ----------------------------------------------------
+      expect(find.text('PASO 4 DE 5'), findsOneWidget);
+      await tester.tap(find.text('Conseguir mi primer empleo profesional'));
+      await tester.pumpAndSettle(const Duration(milliseconds: 600));
+
+      // --- Step 5: summary, in her own words -------------------------------
+      expect(find.text('PASO 5 DE 5'), findsOneWidget);
+      expect(find.text('¡Ya está todo listo!'), findsOneWidget);
+      expect(
+        find.text('Tengo una tienda de barrio y quiero venderle por internet'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Ir al Panel'));
+      await tester.pumpAndSettle();
+
+      // The guard lets her through, and everything she said was persisted.
+      expect(find.byType(OnboardingPage), findsNothing);
+      expect(onboarding.profile!.track, RoadmapTrack.frontend);
+      expect(onboarding.profile!.experienceLevel, ExperienceLevel.other);
+
+      final byKey = {for (final a in onboarding.answers) a.stepKey: a.value};
+      expect(byKey['language'], 'es');
+      expect(byKey['experience_level'], 'other');
+      expect(
+        byKey['experience_other'],
+        'Tengo una tienda de barrio y quiero venderle por internet',
+      );
+      expect(byKey['track'], 'frontend');
+      expect(byKey['goal'], 'first_job');
     });
   });
 
