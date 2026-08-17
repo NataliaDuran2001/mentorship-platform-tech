@@ -124,7 +124,71 @@ Regla de acceso al cliente: la capa `data` toma `SupabaseClient` desde `getIt`.
 
 ---
 
-## 5. Problemas frecuentes en Windows
+## 5. Despliegue
+
+La app se sirve desde **Firebase Hosting**, proyecto `kora-dev-1`, en
+`https://kora-dev-1.web.app`. El despliegue es **manual y desde una máquina de
+desarrollo**: el CI ([ci.yml](../.github/workflows/ci.yml)) sólo corre `analyze`
+y `test`, no publica nada.
+
+La configuración está en [firebase.json](../firebase.json), que publica
+`build/web` y reescribe todo a `/index.html` (la app rutea con la estrategia de
+hash, así que un refresh en cualquier ruta tiene que caer en el index).
+`index.html` va con `no-cache` y `assets/` y `canvaskit/` con caché de un año:
+así un despliegue nuevo se ve al instante sin volver a bajar el runtime.
+
+### Orden, que importa
+
+**Primero la base de datos, después la app.** Toda migración de este proyecto
+es aditiva —valores de enum, columnas con default, tablas nuevas—, así que
+aplicarla antes no rompe la versión que está publicada en ese momento. Al
+revés sí rompe: una app nueva contra un esquema viejo falla al escribir.
+
+1. Aplicar en el SQL Editor las migraciones pendientes de
+   [supabase/migrations/](../supabase/migrations/) — ver
+   [SUPABASE.md](SUPABASE.md), sección «Migraciones».
+2. Estar en `main` y al día:
+   ```bash
+   git checkout main && git pull
+   ```
+3. Verificar antes de construir. Si algo de esto falla, no se despliega:
+   ```bash
+   fvm flutter pub get
+   fvm flutter analyze --fatal-infos
+   fvm flutter test
+   ```
+4. Construir y publicar:
+   ```bash
+   fvm flutter build web --release
+   firebase deploy --only hosting
+   ```
+   `firebase` lee el proyecto de [.firebaserc](../.firebaserc); no hace falta
+   pasar `--project`. Si la CLI pide autenticación: `firebase login`.
+
+### Probar sin publicar
+
+Para revisar el build real antes de que lo vea nadie, un canal de vista previa
+da una URL temporal y no toca producción:
+
+```bash
+firebase hosting:channel:deploy preview --expires 7d
+```
+
+### Después de desplegar
+
+Abrir `https://kora-dev-1.web.app` en una ventana de incógnito —para no leer la
+versión anterior desde la caché del navegador— y recorrer el camino crítico:
+registro, onboarding completo y la ruta de aprendizaje.
+
+Si algo salió mal, se vuelve atrás desde la **consola de Firebase** → *Hosting*
+→ historial de versiones → **Revertir**. No hay un `hosting:rollback` en la
+CLI; lo más cerca es `firebase hosting:clone`, que copia una versión de un
+canal a otro. La base de datos **no** vuelve sola: por eso las migraciones son
+aditivas y compatibles con la versión anterior de la app.
+
+---
+
+## 6. Problemas frecuentes en Windows
 
 | Síntoma | Causa | Solución |
 |---|---|---|
@@ -138,7 +202,7 @@ Regla de acceso al cliente: la capa `data` toma `SupabaseClient` desde `getIt`.
 
 ---
 
-## 6. Arquitectura
+## 7. Arquitectura
 
 Las reglas de capas, atomic design, estado con signals y DI están en
 [`CLAUDE.md`](../CLAUDE.md), en la raíz del repositorio. Todo archivo nuevo bajo
