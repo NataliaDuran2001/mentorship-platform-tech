@@ -34,12 +34,21 @@ class InterviewsPage extends StatelessWidget {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.record_voice_over_outlined,
-                    size: AppConstants.iconSizeCelebration,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(height: AppConstants.spacingLg),
+                  // History is a detour from the "start a practice" flow, not
+                  // a step in it — a corner link keeps it reachable without
+                  // making it look like a third thing to decide between.
+                  if (profile?.track != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () => context.go('/interviews/history'),
+                        icon: const Icon(
+                          Icons.history,
+                          size: AppConstants.iconSizeSm,
+                        ),
+                        label: Text(tr('History', 'Historial')),
+                      ),
+                    ),
                   Text(
                     tr(
                       'Practice for your next interview',
@@ -51,13 +60,10 @@ class InterviewsPage extends StatelessWidget {
                   const SizedBox(height: AppConstants.spacingSm),
                   Text(
                     tr(
-                      "We'll ask you a few interview questions for your path. "
-                          "At the end, you get friendly feedback on all your "
-                          'answers. Take your time — this is just practice.',
-                      'Te haremos algunas preguntas de entrevista para tu '
-                          'camino. Al final, recibes feedback amigable sobre '
-                          'todas tus respuestas. Tómate tu tiempo — esto es '
-                          'solo práctica.',
+                      'A few interview questions, then friendly feedback on '
+                          'all your answers.',
+                      'Algunas preguntas de entrevista y feedback amigable '
+                          'al final.',
                     ),
                     style: textTheme.bodyMedium
                         ?.copyWith(color: AppColors.onSurfaceVariant),
@@ -83,44 +89,66 @@ class InterviewsPage extends StatelessWidget {
                           ?.copyWith(color: AppColors.onSurfaceVariant),
                       textAlign: TextAlign.center,
                     )
-                  else ...[
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        tr(
-                          'What role are you practicing for? (optional)',
-                          '¿Para qué puesto te preparas? (opcional)',
-                        ),
-                        style: textTheme.labelLarge,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSm),
-                    CustomInput(
-                      hintText: tr(
-                        'e.g. Frontend Developer, QA Tester',
-                        'ej. Desarrolladora Frontend, QA Tester',
-                      ),
-                      onChanged: (value) => interviewDesiredRole.value = value,
-                    ),
-                    const SizedBox(height: AppConstants.spacingLg),
-                    ElevatedButton.icon(
-                      onPressed: () => context.go('/interviews/session'),
-                      icon: const Icon(Icons.play_arrow),
-                      label: Text(tr('Start practice', 'Empezar práctica')),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSm),
-                    TextButton.icon(
-                      onPressed: () => context.go('/interviews/history'),
-                      icon: const Icon(Icons.history),
-                      label: Text(
-                        tr('Practice history', 'Historial de práctica'),
-                      ),
-                    ),
-                  ],
+                  else
+                    const _PracticeActionCard(),
                 ],
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Groups the role input and the primary CTA into one bordered card,
+/// separated from the explanatory text above it — loose, differently-styled
+/// controls stacked directly under a paragraph read as visual noise; one
+/// clearly bounded "do this" panel does not.
+class _PracticeActionCard extends StatelessWidget {
+  const _PracticeActionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.spacingLg),
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                tr(
+                  'What role are you practicing for? (optional)',
+                  '¿Para qué puesto te preparas? (opcional)',
+                ),
+                style: textTheme.labelLarge,
+              ),
+            ),
+            const SizedBox(height: AppConstants.spacingSm),
+            CustomInput(
+              hintText: tr(
+                'e.g. Frontend Developer, QA Tester',
+                'ej. Desarrolladora Frontend, QA Tester',
+              ),
+              onChanged: (value) => interviewDesiredRole.value = value,
+            ),
+            const SizedBox(height: AppConstants.spacingLg),
+            ElevatedButton.icon(
+              onPressed: () => context.go('/interviews/session'),
+              icon: const Icon(Icons.play_arrow),
+              label: Text(tr('Start practice', 'Empezar práctica')),
+            ),
+          ],
         ),
       ),
     );
