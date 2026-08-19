@@ -146,7 +146,14 @@ serve(async (req: Request) => {
       .order('created_at', { ascending: false })
       .limit(1);
 
-    if (!cacheError && cachedInsights && cachedInsights.length > 0) {
+    if (cacheError) {
+      // Falling through to a fresh Kimi call on a failed cache read is the
+      // right degradation, but doing it silently made a broken cache read
+      // indistinguishable from a real cache miss — this is what let the
+      // brief regenerate on every request without ever showing up as an
+      // error anywhere.
+      console.error('daily-brief cache check failed:', cacheError);
+    } else if (cachedInsights && cachedInsights.length > 0) {
       const cachedBrief = cachedInsights[0].content as { brief: string };
       return Response.json(cachedBrief, {
         headers: { 'Access-Control-Allow-Origin': '*' },
