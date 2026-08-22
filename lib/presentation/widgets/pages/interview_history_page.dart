@@ -16,6 +16,7 @@ import '../../utils/constants.dart';
 import '../../utils/interview_score_bands.dart';
 import '../../utils/onboarding_labels.dart';
 import '../../utils/translate.dart';
+import '../atoms/wave_header.dart';
 import '../organisms/interview_feedback_card.dart';
 
 class InterviewHistoryPage extends StatefulWidget {
@@ -116,6 +117,7 @@ class _InterviewHistoryPageState extends State<InterviewHistoryPage> {
           }
 
           final average = interviewHistoryAverageScore.value ?? 0;
+          final band = interviewScoreBand(average);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -127,33 +129,85 @@ class _InterviewHistoryPageState extends State<InterviewHistoryPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: ScoreGauge(
-                        score: average,
-                        size: AppConstants.iconSizeCelebration,
-                      ),
-                    ),
-                    const SizedBox(height: AppConstants.spacingSm),
-                    Text(
-                      tr('Average score', 'Puntaje promedio'),
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: AppColors.onSurfaceVariant,
+                    // Same light-card + WaveHeader language as a roadmap
+                    // module card and the results screen's score panel —
+                    // one shared family of "content cards" instead of a
+                    // second solid-primary block competing with the intro
+                    // screen's "Start practice" hero.
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusLg),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.radiusLg),
+                          border: Border.all(
+                            color: band.color.withValues(alpha: 0.35),
                           ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppConstants.spacingXs),
-                    Text(
-                      tr(
-                        '${sessions.length} ${sessions.length == 1 ? 'practice' : 'practices'}',
-                        '${sessions.length} ${sessions.length == 1 ? 'práctica' : 'prácticas'}',
+                        ),
+                        child: Column(
+                          children: [
+                            WaveHeader(
+                              color: band.color.withValues(alpha: 0.15),
+                              height: AppConstants.waveHeaderHeight,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppConstants.spacingLg,
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    tr('OVERALL AVERAGE', 'PROMEDIO GENERAL'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: band.color,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.1,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(
+                                    height: AppConstants.spacingMd,
+                                  ),
+                                  Center(
+                                    child: ScoreGauge(
+                                      score: average,
+                                      size: AppConstants.iconSizeCelebration,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: AppConstants.spacingSm,
+                                  ),
+                                  Text(
+                                    tr(
+                                      '${sessions.length} ${sessions.length == 1 ? 'practice' : 'practices'}',
+                                      '${sessions.length} ${sessions.length == 1 ? 'práctica' : 'prácticas'}',
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.onSurfaceVariant,
+                                        ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppColors.onSurfaceVariant),
-                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppConstants.spacingXl),
+                    Text(
+                      tr('Past attempts', 'Intentos anteriores'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: AppConstants.spacingSm),
                     for (final session in sessions) ...[
                       _HistoryRow(
                         session: session,
@@ -197,6 +251,12 @@ class _HistoryRow extends StatelessWidget {
           padding: const EdgeInsets.all(AppConstants.spacingMd),
           child: Row(
             children: [
+              CircleAvatar(
+                radius: AppConstants.iconTileSize / 2,
+                backgroundColor: band.containerColor,
+                child: Icon(Icons.work_outline, color: band.color),
+              ),
+              const SizedBox(width: AppConstants.spacingMd),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,7 +277,23 @@ class _HistoryRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppConstants.spacingMd),
-              ScoreBandBadge(band: band, score: session.averageScore),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${session.averageScore}',
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: band.color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    band.label,
+                    style: textTheme.labelMedium
+                        ?.copyWith(color: band.color),
+                  ),
+                ],
+              ),
               const SizedBox(width: AppConstants.spacingSm),
               const Icon(
                 Icons.chevron_right,

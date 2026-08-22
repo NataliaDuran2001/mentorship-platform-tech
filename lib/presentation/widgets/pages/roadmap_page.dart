@@ -117,21 +117,32 @@ class _Header extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (roadmapCoachMessage.value != null) ...[
-                  const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
-                  const SizedBox(width: 4),
-                ],
+                const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+                const SizedBox(width: 4),
                 Expanded(
-                  child: Text(
-                    (roadmapCoachMessage.value ?? tr('Your path', 'Tu camino'))
-                        .toUpperCase(),
-                    style: textTheme.labelMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
+                  // A full AI-generated sentence reads in normal case and
+                  // weight, the way the Dashboard's own AI summary does —
+                  // shouting a whole sentence in caps is what made this
+                  // line read as noise before. The short fallback label
+                  // keeps the bold caps eyebrow style used elsewhere.
+                  child: switch (roadmapCoachMessage.value) {
+                    final coachMessage? => Text(
+                        coachMessage,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    null => Text(
+                        tr('YOUR PATH', 'TU CAMINO'),
+                        style: textTheme.labelMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                  },
                 ),
               ],
             ),

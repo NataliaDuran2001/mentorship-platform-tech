@@ -1,9 +1,12 @@
 // Atomic Design (Organism): Reusable functional section.
-// Shared frame for the authentication screens: title, readable width and
-// scroll. Login and sign up share it so they do not look different.
+// Shared frame for the authentication screens: brand mark, title, readable
+// width and scroll. Login and sign up share it so they do not look
+// different.
 
 import 'package:flutter/material.dart';
 
+import '../../../core/config/app_branding.dart';
+import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
 
 class AuthLayout extends StatelessWidget {
@@ -28,15 +31,55 @@ class AuthLayout extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // headlineLg level of the design system scale.
+                    // Same mark as the AI roadmap-coach cue, so it reads as
+                    // Kora's own touch rather than a borrowed icon.
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: AppColors.primary,
+                      size: AppConstants.iconTileSize,
+                    ),
+                    const SizedBox(height: AppConstants.spacingSm),
                     Text(
-                      title,
-                      style: Theme.of(context).textTheme.headlineLarge,
+                      AppBranding.name.toUpperCase(),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
                     ),
-                    const SizedBox(
-                      height: AppConstants.defaultPadding * 3,
+                    const SizedBox(height: AppConstants.spacingLg),
+                    // The form floats as its own panel instead of sitting
+                    // directly on the page background.
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        borderRadius:
+                            BorderRadius.circular(AppConstants.radiusLg),
+                        border: Border.all(
+                          color: AppColors.outlineVariant
+                              .withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.all(AppConstants.spacingLg),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // headlineLg level of the design system scale.
+                            Text(
+                              title,
+                              style:
+                                  Theme.of(context).textTheme.headlineLarge,
+                            ),
+                            const SizedBox(
+                              height: AppConstants.defaultPadding * 2,
+                            ),
+                            child,
+                          ],
+                        ),
+                      ),
                     ),
-                    child,
                   ],
                 ),
               ),

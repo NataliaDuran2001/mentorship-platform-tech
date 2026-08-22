@@ -138,7 +138,7 @@ class _LevelConnector extends StatelessWidget {
 /// name —"Basic", "Intermediate", "Advanced"— and its own progress, so the
 /// path reads as a few reachable stretches instead of one long list where
 /// everything past the current topic looks equally far away.
-class _Module extends StatelessWidget {
+class _Module extends StatefulWidget {
   const _Module({
     required this.node,
     required this.levelColor,
@@ -152,7 +152,21 @@ class _Module extends StatelessWidget {
   final Map<String, TopicTranslation> translations;
 
   @override
+  State<_Module> createState() => _ModuleState();
+}
+
+class _ModuleState extends State<_Module> {
+  // Expanded by default: collapsing is an option to declutter, never a
+  // surprise that hides a topic list the learner could already see.
+  bool _expanded = true;
+
+  @override
   Widget build(BuildContext context) {
+    final node = widget.node;
+    final levelColor = widget.levelColor;
+    final onTopicTap = widget.onTopicTap;
+    final translations = widget.translations;
+
     if (node.isLeaf) {
       return _TopicRow(node: node, onTap: onTopicTap, translations: translations);
     }
@@ -193,24 +207,41 @@ class _Module extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      _LevelBadge(
-                        title: title,
-                        status: node.status,
-                        color: levelColor,
+                  Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusDefault),
+                      onTap: () => setState(() => _expanded = !_expanded),
+                      child: Row(
+                        children: [
+                          _LevelBadge(
+                            title: title,
+                            status: node.status,
+                            color: levelColor,
+                          ),
+                          const Spacer(),
+                          Text(
+                            tr(
+                              '$done of ${leaves.length}',
+                              '$done de ${leaves.length}',
+                            ),
+                            style: textTheme.labelMedium?.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          Icon(
+                            _expanded
+                                ? Icons.expand_less
+                                : Icons.expand_more,
+                            color: AppColors.onSurfaceVariant,
+                            semanticLabel: _expanded
+                                ? tr('Collapse', 'Contraer')
+                                : tr('Expand', 'Expandir'),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      Text(
-                        tr(
-                          '$done of ${leaves.length}',
-                          '$done de ${leaves.length}',
-                        ),
-                        style: textTheme.labelMedium?.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   if (leaves.isNotEmpty) ...[
                     const SizedBox(height: AppConstants.spacingSm),
@@ -219,28 +250,42 @@ class _Module extends StatelessWidget {
                       semanticsLabel: tr('$title progress', 'Progreso de $title'),
                     ),
                   ],
-                  if (description != null) ...[
-                    const SizedBox(height: AppConstants.spacingSm),
-                    Text(
-                      description,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: AppConstants.spacingSm),
-                  for (final child in node.children)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: AppConstants.spacingSm,
-                        top: AppConstants.spacingXs,
-                      ),
-                      child: _TopicRow(
-                        node: child,
-                        onTap: onTopicTap,
-                        translations: translations,
-                      ),
-                    ),
+                  AnimatedSize(
+                    duration: AppConstants.durationMedium,
+                    curve: Curves.easeInOut,
+                    alignment: Alignment.topCenter,
+                    child: !_expanded
+                        ? const SizedBox(width: double.infinity)
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (description != null) ...[
+                                const SizedBox(
+                                  height: AppConstants.spacingSm,
+                                ),
+                                Text(
+                                  description,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: AppConstants.spacingSm),
+                              for (final child in node.children)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: AppConstants.spacingSm,
+                                    top: AppConstants.spacingXs,
+                                  ),
+                                  child: _TopicRow(
+                                    node: child,
+                                    onTap: onTopicTap,
+                                    translations: translations,
+                                  ),
+                                ),
+                            ],
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -343,12 +388,33 @@ class _TopicRow extends StatelessWidget {
           ),
           // The label goes on every row and not only on the actionable ones:
           // the status has to be readable without relying on the icon color.
-          Text(
-            _labelFor(node.status),
-            style: textTheme.labelMedium?.copyWith(
-              color: _colorFor(node.status),
+          if (isAvailable)
+            // The one row you're meant to act on right now gets a filled
+            // pill instead of plain text, so it reads as the CTA it is.
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.spacingSm,
+                vertical: AppConstants.spacingXs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              ),
+              child: Text(
+                _labelFor(node.status),
+                style: textTheme.labelMedium?.copyWith(
+                  color: AppColors.onPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else
+            Text(
+              _labelFor(node.status),
+              style: textTheme.labelMedium?.copyWith(
+                color: _colorFor(node.status),
+              ),
             ),
-          ),
         ],
       ),
     );
