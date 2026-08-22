@@ -20,11 +20,15 @@ import '../atoms/interview_category_tag.dart';
 class InterviewFeedbackCard extends StatefulWidget {
   const InterviewFeedbackCard({
     super.key,
+    required this.index,
     required this.questionPrompt,
     required this.category,
     required this.feedback,
   });
 
+  /// 1-based position of this question in the session, painted as a small
+  /// leading "Q{n}" chip so the list reads as a numbered breakdown.
+  final int index;
   final String questionPrompt;
   final String category;
   final InterviewAnswerFeedback feedback;
@@ -62,6 +66,18 @@ class _InterviewFeedbackCardState extends State<InterviewFeedbackCard> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    CircleAvatar(
+                      radius: AppConstants.iconSizeSm,
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      child: Text(
+                        'Q${widget.index}',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppConstants.spacingSm),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,9 +126,21 @@ class _InterviewFeedbackCardState extends State<InterviewFeedbackCard> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             const SizedBox(height: AppConstants.spacingSm),
-                            Text(
-                              widget.feedback.summary,
-                              style: textTheme.bodyMedium,
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(
+                                AppConstants.spacingSm,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainer,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.radiusDefault,
+                                ),
+                              ),
+                              child: Text(
+                                widget.feedback.summary,
+                                style: textTheme.bodyMedium,
+                              ),
                             ),
                             if (widget.feedback.strengths.isNotEmpty) ...[
                               const SizedBox(height: AppConstants.spacingMd),
@@ -155,14 +183,22 @@ class _InterviewFeedbackCardState extends State<InterviewFeedbackCard> {
 /// session-overall summary, so a 22/100 reads as a shape and a color, not
 /// just a bare number.
 class ScoreGauge extends StatelessWidget {
-  const ScoreGauge({super.key, required this.score, required this.size});
+  const ScoreGauge({super.key, required this.score, required this.size, this.color});
 
   final int score;
   final double size;
 
+  /// Overrides the band color for both the ring and the number. Needed on a
+  /// solid `primary` background (the results hero panel, the history
+  /// average card): the "Good" band's color is a dark purple meant to sit
+  /// on its own pale container, and would all but disappear on `primary`
+  /// itself. Leave null anywhere the gauge sits on a light/neutral surface,
+  /// where the band color is what makes a 72/100 read as good at a glance.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
-    final band = interviewScoreBand(score);
+    final resolvedColor = color ?? interviewScoreBand(score).color;
 
     return SizedBox(
       width: size,
@@ -173,14 +209,16 @@ class ScoreGauge extends StatelessWidget {
           CircularProgressIndicator(
             value: score / 100,
             strokeWidth: AppConstants.gaugeStrokeWidth,
-            backgroundColor: AppColors.surfaceContainerHigh,
-            valueColor: AlwaysStoppedAnimation<Color>(band.color),
+            backgroundColor: color == null
+                ? AppColors.surfaceContainerHigh
+                : color!.withValues(alpha: 0.25),
+            valueColor: AlwaysStoppedAnimation<Color>(resolvedColor),
           ),
           Text(
             '$score',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: band.color,
+                  color: resolvedColor,
                 ),
           ),
         ],
@@ -245,33 +283,44 @@ class _FeedbackList extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: AppConstants.spacingXs),
-        for (final item in items)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppConstants.spacingXs),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, size: AppConstants.iconSizeSm, color: iconColor),
-                const SizedBox(width: AppConstants.spacingSm),
-                Expanded(
-                  child: Text(
-                    item,
-                    style: textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.onSurfaceVariant),
-                  ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppConstants.spacingSm),
+      decoration: BoxDecoration(
+        color: iconColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: AppConstants.iconSizeSm, color: iconColor),
+              const SizedBox(width: AppConstants.spacingXs),
+              Text(
+                title,
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: iconColor,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: AppConstants.spacingXs),
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.only(
+                top: AppConstants.spacingXs,
+                left: AppConstants.iconSizeSm + AppConstants.spacingXs,
+              ),
+              child: Text(
+                item,
+                style: textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.onSurfaceVariant),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

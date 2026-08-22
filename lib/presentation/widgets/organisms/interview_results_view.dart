@@ -14,6 +14,9 @@ import '../../../domain/entities/interview_answer_feedback.dart';
 import '../../../domain/entities/interview_question.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/constants.dart';
+import '../../utils/interview_score_bands.dart';
+import '../../utils/translate.dart';
+import '../atoms/wave_header.dart';
 import 'interview_feedback_card.dart';
 
 class InterviewResultsView extends StatelessWidget {
@@ -40,6 +43,7 @@ class InterviewResultsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final band = interviewScoreBand(averageScore);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppConstants.spacingLg),
@@ -51,13 +55,6 @@ class InterviewResultsView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: ScoreGauge(
-                  score: averageScore,
-                  size: AppConstants.iconSizeCelebration,
-                ),
-              ),
-              const SizedBox(height: AppConstants.spacingLg),
               Text(
                 title,
                 style: textTheme.headlineLarge,
@@ -70,10 +67,72 @@ class InterviewResultsView extends StatelessWidget {
                     ?.copyWith(color: AppColors.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: AppConstants.spacingLg),
+              // Same light-card + WaveHeader language as a roadmap module
+              // card: the gauge's own band color is the accent, so this
+              // reads as one family with the rest of the app instead of a
+              // second, louder "hero" competing with the CTA below.
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.radiusLg),
+                    border: Border.all(color: band.color.withValues(alpha: 0.35)),
+                  ),
+                  child: Column(
+                    children: [
+                      WaveHeader(
+                        color: band.color.withValues(alpha: 0.15),
+                        height: AppConstants.waveHeaderHeight,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: AppConstants.spacingLg,
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              tr('OVERALL SCORE', 'PUNTAJE GENERAL'),
+                              style: textTheme.labelMedium?.copyWith(
+                                color: band.color,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: AppConstants.spacingMd),
+                            ScoreGauge(
+                              score: averageScore,
+                              size: AppConstants.iconSizeCelebration,
+                            ),
+                            const SizedBox(height: AppConstants.spacingXs),
+                            Text(
+                              band.label,
+                              style: textTheme.labelLarge?.copyWith(
+                                color: band.color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: AppConstants.spacingXl),
-              for (final question in questions)
+              if (questions.isNotEmpty) ...[
+                Text(
+                  tr('Detailed breakdown', 'Desglose detallado'),
+                  style: textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppConstants.spacingMd),
+              ],
+              for (final (index, question) in questions.indexed)
                 if (feedback[question.id] case final questionFeedback?) ...[
                   InterviewFeedbackCard(
+                    index: index + 1,
                     questionPrompt: question.prompt,
                     category: question.category,
                     feedback: questionFeedback,

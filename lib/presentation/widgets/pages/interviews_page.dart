@@ -35,12 +35,12 @@ class InterviewsPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // History is a detour from the "start a practice" flow, not
-                  // a step in it — a corner link keeps it reachable without
-                  // making it look like a third thing to decide between.
+                  // a step in it — a lightweight outlined button keeps it
+                  // reachable without competing with the primary CTA below.
                   if (profile?.track != null)
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton.icon(
+                      child: OutlinedButton.icon(
                         onPressed: () => context.go('/interviews/history'),
                         icon: const Icon(
                           Icons.history,
@@ -49,12 +49,14 @@ class InterviewsPage extends StatelessWidget {
                         label: Text(tr('History', 'Historial')),
                       ),
                     ),
+                  const SizedBox(height: AppConstants.spacingMd),
                   Text(
                     tr(
                       'Practice for your next interview',
                       'Practica para tu próxima entrevista',
                     ),
-                    style: textTheme.headlineMedium,
+                    style: textTheme.headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.spacingSm),
@@ -101,10 +103,12 @@ class InterviewsPage extends StatelessWidget {
   }
 }
 
-/// Groups the role input and the primary CTA into one bordered card,
-/// separated from the explanatory text above it — loose, differently-styled
-/// controls stacked directly under a paragraph read as visual noise; one
-/// clearly bounded "do this" panel does not.
+/// Groups the role input and the primary CTA into one hero card, in the
+/// same solid-`primary` language as the Dashboard's "Next up" card
+/// (`dashboard_page.dart`) — the one full-bleed, high-contrast block this
+/// app already uses to mark "the one thing to do right now". Reusing it
+/// here instead of another pale bordered box is what makes starting a
+/// practice feel like the main event of the screen, not a form to fill in.
 class _PracticeActionCard extends StatelessWidget {
   const _PracticeActionCard();
 
@@ -114,27 +118,63 @@ class _PracticeActionCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.5),
-        ),
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.25),
+            blurRadius: AppConstants.spacingLg,
+            offset: const Offset(0, AppConstants.spacingSm),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.spacingLg),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                tr(
-                  'What role are you practicing for? (optional)',
-                  '¿Para qué puesto te preparas? (opcional)',
+            Row(
+              children: [
+                Container(
+                  width: AppConstants.iconSizeLg,
+                  height: AppConstants.iconSizeLg,
+                  decoration: BoxDecoration(
+                    color: AppColors.onPrimary.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusDefault,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.mic_none,
+                    color: AppColors.onPrimary,
+                    size: AppConstants.iconSizeSm,
+                  ),
                 ),
-                style: textTheme.labelLarge,
+                const SizedBox(width: AppConstants.spacingSm),
+                // Expanded: a long translated title (e.g. Spanish "Iniciar
+                // una práctica") must wrap or truncate here instead of
+                // overflowing past the card on a narrow screen.
+                Expanded(
+                  child: Text(
+                    tr('Start a practice session', 'Iniciar una práctica'),
+                    style: textTheme.titleLarge
+                        ?.copyWith(color: AppColors.onPrimary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppConstants.spacingLg),
+            Text(
+              tr(
+                'Target role (optional)',
+                'Puesto objetivo (opcional)',
+              ),
+              style: textTheme.labelLarge?.copyWith(
+                color: AppColors.onPrimary.withValues(alpha: 0.75),
               ),
             ),
-            const SizedBox(height: AppConstants.spacingSm),
+            const SizedBox(height: AppConstants.spacingXs),
             CustomInput(
               hintText: tr(
                 'e.g. Frontend Developer, QA Tester',
@@ -143,10 +183,35 @@ class _PracticeActionCard extends StatelessWidget {
               onChanged: (value) => interviewDesiredRole.value = value,
             ),
             const SizedBox(height: AppConstants.spacingLg),
-            ElevatedButton.icon(
-              onPressed: () => context.go('/interviews/session'),
-              icon: const Icon(Icons.play_arrow),
-              label: Text(tr('Start practice', 'Empezar práctica')),
+            // The white pill button from the same "Next up" card — inverted
+            // against the solid primary background instead of a filled
+            // button that would just blend into it.
+            Material(
+              color: AppColors.onPrimary,
+              borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                onTap: () => context.go('/interviews/session'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.spacingMd,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.play_arrow, color: AppColors.primary),
+                      const SizedBox(width: AppConstants.spacingXs),
+                      Text(
+                        tr('Start practice', 'Empezar práctica'),
+                        style: textTheme.labelLarge?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
